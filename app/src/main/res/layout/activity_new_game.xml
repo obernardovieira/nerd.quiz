@@ -39,4 +39,11 @@
         android:id="@+id/id_search_player"
         android:onClick="clickSearchPlayerButton"/>
 
+    <Button
+        android:text="Play"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/bt_play"
+        android:onClick="clickPlayGameButton"/>
+
 </LinearLayout>

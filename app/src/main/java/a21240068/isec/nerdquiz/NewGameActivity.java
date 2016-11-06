@@ -21,6 +21,11 @@ public class NewGameActivity extends Activity {
         startActivityForResult(new Intent(this, SearchPlayerActivity.class), REQUEST_CODE);
     }
 
+    public void clickPlayGameButton(View view)
+    {
+        //
+    }
+
     private void invitePlayer(String username)
     {
         // send request for game

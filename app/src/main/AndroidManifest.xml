@@ -21,7 +21,8 @@
         <activity android:name=".TakePhotoActivity" />
         <activity android:name=".RegisterActivity" />
         <activity android:name=".EditProfileActivity" />
-        <activity android:name=".NewGameActivity"></activity>
+        <activity android:name=".NewGameActivity" />
+        <activity android:name=".GameActivity"></activity>
     </application>
 
 </manifest>
