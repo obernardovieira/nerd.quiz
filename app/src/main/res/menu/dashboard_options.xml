@@ -4,4 +4,7 @@
         android:id="@+id/id_profile"
         android:showAsAction="always"
         android:icon="@android:drawable/ic_menu_myplaces" />
+    <item android:id="@+id/id_upload_questions"
+        android:icon="@android:drawable/ic_popup_sync"
+        android:showAsAction="always" />
 </menu>

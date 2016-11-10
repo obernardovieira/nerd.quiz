@@ -30,6 +30,11 @@ public class DashboardActivity extends Activity {
             startActivity(intent);
             return true;
         }
+        else if(item.getItemId() == R.id.id_upload_questions)
+        {
+            QuestionsData qdata = new QuestionsData(this);
+            qdata.updateQuestions();
+        }
         return super.onOptionsItemSelected(item);
     }
 
