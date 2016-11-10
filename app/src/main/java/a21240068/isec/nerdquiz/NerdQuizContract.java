@@ -24,5 +24,12 @@ public final class NerdQuizContract {
         public static final String COLUMN_POINTS = "points";
         public static final String COLUMN_DATE = "date";
     }
+
+    public static class QuestionsTable implements BaseColumns {
+        public static final String TABLE_NAME = "questions";
+        public static final String COLUMN_QUESTION = "question";
+        public static final String COLUMN_RIGHT_ANSWER = "ranswer";
+        public static final String COLUMN_QUESTION_SUBJECT = "subject";
+    }
 }
 

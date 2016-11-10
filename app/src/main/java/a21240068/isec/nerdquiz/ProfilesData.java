@@ -9,7 +9,7 @@ import android.database.sqlite.SQLiteDatabase;
  * Created by bernardovieira on 06-11-2016.
  */
 
-class ProfilesData
+public class ProfilesData
 {
     private NerdQuizDBHelper mDbHelper;
 
