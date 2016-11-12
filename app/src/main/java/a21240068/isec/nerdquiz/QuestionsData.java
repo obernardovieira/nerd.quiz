@@ -6,7 +6,6 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -40,13 +39,13 @@ public class QuestionsData {
         String[] selectionArgs = { Integer.toString(id) };
 
         Cursor c = db.query(
-                NerdQuizContract.QuestionsTable.TABLE_NAME,                     // The table to query
-                projection,                               // The columns to return
-                selection,                                // The columns for the WHERE clause
-                selectionArgs,                            // The values for the WHERE clause
-                null,                                     // don't group the rows
-                null,                                     // don't filter by row groups
-                null                                 // The sort order
+                NerdQuizContract.QuestionsTable.TABLE_NAME,
+                projection,
+                selection,
+                selectionArgs,
+                null,
+                null,
+                null
         );
 
         c.moveToFirst();
@@ -66,8 +65,6 @@ public class QuestionsData {
         String answer;
         SQLiteDatabase db = mDbHelper.getReadableDatabase();
 
-        Log.d("getAnswer", "Answer number " + id);
-
         String[] projection = {
                 NerdQuizContract.QuestionsTable.COLUMN_RIGHT_ANSWER
         };
@@ -76,13 +73,13 @@ public class QuestionsData {
         String[] selectionArgs = { Integer.toString(id) };
 
         Cursor c = db.query(
-                NerdQuizContract.QuestionsTable.TABLE_NAME,                     // The table to query
-                projection,                               // The columns to return
-                selection,                                // The columns for the WHERE clause
-                selectionArgs,                            // The values for the WHERE clause
-                null,                                     // don't group the rows
-                null,                                     // don't filter by row groups
-                null                                 // The sort order
+                NerdQuizContract.QuestionsTable.TABLE_NAME,
+                projection,
+                selection,
+                selectionArgs,
+                null,
+                null,
+                null
         );
 
         c.moveToFirst();
@@ -105,13 +102,13 @@ public class QuestionsData {
         if(subject.equals("NONE"))
         {
             c = db.query(
-                    NerdQuizContract.QuestionsTable.TABLE_NAME,                     // The table to query
-                    projection,                               // The columns to return
-                    null,                                // The columns for the WHERE clause
-                    null,                            // The values for the WHERE clause
-                    null,                                     // don't group the rows
-                    null,                                     // don't filter by row groups
-                    null                                 // The sort order
+                    NerdQuizContract.QuestionsTable.TABLE_NAME,
+                    projection,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null
             );
         }
         else
@@ -120,13 +117,13 @@ public class QuestionsData {
             String[] selectionArgs = {subject};
 
             c = db.query(
-                    NerdQuizContract.QuestionsTable.TABLE_NAME,                     // The table to query
-                    projection,                               // The columns to return
-                    selection,                                // The columns for the WHERE clause
-                    selectionArgs,                            // The values for the WHERE clause
-                    null,                                     // don't group the rows
-                    null,                                     // don't filter by row groups
-                    null                                 // The sort order
+                    NerdQuizContract.QuestionsTable.TABLE_NAME,
+                    projection,
+                    selection,
+                    selectionArgs,
+                    null,
+                    null,
+                    null
             );
         }
         return c.getCount();
@@ -151,13 +148,13 @@ public class QuestionsData {
         String[] selectionArgs = { subject };
 
         Cursor c = db.query(
-                NerdQuizContract.QuestionsTable.TABLE_NAME,                     // The table to query
-                projection,                               // The columns to return
-                selection,                                // The columns for the WHERE clause
-                selectionArgs,                            // The values for the WHERE clause
-                null,                                     // don't group the rows
-                null,                                     // don't filter by row groups
-                null                                 // The sort order
+                NerdQuizContract.QuestionsTable.TABLE_NAME,
+                projection,
+                selection,
+                selectionArgs,
+                null,
+                null,
+                null
         );
 
         c.moveToFirst();
@@ -195,15 +192,11 @@ public class QuestionsData {
             {
                 rand_number = rand.nextInt(t_suject_questions) + 1;
                 new_answer = all_answers.get(rand_number);
+
             }while(r_answers.contains(new_answer) || right_answer.equals(new_answer));
-
-            /*rand_number = rand.nextInt(t_suject_questions) + 1;
-            new_answer = all_answers.get(rand_number);*/
-
             r_answers.add(new_answer);
         }
 
-        //
         return r_answers;
     }
 
@@ -271,6 +264,12 @@ public class QuestionsData {
         add("httpcode", "What is the HTTP code for bad gateway?", "502");
         add("httpcode", "What is the HTTP retrieved code when the request is unauthorized?", "401");
         add("httpcode", "What is the HTTP code for bad request?", "400");
+
+        add("langcreator", "Who designed C language?", "Denis Rechie");
+        add("langcreator", "Who designed Ruby language?", "Yukihiro Matsumoto");
+        add("langcreator", "Who designed C++ language?", "Bjarne Stroustrup");
+        add("langcreator", "Who designed Java language?", "James Gosling");
+        add("langcreator", "Who designed Python language?", "Guido van Rossum");
         Log.d("message", "Introduzido! Agora com " + countQuestions());
     }
 }

@@ -2,6 +2,7 @@ package a21240068.isec.nerdquiz;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.os.Handler;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ProgressBar;
@@ -15,6 +16,7 @@ public class GameActivity extends Activity {
     private int                     in_question;
     private int                     total_questions_per_round;
     private ArrayList<GameQuestion> questions;
+    private ArrayList<Integer>      answered_right;
 
     private ProgressBar             pb_questions_left;
     private TextView                tv_time;
@@ -23,8 +25,11 @@ public class GameActivity extends Activity {
     private Button                  bt_answer_two;
     private Button                  bt_answer_three;
 
+    private Handler                 handler;
+
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState)
+    {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_game);
 
@@ -32,6 +37,8 @@ public class GameActivity extends Activity {
         total_questions_per_round   = 4;
         questions                   = qdata.getRandomQuestions(total_questions_per_round);
         in_question                 = 0;
+        handler                     = new Handler();
+        answered_right              = new ArrayList<>();
 
         pb_questions_left = (ProgressBar)   findViewById(R.id.pb_questions_left);
         tv_time =           (TextView)      findViewById(R.id.tv_time);
@@ -40,9 +47,48 @@ public class GameActivity extends Activity {
         bt_answer_two =     (Button)        findViewById(R.id.bt_answer_two);
         bt_answer_three =   (Button)        findViewById(R.id.bt_answer_three);
 
-        //load questions
-        //start game
+        pb_questions_left   .setMax(total_questions_per_round);
         showNewQuestion();
+    }
+
+    private void startCountdown()
+    {
+        Thread t = new Thread()
+        {
+            private int order = in_question;
+            public void run()
+            {
+                while (order == in_question)
+                {
+                    try
+                    {
+                        Thread.sleep(1000);
+                    }
+                    catch (InterruptedException e)
+                    {
+                        e.printStackTrace();
+                    }
+                    handler.post(new Runnable()
+                    {
+                        public void run()
+                        {
+                            tv_time.setText(Integer.toString(time));
+                            time--;
+                            if(time < 0)
+                            {
+                                if(++in_question < total_questions_per_round)
+                                    showNewQuestion();
+                                else
+                                    finishQuiz();
+
+                                answered_right.add(0);
+                            }
+                        }
+                    });
+                }
+            }
+        };
+        t.start();
     }
 
     public void showNewQuestion()
@@ -57,8 +103,7 @@ public class GameActivity extends Activity {
         bt_answer_two   .setText(answers.get(1));
         bt_answer_three .setText(answers.get(2));
         //
-        //
-        //start a thread time
+        startCountdown();
     }
 
     public void finishQuiz()
@@ -68,19 +113,16 @@ public class GameActivity extends Activity {
 
     public void clickAnswerButton(View view)
     {
+        Button btn;
         if(++in_question < total_questions_per_round)
             showNewQuestion();
         else
             finishQuiz();
-    }
 
-    public void countTime()
-    {
-        //
-    }
-
-    public void nextQuestion()
-    {
-        in_question ++;
+        btn = (Button) view.findViewById(view.getId());
+        if(btn.getText().equals(questions.get(in_question).getRightAnswer()))
+            answered_right.add(1);
+        else
+            answered_right.add(0);
     }
 }
