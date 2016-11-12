@@ -29,7 +29,7 @@ public class GameActivity extends Activity {
         setContentView(R.layout.activity_game);
 
         QuestionsData qdata         = new QuestionsData(this);
-        total_questions_per_round   = 3;
+        total_questions_per_round   = 4;
         questions                   = qdata.getRandomQuestions(total_questions_per_round);
         in_question                 = 0;
 
