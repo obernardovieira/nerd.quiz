@@ -9,7 +9,6 @@ import android.widget.Toast;
 public class NewGameActivity extends Activity {
 
     private final int INVITE_PLAYER_CODE = 0;
-    private final int PLAY_GAME_CODE = 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -24,7 +23,10 @@ public class NewGameActivity extends Activity {
 
     public void clickPlayGameButton(View view)
     {
-        startActivityForResult(new Intent(this, GameActivity.class), PLAY_GAME_CODE);
+        Intent intent = new Intent(this, GameActivity.class);
+        startActivity(intent);
+
+        finish();
     }
 
     private void invitePlayer(String username)
@@ -35,17 +37,15 @@ public class NewGameActivity extends Activity {
     }
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == INVITE_PLAYER_CODE) {
-            if (resultCode == RESULT_OK) {
+    protected void onActivityResult(int requestCode, int resultCode, Intent data)
+    {
+        if (requestCode == INVITE_PLAYER_CODE)
+        {
+            if (resultCode == RESULT_OK)
+            {
                 // A contact was picked.  Here we will just display it
                 // to the user.
                 invitePlayer(data.getStringExtra("name"));
-            }
-        }
-        else if(requestCode == PLAY_GAME_CODE) {
-            if (resultCode == RESULT_OK) {
-                //
             }
         }
     }
