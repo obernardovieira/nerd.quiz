@@ -16,21 +16,10 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        /*try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }*/
-
-        /*SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
-        String defaultValue = getResources().getString(R.string.no_user_name_default);
-        String username = sharedPref.getString(getString(R.string.user_name), defaultValue);*/
 
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
         String defaultValue = getResources().getString(R.string.no_user_name_default);
         String username = preferences.getString(getString(R.string.user_name), defaultValue);
-
-        Toast.makeText(this, username, Toast.LENGTH_LONG).show();
 
         if(username.equals(defaultValue))
         {

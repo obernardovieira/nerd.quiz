@@ -13,7 +13,7 @@ import a21240068.isec.nerdquiz.NerdQuizContract.*;
 
 public class NerdQuizDBHelper extends SQLiteOpenHelper {
     // If you change the database schema, you must increment the database version.
-    public static final int DATABASE_VERSION = 2;
+    public static final int DATABASE_VERSION = 3;
     public static final String DATABASE_NAME = "NerdQuiz.db";
     //
     private static final String SQL_CREATE_PROFILES_TABLES =
@@ -28,9 +28,10 @@ public class NerdQuizDBHelper extends SQLiteOpenHelper {
     private static final String SQL_CREATE_GAMES_TABLES =
             "CREATE TABLE " + GamesTable.TABLE_NAME + " (" +
                     GamesTable._ID + " INTEGER PRIMARY KEY," +
-                    GamesTable.COLUMN_PLAYER + " TEXT, " +
+                    GamesTable.COLUMN_OPPONENT_NAME + " TEXT, " +
+                    GamesTable.COLUMN_OPPONENT_POINTS + " INT, " +
                     GamesTable.COLUMN_POINTS + " INT, " +
-                    GamesTable.COLUMN_DATE + " DATE)";
+                    GamesTable.COLUMN_DATE + " TEXT)";
 
     private static final String SQL_DELETE_GAMES_TABLES =
             "DROP TABLE IF EXISTS " + GamesTable.TABLE_NAME;

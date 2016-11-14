@@ -11,9 +11,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Random;
 
-/**
- * Created by bernardovieira on 06-11-2016.
- */
 
 public class QuestionsData {
 

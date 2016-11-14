@@ -5,9 +5,6 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 
-/**
- * Created by bernardovieira on 06-11-2016.
- */
 
 public class ProfilesData
 {

@@ -46,7 +46,10 @@ public class AuthenticationActivity extends Activity {
 
     public void clickNotRegisteredText(View view)
     {
-        //
+        Intent intent = new Intent(this, RegisterActivity.class);
+        startActivity(intent);
+
+        finish();
     }
 
 }
