@@ -1,6 +1,7 @@
 package a21240068.isec.nerdquiz;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.view.View;
@@ -16,7 +17,7 @@ public class GameActivity extends Activity {
     private int                     in_question;
     private int                     total_questions_per_round;
     private ArrayList<GameQuestion> questions;
-    private ArrayList<Integer>      answered_right;
+    private int                     answered_right;
 
     private ProgressBar             pb_questions_left;
     private TextView                tv_time;
@@ -38,14 +39,14 @@ public class GameActivity extends Activity {
         questions                   = qdata.getRandomQuestions(total_questions_per_round);
         in_question                 = 0;
         handler                     = new Handler();
-        answered_right              = new ArrayList<>();
+        answered_right              = 0;
 
-        pb_questions_left = (ProgressBar)   findViewById(R.id.pb_questions_left);
-        tv_time =           (TextView)      findViewById(R.id.tv_time);
-        tv_question =       (TextView)      findViewById(R.id.tv_question);
-        bt_answer_one =     (Button)        findViewById(R.id.bt_answer_one);
-        bt_answer_two =     (Button)        findViewById(R.id.bt_answer_two);
-        bt_answer_three =   (Button)        findViewById(R.id.bt_answer_three);
+        pb_questions_left   = (ProgressBar)   findViewById(R.id.pb_questions_left);
+        tv_time             = (TextView)      findViewById(R.id.tv_time);
+        tv_question         = (TextView)      findViewById(R.id.tv_question);
+        bt_answer_one       = (Button)        findViewById(R.id.bt_answer_one);
+        bt_answer_two       = (Button)        findViewById(R.id.bt_answer_two);
+        bt_answer_three     = (Button)        findViewById(R.id.bt_answer_three);
 
         pb_questions_left   .setMax(total_questions_per_round);
         showNewQuestion();
@@ -81,7 +82,6 @@ public class GameActivity extends Activity {
                                 else
                                     finishQuiz();
 
-                                answered_right.add(0);
                             }
                         }
                     });
@@ -108,21 +108,24 @@ public class GameActivity extends Activity {
 
     public void finishQuiz()
     {
+        Intent intent = new Intent(this, FinishGameActivity.class);
+        //passar dados
+        intent.putExtra("t_questions", total_questions_per_round);
+        intent.putExtra("ans_right", answered_right);
+        startActivity(intent);
+
         finish();
     }
 
     public void clickAnswerButton(View view)
     {
-        Button btn;
+        Button btn = (Button) view.findViewById(view.getId());
+        if(btn.getText().equals(questions.get(in_question).getRightAnswer()))
+            answered_right ++;
+
         if(++in_question < total_questions_per_round)
             showNewQuestion();
         else
             finishQuiz();
-
-        btn = (Button) view.findViewById(view.getId());
-        if(btn.getText().equals(questions.get(in_question).getRightAnswer()))
-            answered_right.add(1);
-        else
-            answered_right.add(0);
     }
 }
