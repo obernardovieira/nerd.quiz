@@ -20,7 +20,8 @@ public final class NerdQuizContract {
 
     public static class GamesTable implements BaseColumns {
         public static final String TABLE_NAME = "games";
-        public static final String COLUMN_PLAYER = "player";
+        public static final String COLUMN_OPPONENT_NAME = "opname";
+        public static final String COLUMN_OPPONENT_POINTS = "oppoints";
         public static final String COLUMN_POINTS = "points";
         public static final String COLUMN_DATE = "date";
     }

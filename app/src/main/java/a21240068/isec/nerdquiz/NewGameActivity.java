@@ -18,7 +18,8 @@ public class NewGameActivity extends Activity {
 
     public void clickSearchPlayerButton(View view)
     {
-        startActivityForResult(new Intent(this, SearchPlayerActivity.class), INVITE_PLAYER_CODE);
+        //startActivityForResult(new Intent(this, SearchPlayerActivity.class), INVITE_PLAYER_CODE);
+        invitePlayer("abc");
     }
 
     public void clickPlayGameButton(View view)
@@ -33,7 +34,21 @@ public class NewGameActivity extends Activity {
     {
         // send request for game
         // wait for answer
-        Toast.makeText(this, username, Toast.LENGTH_LONG).show();
+
+        ProfilesData pdata = new ProfilesData(this);
+        pdata.add("Quim");
+        pdata.add("Zé");
+        pdata.add("Bicho");
+        pdata.add("Manel");
+
+        GamesData gdata = new GamesData(this);
+        gdata.add("Quim", 100, 150);
+        gdata.add("Zé", 110, 130);
+        gdata.add("Bicho", 190, 160);
+        gdata.add("Manel", 180, 140);
+        gdata.add("Manel", 150, 155);
+
+        Toast.makeText(this, "added!", Toast.LENGTH_LONG).show();
     }
 
     @Override
