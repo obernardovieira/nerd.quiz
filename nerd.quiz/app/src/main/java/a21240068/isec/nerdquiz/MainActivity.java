@@ -11,11 +11,16 @@ import android.widget.Toast;
 
 public class MainActivity extends Activity {
 
+    Connection connection;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        /*connection = (Connection)getApplication();
+        connection.serverIP = "192.168.1.10";
+        connection.serverPort = 5007;*/
 
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
         String defaultValue = getResources().getString(R.string.no_user_name_default);

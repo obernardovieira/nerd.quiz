@@ -1,25 +1,49 @@
 package a21240068.isec.nerdquiz;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.util.Log;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.Toast;
+
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.net.Socket;
 
 public class NewGameActivity extends Activity {
 
     private final int INVITE_PLAYER_CODE = 0;
 
+    private int PORT;
+
+    Socket socketGame = null;
+    BufferedReader input;
+    PrintWriter output;
+    Handler procMsg = null;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_new_game);
+
+        procMsg = new Handler();
+
+        PORT = 5007;
+        clientDlg();
     }
 
     public void clickSearchPlayerButton(View view)
     {
         //startActivityForResult(new Intent(this, SearchPlayerActivity.class), INVITE_PLAYER_CODE);
-        invitePlayer("abc");
     }
 
     public void clickPlayGameButton(View view)
@@ -35,20 +59,6 @@ public class NewGameActivity extends Activity {
         // send request for game
         // wait for answer
 
-        ProfilesData pdata = new ProfilesData(this);
-        pdata.add("Quim");
-        pdata.add("Zé");
-        pdata.add("Bicho");
-        pdata.add("Manel");
-
-        GamesData gdata = new GamesData(this);
-        gdata.add("Quim", 100, 150);
-        gdata.add("Zé", 110, 130);
-        gdata.add("Bicho", 190, 160);
-        gdata.add("Manel", 180, 140);
-        gdata.add("Manel", 150, 155);
-
-        Toast.makeText(this, "added!", Toast.LENGTH_LONG).show();
     }
 
     @Override
@@ -65,5 +75,100 @@ public class NewGameActivity extends Activity {
         }
     }
 
+    public void clientDlg() {
+        final EditText edtIP = new EditText(this);
+        edtIP.setText("192.168.43.18");
+        AlertDialog ad = new AlertDialog.Builder(this).setTitle("RPS Client")
+                .setMessage("Server IP").setView(edtIP)
+                .setPositiveButton("Confirm", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        client(edtIP.getText().toString(), PORT); // to test with emulators: PORTaux);
+                    }
+                }).setOnCancelListener(new DialogInterface.OnCancelListener() {
+                    @Override
+                    public void onCancel(DialogInterface dialog) {
+                        finish();
+                    }
+                }).create();
+        ad.show();
+    }
 
+    public void client(final String strIP, final int Port) {
+        Thread t = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Log.d("RPS", "Connecting to the server  " + strIP);
+                    socketGame = new Socket(strIP, Port);
+                } catch (Exception e) {
+                    socketGame = null;
+                }
+                if (socketGame == null) {
+                    procMsg.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            Log.d("procMsg","no run");
+                            //finish();
+                        }
+                    });
+                    return;
+                }
+                commThread.start();
+            }
+        });
+        t.start();
+    }
+
+    Thread commThread = new Thread(new Runnable() {
+        @Override
+        public void run() {
+            try {
+
+                OutputStream oStream = socketGame.getOutputStream();
+                InputStream iStream = socketGame.getInputStream();
+                ObjectOutputStream ooStream = new ObjectOutputStream(oStream);
+                ObjectInputStream oiStream = new ObjectInputStream(iStream);
+
+                Log.d("commThread" , "b1");
+                ooStream.writeObject("Hello!");
+                Log.d("commThread" , "abc");
+                String read = (String) oiStream.readObject();
+                Log.d("commThread" , "xyz");
+
+                Log.d("RPS", "Received: " + read);
+
+                /*input = new BufferedReader(new InputStreamReader(socketGame.getInputStream()));
+                output = new PrintWriter(socketGame.getOutputStream());
+                while (!Thread.currentThread().isInterrupted()) {
+                    String read = input.readLine();
+                    Log.d("RPS", "Received: " + read);
+                }*/
+            } catch (Exception e) {
+                procMsg.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        //finish();
+                    }
+                });
+            }
+        }
+    });
+
+    protected void onPause() {
+        super.onPause();
+        try {
+            commThread.interrupt();
+            if (socketGame != null)
+                socketGame.close();
+            if (output != null)
+                output.close();
+            if (input != null)
+                input.close();
+        } catch (Exception e) {
+        }
+        input = null;
+        output = null;
+        socketGame = null;
+    };
 }
