@@ -1,8 +1,10 @@
 package a21240068.isec.nerdquiz;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -12,12 +14,19 @@ import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
+import java.net.Socket;
 import java.util.ArrayList;
 
 public class DashboardActivity extends Activity {
 
     private ArrayList<Game> games;
+    Handler mainHandler = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,6 +38,22 @@ public class DashboardActivity extends Activity {
 
         ListView lv = (ListView) findViewById(R.id.lv_history);
         lv.setAdapter(new MyGamesHistoryAdapter());
+
+        mainHandler = new Handler();
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+
+        //
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        //
     }
 
     @Override

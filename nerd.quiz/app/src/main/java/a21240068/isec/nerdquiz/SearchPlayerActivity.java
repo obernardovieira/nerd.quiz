@@ -1,7 +1,10 @@
 package a21240068.isec.nerdquiz;
 
 import android.app.Activity;
+import android.content.Context;
+import android.content.ContextWrapper;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.view.View;
@@ -13,6 +16,8 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.util.ArrayList;
 
 public class SearchPlayerActivity extends Activity {
@@ -49,6 +54,29 @@ public class SearchPlayerActivity extends Activity {
         {
             //search by name
         }
+    }
+
+    private String saveToInternalStorage(Bitmap bitmapImage)
+    {
+        ContextWrapper  cw          = new ContextWrapper(getApplicationContext());
+        File            directory   = cw.getDir("directoryName", Context.MODE_PRIVATE);
+        String          fileName    = Long.toString(System.currentTimeMillis()) + ".jpg";
+        File            myPath      = new File(directory, fileName);
+
+        try
+        {
+            FileOutputStream fos;
+            fos = new FileOutputStream(myPath);
+
+            // Use the compress method on the BitMap object to write image to the OutputStream
+            bitmapImage.compress(Bitmap.CompressFormat.JPEG, 90, fos);
+            fos.close();
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+        return directory.getAbsolutePath();
     }
 
     public void updatePlayersList()
