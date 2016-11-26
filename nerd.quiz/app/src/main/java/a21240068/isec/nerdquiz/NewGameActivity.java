@@ -36,7 +36,8 @@ public class NewGameActivity extends Activity {
         procMsg = new Handler();
         nerdQuizApp = (NerdQuizApp)getApplication();
 
-        clientDlg();
+        //clientDlg();
+        client("192.168.1.10", 5007);
     }
 
     public void clickSearchPlayerButton(View view)
