@@ -21,12 +21,12 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.ArrayList;
 
 public class DashboardActivity extends Activity {
 
     private ArrayList<Game> games;
-    Handler mainHandler = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,22 +38,16 @@ public class DashboardActivity extends Activity {
 
         ListView lv = (ListView) findViewById(R.id.lv_history);
         lv.setAdapter(new MyGamesHistoryAdapter());
-
-        mainHandler = new Handler();
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
-
-        //
     }
 
     @Override
     public void onResume() {
         super.onResume();
+    }
 
-        //
+    @Override
+    public void onPause() {
+        super.onPause();
     }
 
     @Override
