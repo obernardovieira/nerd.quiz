@@ -18,15 +18,15 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        /*connection = (Connection)getApplication();
+        connection = (Connection)getApplication();
         connection.serverIP = "192.168.1.10";
-        connection.serverPort = 5007;*/
+        connection.serverPort = 5007;
 
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
         String defaultValue = getResources().getString(R.string.no_user_name_default);
         String username = preferences.getString(getString(R.string.user_name), defaultValue);
 
-        if(username.equals(defaultValue))
+        if(!username.equals(defaultValue))
         {
             Intent intent = new Intent(this, AuthenticationActivity.class);
             startActivity(intent);

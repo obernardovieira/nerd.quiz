@@ -27,6 +27,7 @@ public class DashboardActivity extends Activity {
 
     private ArrayList<Game> games;
     Handler mainHandler = null;
+    private Intent intent_socketservice;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,6 +41,8 @@ public class DashboardActivity extends Activity {
         lv.setAdapter(new MyGamesHistoryAdapter());
 
         mainHandler = new Handler();
+
+        intent_socketservice = new Intent(this, SocketService.class);
     }
 
     @Override
@@ -47,6 +50,8 @@ public class DashboardActivity extends Activity {
         super.onPause();
 
         //
+        Log.d("onPause", "Really?");
+        stopService(intent_socketservice);
     }
 
     @Override
@@ -54,6 +59,7 @@ public class DashboardActivity extends Activity {
         super.onResume();
 
         //
+        startService(intent_socketservice);
     }
 
     @Override

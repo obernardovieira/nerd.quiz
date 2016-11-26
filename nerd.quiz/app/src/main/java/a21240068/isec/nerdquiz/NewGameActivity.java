@@ -23,9 +23,8 @@ public class NewGameActivity extends Activity {
 
     private final int INVITE_PLAYER_CODE = 0;
 
-    private int PORT;
-
-    Socket socketGame = null;
+    Connection connection;
+    //Socket socketGame = null;
     BufferedReader input;
     PrintWriter output;
     Handler procMsg = null;
@@ -36,8 +35,8 @@ public class NewGameActivity extends Activity {
         setContentView(R.layout.activity_new_game);
 
         procMsg = new Handler();
+        connection = (Connection)getApplication();
 
-        PORT = 5007;
         clientDlg();
     }
 
@@ -76,14 +75,15 @@ public class NewGameActivity extends Activity {
     }
 
     public void clientDlg() {
+
         final EditText edtIP = new EditText(this);
-        edtIP.setText("192.168.43.18");
+        edtIP.setText(connection.serverIP.toString());
         AlertDialog ad = new AlertDialog.Builder(this).setTitle("RPS Client")
                 .setMessage("Server IP").setView(edtIP)
                 .setPositiveButton("Confirm", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        client(edtIP.getText().toString(), PORT); // to test with emulators: PORTaux);
+                        client(edtIP.getText().toString(), connection.serverPort); // to test with emulators: PORTaux);
                     }
                 }).setOnCancelListener(new DialogInterface.OnCancelListener() {
                     @Override
@@ -100,11 +100,11 @@ public class NewGameActivity extends Activity {
             public void run() {
                 try {
                     Log.d("RPS", "Connecting to the server  " + strIP);
-                    socketGame = new Socket(strIP, Port);
+                    connection.socketToServer = new Socket(strIP, Port);
                 } catch (Exception e) {
-                    socketGame = null;
+                    connection.socketToServer = null;
                 }
-                if (socketGame == null) {
+                if (connection.socketToServer == null) {
                     procMsg.post(new Runnable() {
                         @Override
                         public void run() {
@@ -125,8 +125,8 @@ public class NewGameActivity extends Activity {
         public void run() {
             try {
 
-                OutputStream oStream = socketGame.getOutputStream();
-                InputStream iStream = socketGame.getInputStream();
+                OutputStream oStream = connection.socketToServer.getOutputStream();
+                InputStream iStream = connection.socketToServer.getInputStream();
                 ObjectOutputStream ooStream = new ObjectOutputStream(oStream);
                 ObjectInputStream oiStream = new ObjectInputStream(iStream);
 
@@ -159,8 +159,8 @@ public class NewGameActivity extends Activity {
         super.onPause();
         try {
             commThread.interrupt();
-            if (socketGame != null)
-                socketGame.close();
+            if (connection.socketToServer != null)
+                connection.socketToServer.close();
             if (output != null)
                 output.close();
             if (input != null)
@@ -169,6 +169,6 @@ public class NewGameActivity extends Activity {
         }
         input = null;
         output = null;
-        socketGame = null;
+        connection.socketToServer = null;
     };
 }
