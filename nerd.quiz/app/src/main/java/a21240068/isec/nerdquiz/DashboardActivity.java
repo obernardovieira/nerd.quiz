@@ -21,13 +21,12 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.ArrayList;
 
 public class DashboardActivity extends Activity {
 
     private ArrayList<Game> games;
-    Handler mainHandler = null;
-    private Intent intent_socketservice;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,27 +38,16 @@ public class DashboardActivity extends Activity {
 
         ListView lv = (ListView) findViewById(R.id.lv_history);
         lv.setAdapter(new MyGamesHistoryAdapter());
-
-        mainHandler = new Handler();
-
-        intent_socketservice = new Intent(this, SocketService.class);
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
-
-        //
-        Log.d("onPause", "Really?");
-        stopService(intent_socketservice);
     }
 
     @Override
     public void onResume() {
         super.onResume();
+    }
 
-        //
-        startService(intent_socketservice);
+    @Override
+    public void onPause() {
+        super.onPause();
     }
 
     @Override

@@ -9,7 +9,6 @@ import android.os.Handler;
 import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
-import android.widget.Toast;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -23,7 +22,7 @@ public class NewGameActivity extends Activity {
 
     private final int INVITE_PLAYER_CODE = 0;
 
-    Connection connection;
+    NerdQuizApp nerdQuizApp;
     //Socket socketGame = null;
     BufferedReader input;
     PrintWriter output;
@@ -35,7 +34,7 @@ public class NewGameActivity extends Activity {
         setContentView(R.layout.activity_new_game);
 
         procMsg = new Handler();
-        connection = (Connection)getApplication();
+        nerdQuizApp = (NerdQuizApp)getApplication();
 
         clientDlg();
     }
@@ -77,13 +76,13 @@ public class NewGameActivity extends Activity {
     public void clientDlg() {
 
         final EditText edtIP = new EditText(this);
-        edtIP.setText(connection.serverIP.toString());
+        edtIP.setText("192.168.1.10");
         AlertDialog ad = new AlertDialog.Builder(this).setTitle("RPS Client")
                 .setMessage("Server IP").setView(edtIP)
                 .setPositiveButton("Confirm", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        client(edtIP.getText().toString(), connection.serverPort); // to test with emulators: PORTaux);
+                        client(edtIP.getText().toString(), 5007); // to test with emulators: PORTaux);
                     }
                 }).setOnCancelListener(new DialogInterface.OnCancelListener() {
                     @Override
@@ -100,11 +99,11 @@ public class NewGameActivity extends Activity {
             public void run() {
                 try {
                     Log.d("RPS", "Connecting to the server  " + strIP);
-                    connection.socketToServer = new Socket(strIP, Port);
+                    nerdQuizApp.socketToServer = new Socket(strIP, Port);
                 } catch (Exception e) {
-                    connection.socketToServer = null;
+                    nerdQuizApp.socketToServer = null;
                 }
-                if (connection.socketToServer == null) {
+                if (nerdQuizApp.socketToServer == null) {
                     procMsg.post(new Runnable() {
                         @Override
                         public void run() {
@@ -125,13 +124,14 @@ public class NewGameActivity extends Activity {
         public void run() {
             try {
 
-                OutputStream oStream = connection.socketToServer.getOutputStream();
-                InputStream iStream = connection.socketToServer.getInputStream();
+                OutputStream oStream = nerdQuizApp.socketToServer.getOutputStream();
+                InputStream iStream = nerdQuizApp.socketToServer.getInputStream();
                 ObjectOutputStream ooStream = new ObjectOutputStream(oStream);
                 ObjectInputStream oiStream = new ObjectInputStream(iStream);
 
                 Log.d("commThread" , "b1");
                 ooStream.writeObject("Hello!");
+                ooStream.flush();
                 Log.d("commThread" , "abc");
                 String read = (String) oiStream.readObject();
                 Log.d("commThread" , "xyz");
@@ -159,8 +159,8 @@ public class NewGameActivity extends Activity {
         super.onPause();
         try {
             commThread.interrupt();
-            if (connection.socketToServer != null)
-                connection.socketToServer.close();
+            if (nerdQuizApp.socketToServer != null)
+                nerdQuizApp.socketToServer.close();
             if (output != null)
                 output.close();
             if (input != null)
@@ -169,6 +169,6 @@ public class NewGameActivity extends Activity {
         }
         input = null;
         output = null;
-        connection.socketToServer = null;
+        nerdQuizApp.socketToServer = null;
     };
 }

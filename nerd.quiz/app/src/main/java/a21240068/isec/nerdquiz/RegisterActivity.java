@@ -1,41 +1,19 @@
 package a21240068.isec.nerdquiz;
 
 import android.app.Activity;
-import android.content.Context;
-import android.content.ContextWrapper;
 import android.content.Intent;
-import android.database.Cursor;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Handler;
-import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
-import android.widget.TextView;
 import android.widget.Toast;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutput;
-import java.io.ObjectOutputStream;
-import java.io.OutputStream;
-import java.net.Socket;
-import java.net.UnknownHostException;
 
 public class RegisterActivity extends Activity {
 
     private static final int PICK_IMAGE = 1;
     private Uri selectedImageUri;
-    Connection connection;
+    NerdQuizApp nerdQuizApp;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,7 +21,7 @@ public class RegisterActivity extends Activity {
         setContentView(R.layout.activity_register);
 
         selectedImageUri = null;
-        connection = (Connection)getApplication();
+        nerdQuizApp = (NerdQuizApp)getApplication();
     }
 
     public void changeProfilePhoto(View view)
