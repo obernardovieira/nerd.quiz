@@ -9,40 +9,40 @@ import android.os.Handler;
 import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.nio.channels.ClosedByInterruptException;
 
 public class NewGameActivity extends Activity {
 
     private final int INVITE_PLAYER_CODE = 0;
 
     NerdQuizApp nerdQuizApp;
-    //Socket socketGame = null;
-    BufferedReader input;
-    PrintWriter output;
-    Handler procMsg = null;
+    Handler mainHandler;
+    //
+    ObjectOutputStream ooStream;
+    ObjectInputStream oiStream;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_new_game);
 
-        procMsg = new Handler();
+        mainHandler = new Handler();
         nerdQuizApp = (NerdQuizApp)getApplication();
-
-        //clientDlg();
-        client("192.168.1.10", 5007);
     }
 
     public void clickSearchPlayerButton(View view)
     {
-        //startActivityForResult(new Intent(this, SearchPlayerActivity.class), INVITE_PLAYER_CODE);
+        startActivityForResult(new Intent(this, SearchPlayerActivity.class), INVITE_PLAYER_CODE);
     }
 
     public void clickPlayGameButton(View view)
@@ -55,9 +55,7 @@ public class NewGameActivity extends Activity {
 
     private void invitePlayer(String username)
     {
-        // send request for game
-        // wait for answer
-
+        //
     }
 
     @Override
@@ -67,69 +65,100 @@ public class NewGameActivity extends Activity {
         {
             if (resultCode == RESULT_OK)
             {
-                // A contact was picked.  Here we will just display it
-                // to the user.
                 invitePlayer(data.getStringExtra("name"));
             }
         }
     }
 
-    public void clientDlg() {
-
-        final EditText edtIP = new EditText(this);
-        edtIP.setText("192.168.1.10");
-        AlertDialog ad = new AlertDialog.Builder(this).setTitle("RPS Client")
-                .setMessage("Server IP").setView(edtIP)
-                .setPositiveButton("Confirm", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        client(edtIP.getText().toString(), 5007); // to test with emulators: PORTaux);
-                    }
-                }).setOnCancelListener(new DialogInterface.OnCancelListener() {
-                    @Override
-                    public void onCancel(DialogInterface dialog) {
-                        finish();
-                    }
-                }).create();
-        ad.show();
-    }
-
-    public void client(final String strIP, final int Port) {
-        Thread t = new Thread(new Runnable() {
+    @Override
+    protected void onPause()
+    {
+        super.onPause();
+        //
+        communicationThread.interrupt();
+        Thread t = new Thread(new Runnable()
+        {
             @Override
-            public void run() {
-                try {
-                    Log.d("RPS", "Connecting to the server  " + strIP);
-                    nerdQuizApp.socketToServer = new Socket(strIP, Port);
-                } catch (Exception e) {
-                    nerdQuizApp.socketToServer = null;
-                }
-                if (nerdQuizApp.socketToServer == null) {
-                    procMsg.post(new Runnable() {
+            public void run()
+            {
+                //
+                try
+                {
+                    ooStream.close();
+                    oiStream.close();
+                    mainHandler.post(new Runnable()
+                    {
                         @Override
-                        public void run() {
-                            Log.d("procMsg","no run");
-                            //finish();
+                        public void run()
+                        {
+                            Log.d("onPause","Streams closed!");
                         }
                     });
-                    return;
                 }
-                commThread.start();
+                catch (IOException e)
+                {
+                    mainHandler.post(new Runnable()
+                    {
+                        @Override
+                        public void run()
+                        {
+                            Log.d("onPause","Error closing streams!");
+                        }
+                    });
+                }
             }
         });
         t.start();
-    }
+    };
 
-    Thread commThread = new Thread(new Runnable() {
+    @Override
+    protected void onResume()
+    {
+        super.onResume();
+        //
+        Thread t = new Thread(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                //
+                try
+                {
+                    ooStream = new ObjectOutputStream(nerdQuizApp.socketToServer.getOutputStream());
+                    oiStream = new ObjectInputStream(nerdQuizApp.socketToServer.getInputStream());
+                    mainHandler.post(new Runnable()
+                    {
+                        @Override
+                        public void run()
+                        {
+                            Log.d("onResume", "Streams opened!");
+                        }
+                    });
+                    communicationThread.start();
+                }
+                catch (IOException e)
+                {
+                    mainHandler.post(new Runnable()
+                    {
+                        @Override
+                        public void run()
+                        {
+                            Log.d("onResume", "Error opening streams!");
+                        }
+                    });
+                }
+            }
+        });
+        t.start();
+    };
+
+    Thread communicationThread = new Thread(new Runnable()
+    {
         @Override
-        public void run() {
-            try {
-
-                OutputStream oStream = nerdQuizApp.socketToServer.getOutputStream();
-                InputStream iStream = nerdQuizApp.socketToServer.getInputStream();
-                ObjectOutputStream ooStream = new ObjectOutputStream(oStream);
-                ObjectInputStream oiStream = new ObjectInputStream(iStream);
-
+        public void run()
+        {
+            try
+            {
                 Log.d("commThread" , "b1");
                 ooStream.writeObject("Hello!");
                 ooStream.flush();
@@ -145,31 +174,19 @@ public class NewGameActivity extends Activity {
                     String read = input.readLine();
                     Log.d("RPS", "Received: " + read);
                 }*/
-            } catch (Exception e) {
-                procMsg.post(new Runnable() {
+            }
+            catch (Exception e)
+            {
+                mainHandler.post(new Runnable()
+                {
                     @Override
-                    public void run() {
-                        //finish();
+                    public void run()
+                    {
+                        Log.d("communicationThread","An error occurred!");
+                        finish();
                     }
                 });
             }
         }
     });
-
-    protected void onPause() {
-        super.onPause();
-        try {
-            commThread.interrupt();
-            if (nerdQuizApp.socketToServer != null)
-                nerdQuizApp.socketToServer.close();
-            if (output != null)
-                output.close();
-            if (input != null)
-                input.close();
-        } catch (Exception e) {
-        }
-        input = null;
-        output = null;
-        nerdQuizApp.socketToServer = null;
-    };
 }
