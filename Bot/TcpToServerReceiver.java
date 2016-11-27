@@ -5,6 +5,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectStreamException;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -18,6 +19,15 @@ import java.util.logging.Logger;
  *
  * @author bernardovieira
  */
+
+class Command
+{
+    public static String    LOGIN   = "login";
+    public static String    PLAY    = "play";
+    public static String    SEARCH  = "search";
+    public static String    INVITE  = "invite";
+    public static String    ANSWER  = "answer";
+}
 
 class Response
 {
@@ -62,14 +72,47 @@ class TcpToServerReceiver implements Runnable
             throws IOException, ClassNotFoundException
     {
         //
-        Integer response;
-        //
-        if(command.equals("play"))
+        if(command.equals(Command.PLAY))
         {
-            response = (Integer)oiStream.readObject();
+            Integer response = (Integer)oiStream.readObject();
             if(response.equals(Response.OK))
             {
                 System.out.println("You are playing now!");
+            }
+            else
+            {
+                System.out.println("An error occurred!");
+            }
+        }
+        else if(command.equals(Command.SEARCH))
+        {
+            List<String> response = (List<String>)oiStream.readObject();
+            if(response.size() > 0)
+            {
+                for(String name : response)
+                {
+                    System.out.println(name);
+                }
+            }
+            else
+            {
+                System.out.println("There is no results!");
+            }
+        }
+        else if(command.equals(Command.INVITE))
+        {
+            //
+        }
+        else if(command.equals(Command.LOGIN))
+        {
+            Integer response = (Integer)oiStream.readObject();
+            if(response.equals(Response.OK))
+            {
+                System.out.println("You are connected now!");
+            }
+            else
+            {
+                System.out.println("An error occurred!");
             }
         }
     }

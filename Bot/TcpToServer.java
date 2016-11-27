@@ -24,14 +24,17 @@ public class TcpToServer
             OutputStream oStream = this.socket.getOutputStream();
             ObjectOutputStream ooStream = new ObjectOutputStream(oStream);
             
-            ooStream.writeObject("bernardo");
-            ooStream.flush();
-            
             TcpToServerReceiver tcpconn = new TcpToServerReceiver(socket);
             Thread thread_tcpconn = new Thread(tcpconn);
             thread_tcpconn.start();
             
             sc = new Scanner(System.in);
+            System.out.print("Login:");
+            cmd = sc.nextLine();//"login ber obv";//sc.nextLine();
+            
+            ooStream.writeObject(cmd);
+            ooStream.flush();
+            
             do
             {
                 System.out.print("Command:");

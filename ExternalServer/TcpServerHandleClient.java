@@ -24,6 +24,8 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -37,6 +39,15 @@ import java.util.logging.Logger;
  *
  * @author bernardovieira
  */
+
+class Command
+{
+    public static String    LOGIN   = "login";
+    public static String    PLAY    = "play";
+    public static String    SEARCH  = "search";
+    public static String    INVITE  = "invite";
+    //public static String    ANSWER  = "answer";
+}
 
 class Response
 {
@@ -66,8 +77,6 @@ public class TcpServerHandleClient implements Runnable {
             oiStream = new ObjectInputStream(socket.getInputStream());
             ooStream = new ObjectOutputStream(socket.getOutputStream());
             
-            player.setName((String)oiStream.readObject());
-            
             do
             {
                 command = (String)oiStream.readObject();
@@ -89,20 +98,36 @@ public class TcpServerHandleClient implements Runnable {
     private void executeCommand(String command) throws IOException
     {
         //
-        if(command.equals("play"))
+        if(command.equals(Command.PLAY))
         {
-            player.setPlaying(true);
-            ooStream.writeObject(command);
+            player.setConnected(true);
+            ooStream.writeObject(Command.PLAY);
             ooStream.writeObject(Response.OK);
             ooStream.flush();
         }
-        else if(command.equals("search"))
+        else if(command.equals(Command.SEARCH))
         {
-            //search random
+            List<String> names = new ArrayList<>();
+            for(Player player : TcpServer.players)
+            {
+                if(player.isConnected() && !player.isPlaying())
+                    names.add(player.getName());
+            }
+            ooStream.writeObject(Command.SEARCH);
+            ooStream.writeObject(names);
+            ooStream.flush();
         }
-        else if(command.startsWith("search"))
+        else if(command.startsWith(Command.SEARCH))
         {
             //search for a name
+        }
+        else if(command.startsWith(Command.LOGIN))
+        {
+            String [] params = command.split(" ");
+            player.setName(params[1]);
+            ooStream.writeObject(Command.LOGIN);
+            ooStream.writeObject(Response.OK);
+            ooStream.flush();
         }
     }
 }
