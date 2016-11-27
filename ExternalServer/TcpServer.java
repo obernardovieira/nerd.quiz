@@ -7,6 +7,7 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.List;
+import paservidor.Database;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -26,6 +27,7 @@ public class TcpServer
     public TcpServer(int port)
     {
         initServerSocket(port);
+        Database database = new Database();
         players = new ArrayList<>();
         try
         {
@@ -34,7 +36,7 @@ public class TcpServer
                 Socket socket = this.serverSocket.accept();
                 Player player = new Player(socket);
                 players.add(player);
-                TcpServerHandleClient handle = new TcpServerHandleClient(player);
+                TcpServerHandleClient handle = new TcpServerHandleClient(player, database);
                 Thread threadhandle = new Thread(handle);
                 threadhandle.start();
             }

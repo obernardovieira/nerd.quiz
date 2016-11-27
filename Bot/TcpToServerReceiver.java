@@ -22,11 +22,12 @@ import java.util.logging.Logger;
 
 class Command
 {
-    public static String    LOGIN   = "login";
-    public static String    PLAY    = "play";
-    public static String    SEARCH  = "search";
-    public static String    INVITE  = "invite";
-    public static String    ANSWER  = "answer";
+    public static String    REGISTER    = "register";
+    public static String    LOGIN       = "login";
+    public static String    PLAY        = "play";
+    public static String    SEARCH      = "search";
+    public static String    INVITE      = "invite";
+    public static String    ANSWER      = "answer";
 }
 
 class Response
@@ -109,6 +110,18 @@ class TcpToServerReceiver implements Runnable
             if(response.equals(Response.OK))
             {
                 System.out.println("You are connected now!");
+            }
+            else
+            {
+                System.out.println("An error occurred!");
+            }
+        }
+        else if(command.equals(Command.REGISTER))
+        {
+            Integer response = (Integer)oiStream.readObject();
+            if(response.equals(Response.OK))
+            {
+                System.out.println("You are registered now!");
             }
             else
             {
