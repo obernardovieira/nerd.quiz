@@ -5,6 +5,9 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.util.ArrayList;
+import java.util.List;
+import paservidor.Database;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -19,17 +22,21 @@ import java.net.SocketException;
 public class TcpServer
 {
     private ServerSocket serverSocket;
-    
+    public static List<Player> players;
 
     public TcpServer(int port)
     {
         initServerSocket(port);
+        Database database = new Database();
+        players = new ArrayList<>();
         try
         {
             while (true)
             {
                 Socket socket = this.serverSocket.accept();
-                TcpServerHandleClient handle = new TcpServerHandleClient(socket);
+                Player player = new Player(socket);
+                players.add(player);
+                TcpServerHandleClient handle = new TcpServerHandleClient(player, database);
                 Thread threadhandle = new Thread(handle);
                 threadhandle.start();
             }
