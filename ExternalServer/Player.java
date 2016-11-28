@@ -1,4 +1,5 @@
 
+import java.io.ObjectOutputStream;
 import java.net.Socket;
 
 /*
@@ -18,6 +19,7 @@ public class Player {
     private String name;
     private boolean connected;
     private boolean playing;
+    private ObjectOutputStream ooStream;
 
     public Player(Socket socket)
     {
@@ -25,6 +27,15 @@ public class Player {
         this.name = "";
         this.connected = false;
         this.playing = false;
+        this.ooStream = null;
+    }
+
+    public ObjectOutputStream getOoStream() {
+        return ooStream;
+    }
+
+    public void setOoStream(ObjectOutputStream ooStream) {
+        this.ooStream = ooStream;
     }
 
     public void setName(String name) {

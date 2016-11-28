@@ -12,19 +12,10 @@
  */
 
 import amovserver.Response;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InvalidClassException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.OptionalDataException;
-import java.io.OutputStream;
-import java.io.StreamCorruptedException;
 import java.net.Socket;
-import java.net.SocketException;
-import java.net.SocketTimeoutException;
-import java.net.UnknownHostException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -50,7 +41,10 @@ class Command
     public static String    PLAY        = "play";
     public static String    SEARCH      = "search";
     public static String    INVITE      = "invite";
+    public static String    INVITED     = "beinvite";
     //public static String    ANSWER    = "answer";
+    public static String    REJECT_INV  = "reject";
+    public static String    ACCEPT_INV  = "accept";
 }
 
 public class TcpServerHandleClient implements Runnable {
@@ -76,6 +70,7 @@ public class TcpServerHandleClient implements Runnable {
             Socket socket = player.getSocket();
             oiStream = new ObjectInputStream(socket.getInputStream());
             ooStream = new ObjectOutputStream(socket.getOutputStream());
+            player.setOoStream(ooStream);
             
             do
             {
@@ -157,6 +152,43 @@ public class TcpServerHandleClient implements Runnable {
                 ooStream.writeObject(Response.OK);
             }
             ooStream.flush();
+        }
+        else if(command.startsWith(Command.INVITE))
+        {
+            String [] params = command.split(" ");
+            
+            ooStream.writeObject(Command.INVITE);
+            ooStream.writeObject(Response.OK);
+            ooStream.flush();
+            
+            for(Player p : TcpServer.players)
+            {
+                if(p.getName().equals(params[1]))
+                {
+                    ObjectOutputStream iooStream = p.getOoStream();
+                    iooStream.writeObject(Command.INVITED + " " + player.getName());
+                    iooStream.flush();
+                }
+            }
+        }
+        else if(command.startsWith(Command.REJECT_INV))
+        {
+            //
+            String [] params = command.split(" ");
+            
+            for(Player p : TcpServer.players)
+            {
+                if(p.getName().equals(params[1]))
+                {
+                    ObjectOutputStream iooStream = p.getOoStream();
+                    iooStream.writeObject(Command.REJECT_INV + " " + player.getName());
+                    iooStream.flush();
+                }
+            }
+        }
+        else if(command.startsWith(Command.ACCEPT_INV))
+        {
+            //
         }
     }
 }

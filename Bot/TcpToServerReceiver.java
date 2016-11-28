@@ -2,10 +2,12 @@
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.ObjectStreamException;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -27,7 +29,10 @@ class Command
     public static String    PLAY        = "play";
     public static String    SEARCH      = "search";
     public static String    INVITE      = "invite";
+    public static String    INVITED     = "beinvite";
     public static String    ANSWER      = "answer";
+    public static String    REJECT_INV  = "reject";
+    public static String    ACCEPT_INV  = "accept";
 }
 
 class Response
@@ -100,10 +105,6 @@ class TcpToServerReceiver implements Runnable
                 System.out.println("There is no results!");
             }
         }
-        else if(command.equals(Command.INVITE))
-        {
-            //
-        }
         else if(command.equals(Command.LOGIN))
         {
             Integer response = (Integer)oiStream.readObject();
@@ -127,6 +128,50 @@ class TcpToServerReceiver implements Runnable
             {
                 System.out.println("An error occurred!");
             }
+        }
+        else if(command.equals(Command.INVITE))
+        {
+            Integer response = (Integer)oiStream.readObject();
+            if(response.equals(Response.OK))
+            {
+                System.out.println("Invited!");
+            }
+            else
+            {
+                System.out.println("An error occurred!");
+            }
+        }
+        else if(command.startsWith(Command.INVITED))
+        {
+            String [] params = command.split(" ");
+            System.out.println("You have been invited by " + params[1]);
+            
+            System.out.print("Accept? (y/n)");
+            Scanner question = new Scanner(System.in);
+            String ans = "n";//question.nextLine();
+            
+            if(ans.equals("y") || ans.equals("Y"))
+            {
+                //abre socket servidor
+                //espera adversario
+                //gera perguntas
+                //começa o jogo
+            }
+            else
+            {
+                TcpToServer.ooStream.writeObject(Command.REJECT_INV + " " + params[1]);
+                TcpToServer.ooStream.flush();
+            }
+        }
+        else if(command.startsWith(Command.REJECT_INV))
+        {
+            //
+            String [] params = command.split(" ");
+            System.out.println(params[1] + " rejected you invitation!");
+        }
+        else if(command.startsWith(Command.ACCEPT_INV))
+        {
+            //
         }
     }
 }

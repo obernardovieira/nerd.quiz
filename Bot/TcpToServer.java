@@ -11,6 +11,7 @@ import java.util.logging.Logger;
 public class TcpToServer
 {
     private Socket socket;
+    public static ObjectOutputStream ooStream;
 
     public TcpToServer(String hostname, int port)
     {
@@ -22,7 +23,7 @@ public class TcpToServer
             String cmd;
             
             OutputStream oStream = this.socket.getOutputStream();
-            ObjectOutputStream ooStream = new ObjectOutputStream(oStream);
+            ooStream = new ObjectOutputStream(oStream);
             
             TcpToServerReceiver tcpconn = new TcpToServerReceiver(socket);
             Thread thread_tcpconn = new Thread(tcpconn);
