@@ -13,8 +13,11 @@
 
 import amovserver.Response;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -41,7 +44,7 @@ class Command
     public static String    PLAY        = "play";
     public static String    SEARCH      = "search";
     public static String    INVITE      = "invite";
-    public static String    INVITED     = "beinvite";
+    public static String    INVITED     = "beinvited";
     //public static String    ANSWER    = "answer";
     public static String    REJECT_INV  = "reject";
     public static String    ACCEPT_INV  = "accept";
@@ -98,7 +101,8 @@ public class TcpServerHandleClient implements Runnable {
         }
     }
     
-    private void executeCommand(String command) throws IOException, SQLException
+    private void executeCommand(String command)
+            throws IOException, SQLException, ClassNotFoundException
     {
         //
         if(command.equals(Command.PLAY))
@@ -189,6 +193,29 @@ public class TcpServerHandleClient implements Runnable {
         else if(command.startsWith(Command.ACCEPT_INV))
         {
             //
+            String [] params = command.split(" ");
+            
+            ObjectOutputStream iooStream = null;
+            for(Player p : TcpServer.players)
+            {
+                if(p.getName().equals(params[1]))
+                {
+                    iooStream = p.getOoStream();
+                    break;
+                }
+            }
+            
+            if(iooStream != null)
+            {
+                //
+                iooStream.writeObject(Command.ACCEPT_INV + " " + params[1]);
+                iooStream.writeObject(oiStream.readObject());//adress
+                iooStream.writeObject(oiStream.readObject());//port
+            }
+            else
+            {
+                System.out.println("Um erro!");
+            }
         }
     }
 }
