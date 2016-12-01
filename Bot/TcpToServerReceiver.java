@@ -4,6 +4,9 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamException;
+import java.io.OutputStream;
+import java.net.InetAddress;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,7 +32,7 @@ class Command
     public static String    PLAY        = "play";
     public static String    SEARCH      = "search";
     public static String    INVITE      = "invite";
-    public static String    INVITED     = "beinvite";
+    public static String    INVITED     = "beinvited";
     public static String    ANSWER      = "answer";
     public static String    REJECT_INV  = "reject";
     public static String    ACCEPT_INV  = "accept";
@@ -148,7 +151,7 @@ class TcpToServerReceiver implements Runnable
             
             System.out.print("Accept? (y/n)");
             Scanner question = new Scanner(System.in);
-            String ans = "n";//question.nextLine();
+            String ans = "y";//question.nextLine();
             
             if(ans.equals("y") || ans.equals("Y"))
             {
@@ -156,6 +159,58 @@ class TcpToServerReceiver implements Runnable
                 //espera adversario
                 //gera perguntas
                 //começa o jogo
+                InputStream in = null;
+                OutputStream out = null;
+        
+                ServerSocket game_socket = new ServerSocket(5009);
+                game_socket.setSoTimeout(5000);
+                
+                TcpToServer.ooStream.writeObject(Command.ACCEPT_INV + " " + params[1]);
+                TcpToServer.ooStream.writeObject(game_socket.getInetAddress());
+                TcpToServer.ooStream.writeObject(5009);
+                
+                Socket socket = game_socket.accept();
+                in = socket.getInputStream();
+                out = socket.getOutputStream();
+                
+                ObjectOutputStream oStreamG = new ObjectOutputStream(out);
+                ObjectInputStream iStreamG = new ObjectInputStream(in);
+                
+                //gerar perguntas
+                ArrayList<String> answers = new ArrayList<>();
+                answers.add("200");
+                answers.add("404");
+                answers.add("502");
+                
+                List<GameQuestion> questions = new ArrayList<>();
+                GameQuestion q1 = new GameQuestion();
+                q1.setQuestion("What is the HTTP retrieved code when the request was successful?");
+                q1.setRightAnswer("200");
+                q1.addAnswers(answers);
+                
+                GameQuestion q2 = new GameQuestion();
+                q1.setQuestion("What is the HTTP code for not found?");
+                q1.setRightAnswer("404");
+                q1.addAnswers(answers);
+                
+                GameQuestion q3 = new GameQuestion();
+                q1.setQuestion("What is the HTTP code for bad gateway?");
+                q1.setRightAnswer("502");
+                q1.addAnswers(answers);
+                
+                questions.add(q1);
+                questions.add(q2);
+                questions.add(q3);
+                //
+                
+                oStreamG.writeObject(questions);
+                
+                //
+                iStreamG.readObject();
+                
+                //start game
+                
+                System.out.println("game starts");
             }
             else
             {
@@ -172,6 +227,23 @@ class TcpToServerReceiver implements Runnable
         else if(command.startsWith(Command.ACCEPT_INV))
         {
             //
+            InputStream in = null;
+            OutputStream out = null;
+
+            InetAddress address = (InetAddress)oiStream.readObject();
+            Socket socket = new Socket(address, (Integer)oiStream.readObject());
+
+            in = socket.getInputStream();
+            out = socket.getOutputStream();
+
+            ObjectOutputStream oStreamG = new ObjectOutputStream(out);
+            ObjectInputStream iStreamG = new ObjectInputStream(in);
+
+            List<GameQuestion> questions = (List<GameQuestion>)iStreamG.readObject();
+
+            oStreamG.writeObject(1);
+
+            System.out.println("game starts");
         }
     }
 }
