@@ -1,4 +1,6 @@
 
+
+
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 
@@ -16,7 +18,7 @@ public class Player {
     
     
     private final Socket socket;
-    private String name;
+    private Profile profile;
     private boolean connected;
     private boolean playing;
     private ObjectOutputStream ooStream;
@@ -24,7 +26,7 @@ public class Player {
     public Player(Socket socket)
     {
         this.socket = socket;
-        this.name = "";
+        this.profile = new Profile("","");
         this.connected = false;
         this.playing = false;
         this.ooStream = null;
@@ -39,7 +41,11 @@ public class Player {
     }
 
     public void setName(String name) {
-        this.name = name;
+        this.profile.setName(name);
+    }
+    
+    public void setProfilePicture(String profile_pic) {
+        this.profile.setProfilePicture(profile_pic);
     }
 
     public Socket getSocket() {
@@ -55,7 +61,15 @@ public class Player {
     }
 
     public String getName() {
-        return name;
+        return profile.getName();
+    }
+    
+    public String getProfilePicture() {
+        return profile.getProfilePicture();
+    }
+    
+    public Profile getProfile() {
+        return profile;
     }
 
     public boolean isConnected() {

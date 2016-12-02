@@ -114,14 +114,17 @@ public class TcpServerHandleClient implements Runnable {
         }
         else if(command.equals(Command.SEARCH))
         {
-            List<String> names = new ArrayList<>();
-            for(Player player : TcpServer.players)
+            ArrayList<Profile> profiles = new ArrayList<>();
+            for(Player player_in_list : TcpServer.players)
             {
-                if(player.isConnected() && !player.isPlaying())
-                    names.add(player.getName());
+                if(player_in_list.isConnected() && !player_in_list.isPlaying())
+                {
+                    if(player_in_list != player)
+                        profiles.add(player_in_list.getProfile());
+                }
             }
             ooStream.writeObject(Command.SEARCH);
-            ooStream.writeObject(names);
+            ooStream.writeObject(profiles);
             ooStream.flush();
         }
         else if(command.startsWith(Command.SEARCH))

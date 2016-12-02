@@ -28,6 +28,9 @@ public class NewGameActivity extends Activity {
     NerdQuizApp nerdQuizApp;
     Handler mainHandler;
     //
+    OutputStream oStream;
+    InputStream iStream;
+
     ObjectOutputStream ooStream;
     ObjectInputStream oiStream;
 
@@ -84,6 +87,8 @@ public class NewGameActivity extends Activity {
                 //
                 try
                 {
+                    oStream.close();
+                    iStream.close();
                     ooStream.close();
                     oiStream.close();
                     mainHandler.post(new Runnable()
@@ -124,8 +129,10 @@ public class NewGameActivity extends Activity {
                 //
                 try
                 {
-                    ooStream = new ObjectOutputStream(nerdQuizApp.socketToServer.getOutputStream());
-                    oiStream = new ObjectInputStream(nerdQuizApp.socketToServer.getInputStream());
+                    oStream = nerdQuizApp.socketToServer.getOutputStream();
+                    iStream = nerdQuizApp.socketToServer.getInputStream();
+                    ooStream = new ObjectOutputStream(oStream);
+                    oiStream = new ObjectInputStream(iStream);
                     mainHandler.post(new Runnable()
                     {
                         @Override
