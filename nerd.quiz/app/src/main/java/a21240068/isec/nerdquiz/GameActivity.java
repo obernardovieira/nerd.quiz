@@ -11,6 +11,9 @@ import android.widget.TextView;
 
 import java.util.ArrayList;
 
+import a21240068.isec.nerdquiz.Objects.GameQuestion;
+import a21240068.isec.nerdquiz.Database.QuestionsData;
+
 public class GameActivity extends Activity {
 
     private int                     time;

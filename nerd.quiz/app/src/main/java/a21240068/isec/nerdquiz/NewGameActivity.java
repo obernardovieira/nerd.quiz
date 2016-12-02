@@ -24,23 +24,10 @@ import java.nio.channels.ClosedByInterruptException;
 public class NewGameActivity extends Activity {
 
     private final int INVITE_PLAYER_CODE = 0;
-
-    NerdQuizApp nerdQuizApp;
-    Handler mainHandler;
-    //
-    OutputStream oStream;
-    InputStream iStream;
-
-    ObjectOutputStream ooStream;
-    ObjectInputStream oiStream;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_new_game);
-
-        mainHandler = new Handler();
-        nerdQuizApp = (NerdQuizApp)getApplication();
     }
 
     public void clickSearchPlayerButton(View view)
@@ -78,42 +65,6 @@ public class NewGameActivity extends Activity {
     {
         super.onPause();
         //
-        communicationThread.interrupt();
-        Thread t = new Thread(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                //
-                try
-                {
-                    oStream.close();
-                    iStream.close();
-                    ooStream.close();
-                    oiStream.close();
-                    mainHandler.post(new Runnable()
-                    {
-                        @Override
-                        public void run()
-                        {
-                            Log.d("onPause","Streams closed!");
-                        }
-                    });
-                }
-                catch (IOException e)
-                {
-                    mainHandler.post(new Runnable()
-                    {
-                        @Override
-                        public void run()
-                        {
-                            Log.d("onPause","Error closing streams!");
-                        }
-                    });
-                }
-            }
-        });
-        t.start();
     };
 
     @Override
@@ -121,79 +72,5 @@ public class NewGameActivity extends Activity {
     {
         super.onResume();
         //
-        Thread t = new Thread(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                //
-                try
-                {
-                    oStream = nerdQuizApp.socketToServer.getOutputStream();
-                    iStream = nerdQuizApp.socketToServer.getInputStream();
-                    ooStream = new ObjectOutputStream(oStream);
-                    oiStream = new ObjectInputStream(iStream);
-                    mainHandler.post(new Runnable()
-                    {
-                        @Override
-                        public void run()
-                        {
-                            Log.d("onResume", "Streams opened!");
-                        }
-                    });
-                    communicationThread.start();
-                }
-                catch (IOException e)
-                {
-                    mainHandler.post(new Runnable()
-                    {
-                        @Override
-                        public void run()
-                        {
-                            Log.d("onResume", "Error opening streams!");
-                        }
-                    });
-                }
-            }
-        });
-        t.start();
     };
-
-    Thread communicationThread = new Thread(new Runnable()
-    {
-        @Override
-        public void run()
-        {
-            try
-            {
-                Log.d("commThread" , "b1");
-                ooStream.writeObject("Hello!");
-                ooStream.flush();
-                Log.d("commThread" , "abc");
-                String read = (String) oiStream.readObject();
-                Log.d("commThread" , "xyz");
-
-                Log.d("RPS", "Received: " + read);
-
-                /*input = new BufferedReader(new InputStreamReader(socketGame.getInputStream()));
-                output = new PrintWriter(socketGame.getOutputStream());
-                while (!Thread.currentThread().isInterrupted()) {
-                    String read = input.readLine();
-                    Log.d("RPS", "Received: " + read);
-                }*/
-            }
-            catch (Exception e)
-            {
-                mainHandler.post(new Runnable()
-                {
-                    @Override
-                    public void run()
-                    {
-                        Log.d("communicationThread","An error occurred!");
-                        finish();
-                    }
-                });
-            }
-        }
-    });
 }

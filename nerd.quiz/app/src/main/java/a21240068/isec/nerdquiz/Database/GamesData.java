@@ -1,4 +1,4 @@
-package a21240068.isec.nerdquiz;
+package a21240068.isec.nerdquiz.Database;
 
 import android.content.ContentValues;
 import android.content.Context;
@@ -8,6 +8,10 @@ import android.database.sqlite.SQLiteDatabase;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+
+import a21240068.isec.nerdquiz.Database.NerdQuizContract;
+import a21240068.isec.nerdquiz.Database.NerdQuizDBHelper;
+import a21240068.isec.nerdquiz.Objects.Game;
 
 
 public class GamesData

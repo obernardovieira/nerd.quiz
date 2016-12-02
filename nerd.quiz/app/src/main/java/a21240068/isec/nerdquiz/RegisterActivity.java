@@ -9,6 +9,8 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import a21240068.isec.nerdquiz.Core.NerdQuizApp;
+
 public class RegisterActivity extends Activity {
 
     private static final int PICK_IMAGE = 1;

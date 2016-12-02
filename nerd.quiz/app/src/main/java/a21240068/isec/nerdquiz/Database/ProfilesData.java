@@ -1,9 +1,12 @@
-package a21240068.isec.nerdquiz;
+package a21240068.isec.nerdquiz.Database;
 
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+
+import a21240068.isec.nerdquiz.Database.NerdQuizContract;
+import a21240068.isec.nerdquiz.Database.NerdQuizDBHelper;
 
 
 public class ProfilesData

@@ -5,10 +5,8 @@ import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
-import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
@@ -16,22 +14,17 @@ import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.util.ArrayList;
+
+import a21240068.isec.nerdquiz.Objects.Profile;
 
 public class SearchPlayerActivity extends Activity {
 
     ArrayList<Profile> players_profile;
-    NerdQuizApp nerdQuizApp;
     Handler mainHandler;
-    ObjectOutputStream ooStream;
-    ObjectInputStream oiStream;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,7 +32,6 @@ public class SearchPlayerActivity extends Activity {
         setContentView(R.layout.activity_search_player);
 
         mainHandler = new Handler();
-        nerdQuizApp = (NerdQuizApp)getApplication();
         players_profile = new ArrayList<>();
         getConnectedPlayers();
         updatePlayersList();
@@ -52,104 +44,19 @@ public class SearchPlayerActivity extends Activity {
 
     public void getConnectedPlayers(final String search_for_name)
     {
-
-        Thread t = new Thread(new Runnable()
+        if(search_for_name.equals("a21240068.isec.nerdquiz"))
         {
-            @Override
-            public void run()
-            {
-                //
-                try
-                {
-                    //adicionar excecoes para perceber qual o erro!
-                    ooStream = new ObjectOutputStream(nerdQuizApp.socketToServer.getOutputStream());
-                    oiStream = new ObjectInputStream(nerdQuizApp.socketToServer.getInputStream());
-
-                    if(search_for_name.equals("a21240068.isec.nerdquiz"))
-                    {
-                        //ooStream.writeObject("search");
-
-                        //players_profile = (ArrayList<Profile>)oiStream.readObject();
-
-
-                        //search random
-                        /*players_profile.add(new Profile("User1", "user"));
-                        players_profile.add(new Profile("User2", "user"));
-                        players_profile.add(new Profile("User3", "user"));
-                        players_profile.add(new Profile("User4", "user"));*/
-
-                        //players_profile
-                    }
-                    else
-                    {
-                        //search by name
-                    }
-
-                    mainHandler.post(new Runnable()
-                    {
-                        @Override
-                        public void run()
-                        {
-                            Log.d("onResume", "Streams opened!");
-                        }
-                    });
-                    communicationThread.start();
-                }
-                catch (IOException e)
-                {
-                    mainHandler.post(new Runnable()
-                    {
-                        @Override
-                        public void run()
-                        {
-                            Log.d("onResume", "Error opening streams!");
-                        }
-                    });
-                } /*catch (ClassNotFoundException e) {
-                    e.printStackTrace();
-                }*/
-            }
-        });
-        t.start();
+            players_profile.add(new Profile("User1", "user"));
+            players_profile.add(new Profile("User2", "user"));
+            players_profile.add(new Profile("User3", "user"));
+            players_profile.add(new Profile("User4", "user"));
+        }
+        else
+        {
+            //search by name
+        }
     }
 
-    Thread communicationThread = new Thread(new Runnable()
-    {
-        @Override
-        public void run()
-        {
-            try
-            {
-                Log.d("commThread" , "b1");
-                ooStream.writeObject("Hello!");
-                ooStream.flush();
-                Log.d("commThread" , "abc");
-                String read = (String) oiStream.readObject();
-                Log.d("commThread" , "xyz");
-
-                Log.d("RPS", "Received: " + read);
-
-                /*input = new BufferedReader(new InputStreamReader(socketGame.getInputStream()));
-                output = new PrintWriter(socketGame.getOutputStream());
-                while (!Thread.currentThread().isInterrupted()) {
-                    String read = input.readLine();
-                    Log.d("RPS", "Received: " + read);
-                }*/
-            }
-            catch (Exception e)
-            {
-                mainHandler.post(new Runnable()
-                {
-                    @Override
-                    public void run()
-                    {
-                        Log.d("communicationThread","An error occurred!");
-                        finish();
-                    }
-                });
-            }
-        }
-    });
 
     private String saveToInternalStorage(Bitmap bitmapImage)
     {

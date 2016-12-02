@@ -1,4 +1,4 @@
-package a21240068.isec.nerdquiz;
+package a21240068.isec.nerdquiz.Core;
 
 import android.app.Application;
 import android.util.Log;

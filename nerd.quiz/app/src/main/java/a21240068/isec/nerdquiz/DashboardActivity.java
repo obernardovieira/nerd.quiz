@@ -1,11 +1,8 @@
 package a21240068.isec.nerdquiz;
 
 import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.Handler;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -14,15 +11,12 @@ import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
 
-import java.io.InputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.OutputStream;
-import java.net.Socket;
-import java.net.SocketException;
 import java.util.ArrayList;
+
+import a21240068.isec.nerdquiz.Objects.Game;
+import a21240068.isec.nerdquiz.Database.GamesData;
+import a21240068.isec.nerdquiz.Database.QuestionsData;
 
 public class DashboardActivity extends Activity {
 
