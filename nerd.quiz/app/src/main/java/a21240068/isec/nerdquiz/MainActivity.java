@@ -30,8 +30,8 @@ public class MainActivity extends Activity {
             {
                 try
                 {
-                    Log.d("ConnectToRemoteServer", "Connecting to the server 192.168.1.10");
-                    nerdQuizApp.socketToServer = new Socket("192.168.1.10", 5007);
+                    Log.d("ConnectToRemoteServer", "Connecting to the server 192.168.1.7");
+                    nerdQuizApp.socketToServer = new Socket("192.168.1.7", 5007);
                     Log.d("ConnectToRemoteServer", "Successfully connected!");
                 }
                 catch (Exception e)

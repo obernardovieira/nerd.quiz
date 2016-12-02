@@ -95,12 +95,12 @@ class TcpToServerReceiver implements Runnable
         }
         else if(command.equals(Command.SEARCH))
         {
-            List<String> response = (List<String>)oiStream.readObject();
+            ArrayList<Profile> response = (ArrayList<Profile>)oiStream.readObject();
             if(response.size() > 0)
             {
-                for(String name : response)
+                for(Profile profile : response)
                 {
-                    System.out.println(name);
+                    System.out.println(profile.getName());
                 }
             }
             else
