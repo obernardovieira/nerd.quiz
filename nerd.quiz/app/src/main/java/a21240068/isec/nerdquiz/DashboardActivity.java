@@ -1,8 +1,13 @@
 package a21240068.isec.nerdquiz;
 
 import android.app.Activity;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.IBinder;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -14,6 +19,7 @@ import android.widget.TextView;
 
 import java.util.ArrayList;
 
+import a21240068.isec.nerdquiz.Core.SocketService;
 import a21240068.isec.nerdquiz.Objects.Game;
 import a21240068.isec.nerdquiz.Database.GamesData;
 import a21240068.isec.nerdquiz.Database.QuestionsData;
@@ -21,6 +27,45 @@ import a21240068.isec.nerdquiz.Database.QuestionsData;
 public class DashboardActivity extends Activity {
 
     private ArrayList<Game> games;
+    private boolean mIsBound;
+    private SocketService mBoundService;
+
+    private ServiceConnection mConnection = new ServiceConnection() {
+        //EDITED PART
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            // TODO Auto-generated method stub
+            mBoundService = ((SocketService.LocalBinder)service).getService();
+
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            // TODO Auto-generated method stub
+            mBoundService = null;
+        }
+
+    };
+
+
+    private void doBindService() {
+        bindService(new Intent(DashboardActivity.this, SocketService.class), mConnection, Context.BIND_AUTO_CREATE);
+        mIsBound = true;
+        if(mBoundService!=null){
+            mBoundService.IsBoundable(this);
+        }
+        Log.d("SocketService", "doBindService");
+    }
+
+
+    private void doUnbindService() {
+        if (mIsBound) {
+            // Detach our existing connection.
+            unbindService(mConnection);
+            mIsBound = false;
+        }
+        Log.d("SocketService", "doUnbindService");
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,16 +77,19 @@ public class DashboardActivity extends Activity {
 
         ListView lv = (ListView) findViewById(R.id.lv_history);
         lv.setAdapter(new MyGamesHistoryAdapter());
+        startService(new Intent(DashboardActivity.this,SocketService.class));
     }
 
     @Override
     public void onResume() {
         super.onResume();
+        doBindService();
     }
 
     @Override
     public void onPause() {
         super.onPause();
+        doUnbindService();
     }
 
     @Override
