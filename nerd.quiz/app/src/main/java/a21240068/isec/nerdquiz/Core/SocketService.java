@@ -9,6 +9,7 @@ import android.util.Log;
 import android.widget.Toast;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
@@ -18,11 +19,12 @@ import java.net.Socket;
  */
 
 public class SocketService extends Service {
-    public static final String SERVERIP = "192.168.1.7"; //your computer IP address should be written here
+    public static final String SERVERIP = "192.168.1.4"; //your computer IP address should be written here
     public static final int SERVERPORT = 5007;
     //PrintWriter out;
     ObjectOutputStream out;
-    Socket socket;
+    //ObjectInputStream in;
+    public Socket socket;
     InetAddress serverAddr;
 
     @Override
@@ -60,6 +62,7 @@ public class SocketService extends Service {
     public void onCreate() {
         super.onCreate();
         Log.d("SocketService", "I am in on create");
+        //in = null;
         Runnable connect = new connectSocket();
         new Thread(connect).start();
     }
@@ -128,7 +131,9 @@ public class SocketService extends Service {
                     //send the message to the server
                     //out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(socket.getOutputStream())), true);
 
+                    Log.d("TCP Client", "Opening streams.");
                     out = new ObjectOutputStream(socket.getOutputStream());
+                    //in = new ObjectInputStream(socket.getInputStream());
                     out.writeObject("Ola");
 
                     Log.d("TCP Client", "C: Sent.");

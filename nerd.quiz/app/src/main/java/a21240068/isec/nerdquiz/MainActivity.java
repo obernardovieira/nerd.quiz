@@ -21,9 +21,9 @@ public class MainActivity extends Activity {
         String defaultValue = getResources().getString(R.string.no_user_name_default);
         String username = preferences.getString(getString(R.string.user_name), defaultValue);
 
-        if(!username.equals(defaultValue))
+        if(username.equals(defaultValue))
         {
-            Intent intent = new Intent(this, AuthenticationActivity.class);
+            Intent intent = new Intent(this, RegisterActivity.class);
             startActivity(intent);
         }
         else
