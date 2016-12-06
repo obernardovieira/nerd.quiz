@@ -148,6 +148,7 @@ public class TcpServerHandleClient implements Runnable {
         {
             String [] params = command.split(" ");
             
+            ooStream.writeObject(Command.REGISTER);
             if(database.checkUser(params[1]))
             {
                 ooStream.writeObject(Response.ERROR);
