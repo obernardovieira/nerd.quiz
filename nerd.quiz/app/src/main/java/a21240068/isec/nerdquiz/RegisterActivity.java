@@ -41,7 +41,7 @@ public class RegisterActivity extends Activity {
         selectedImageUri = null;
         nerdQuizApp = (NerdQuizApp)getApplication();
 
-        startService(new Intent(RegisterActivity.this,SocketService.class));
+
         mBoundService = null;
     }
 
@@ -107,7 +107,14 @@ public class RegisterActivity extends Activity {
             {
                 ObjectInputStream in;
                 in = new ObjectInputStream(mBoundService.socket.getInputStream());
-                response = (Integer)in.readObject();
+                while(!isCancelled())
+                {
+                    if(in.available() > 0)
+                    {
+                        response = (Integer)in.readObject();
+                        break;
+                    }
+                }
                 in.close();
             }
             catch (IOException e)
@@ -134,12 +141,6 @@ public class RegisterActivity extends Activity {
             else if(response == Response.ERROR)
             {
                 Toast.makeText(RegisterActivity.this, "An error occurred while registering!", Toast.LENGTH_LONG).show();
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        new ReceiveFromServerTask().execute();
-                    }
-                }).start();
             }
         }
     }

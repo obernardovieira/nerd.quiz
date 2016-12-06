@@ -134,7 +134,7 @@ public class SocketService extends Service {
                     Log.d("TCP Client", "Opening streams.");
                     out = new ObjectOutputStream(socket.getOutputStream());
                     //in = new ObjectInputStream(socket.getInputStream());
-                    out.writeObject("Ola");
+                    //out.writeObject("Ola");
 
                     Log.d("TCP Client", "C: Sent.");
 
