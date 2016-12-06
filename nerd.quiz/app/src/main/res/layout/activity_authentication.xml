@@ -42,7 +42,7 @@
             android:id="@+id/bt_login"
             android:onClick="clickLoginButton" />
 
-        <TextView
+        <Button
             android:text="Aren't you registered yet? Click here!"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

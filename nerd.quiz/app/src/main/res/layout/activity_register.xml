@@ -45,7 +45,7 @@
         android:id="@+id/bt_register"
         android:onClick="clickRegisterButton"/>
 
-    <TextView
+    <Button
         android:text="Are you registered already? Click here!"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

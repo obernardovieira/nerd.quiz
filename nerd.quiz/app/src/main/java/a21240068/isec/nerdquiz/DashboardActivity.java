@@ -52,7 +52,6 @@ public class DashboardActivity extends Activity {
         bindService(new Intent(DashboardActivity.this, SocketService.class), mConnection, Context.BIND_AUTO_CREATE);
         mIsBound = true;
         if(mBoundService!=null){
-            mBoundService.IsBoundable(this);
         }
         Log.d("SocketService", "doBindService");
     }

@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.Socket;
 
 /**
@@ -16,16 +17,10 @@ import java.net.Socket;
 
 public class NerdQuizApp extends Application {
 
-    public String serverIP;
-    public Integer serverPort;
-    public Socket socketToServer;
-    public Socket socketForClientServer;
-    public Socket socketForClientClient;
-
     @Override
     public void onCreate() {
         super.onCreate();
-        Log.d("onCreate", "Create nerdQuizApp class!");
+        Log.d("NerdQuizApp", "Create nerdQuizApp class!");
     }
 
 }

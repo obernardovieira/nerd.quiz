@@ -10,6 +10,8 @@ import android.util.Log;
 
 import java.net.Socket;
 
+import a21240068.isec.nerdquiz.Core.NerdQuizApp;
+
 public class MainActivity extends Activity {
 
     @Override
@@ -17,13 +19,16 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        NerdQuizApp application;
+        application = (NerdQuizApp)getApplication();
+
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
         String defaultValue = getResources().getString(R.string.no_user_name_default);
         String username = preferences.getString(getString(R.string.user_name), defaultValue);
 
-        if(!username.equals(defaultValue))
+        if(username.equals(defaultValue))
         {
-            Intent intent = new Intent(this, AuthenticationActivity.class);
+            Intent intent = new Intent(this, RegisterActivity.class);
             startActivity(intent);
         }
         else
