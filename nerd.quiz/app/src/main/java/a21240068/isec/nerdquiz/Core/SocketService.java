@@ -71,7 +71,7 @@ public class SocketService extends Service {
         Toast.makeText(context,"I bind like butter", Toast.LENGTH_LONG).show();
     }
 
-    public void sendMessage(final String message) {
+    public void sendMessage(final Object object) {
         /*if (out != null && !out.checkError()) {
             Log.d("SocketService", "in sendMessage"+message);
             out.println(message);
@@ -84,7 +84,7 @@ public class SocketService extends Service {
                 {
 
                     try {
-                        out.writeObject(message);
+                        out.writeObject(object);
                         out.flush();
                         Log.d("sendMessage","ENVIADO!");
                     } catch (IOException e) {

@@ -148,13 +148,14 @@ public class TcpServerHandleClient implements Runnable {
         {
             String [] params = command.split(" ");
             
-            ooStream.writeObject(Command.REGISTER);
             if(database.checkUser(params[1]))
             {
+                System.out.println("erro");
                 ooStream.writeObject(Response.ERROR);
             }
             else
             {
+                System.out.println("nerro");
                 database.addUser(params[1], params[2]);
                 ooStream.writeObject(Response.OK);
             }

@@ -11,13 +11,17 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
 
+import a21240068.isec.nerdquiz.Core.Command;
 import a21240068.isec.nerdquiz.Core.NerdQuizApp;
+import a21240068.isec.nerdquiz.Core.Response;
 import a21240068.isec.nerdquiz.Core.SocketService;
 
 public class RegisterActivity extends Activity {
@@ -59,11 +63,15 @@ public class RegisterActivity extends Activity {
 
     public void clickRegisterButton(View view)
     {
+        EditText et_username = (EditText)findViewById(R.id.et_username);
+        EditText et_password = (EditText)findViewById(R.id.et_password);
 
+        registerOnServer(et_username.getText().toString(), et_password.getText().toString());
     }
 
-    public void registerOnServer(String username, String password, String profile_pic)
+    public void registerOnServer(String username, String password)
     {
+        mBoundService.sendMessage(Command.REGISTER + " " + username + " " + password);
     }
 
     public void clickRegisteredText(View view)
@@ -94,12 +102,13 @@ public class RegisterActivity extends Activity {
     {
         protected String doInBackground(Void... params)
         {
-            ObjectInputStream in;
-            String msg = "";
+            Integer response = Response.ERROR;
             try
             {
+                ObjectInputStream in;
                 in = new ObjectInputStream(mBoundService.socket.getInputStream());
-                msg = (String)in.readObject();
+                response = (Integer)in.readObject();
+                in.close();
             }
             catch (IOException e)
             {
@@ -109,11 +118,29 @@ public class RegisterActivity extends Activity {
             {
                 e.printStackTrace();
             }
-            return msg;
+            return response.toString();
         }
 
         protected void onPostExecute(String result) {
-            Toast.makeText(RegisterActivity.this, "Downloaded " + result + " bytes", Toast.LENGTH_LONG).show();
+            Integer response = Integer.parseInt(result);
+            Log.d("onPostExecute",result);
+            if(response == Response.OK)
+            {
+                Toast.makeText(RegisterActivity.this, "You are registered now!", Toast.LENGTH_LONG).show();
+                Intent intent = new Intent(RegisterActivity.this, AuthenticationActivity.class);
+                startActivity(intent);
+                finish();
+            }
+            else if(response == Response.ERROR)
+            {
+                Toast.makeText(RegisterActivity.this, "An error occurred while registering!", Toast.LENGTH_LONG).show();
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        new ReceiveFromServerTask().execute();
+                    }
+                }).start();
+            }
         }
     }
 
