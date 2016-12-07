@@ -5,8 +5,11 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -16,9 +19,13 @@ import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.util.ArrayList;
 
+import a21240068.isec.nerdquiz.Core.Response;
 import a21240068.isec.nerdquiz.Core.SocketService;
 import a21240068.isec.nerdquiz.Objects.Game;
 import a21240068.isec.nerdquiz.Database.GamesData;
@@ -30,43 +37,6 @@ public class DashboardActivity extends Activity {
     private boolean mIsBound;
     private SocketService mBoundService;
 
-    private ServiceConnection mConnection = new ServiceConnection() {
-        //EDITED PART
-        @Override
-        public void onServiceConnected(ComponentName name, IBinder service) {
-            // TODO Auto-generated method stub
-            mBoundService = ((SocketService.LocalBinder)service).getService();
-
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName name) {
-            // TODO Auto-generated method stub
-            mBoundService = null;
-        }
-
-    };
-
-
-    private void doBindService() {
-        bindService(new Intent(DashboardActivity.this, SocketService.class), mConnection, Context.BIND_AUTO_CREATE);
-        mIsBound = true;
-        if(mBoundService!=null){
-            mBoundService.IsBoundable(this);
-        }
-        Log.d("SocketService", "doBindService");
-    }
-
-
-    private void doUnbindService() {
-        if (mIsBound) {
-            // Detach our existing connection.
-            unbindService(mConnection);
-            mIsBound = false;
-        }
-        Log.d("SocketService", "doUnbindService");
-    }
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -77,19 +47,6 @@ public class DashboardActivity extends Activity {
 
         ListView lv = (ListView) findViewById(R.id.lv_history);
         lv.setAdapter(new MyGamesHistoryAdapter());
-        startService(new Intent(DashboardActivity.this,SocketService.class));
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        doBindService();
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
-        doUnbindService();
     }
 
     @Override
@@ -154,5 +111,132 @@ public class DashboardActivity extends Activity {
 
             return layout;
         }
+    }
+
+
+    private class ReceiveFromServerTask extends AsyncTask<Void, Void, String>
+    {
+        protected String doInBackground(Void... params)
+        {
+            Log.d("ReceiveFromServerTask","a");
+            Integer response = Response.ERROR;
+            try
+            {
+                ObjectInputStream in;
+                in = new ObjectInputStream(mBoundService.socket.getInputStream());
+
+                while(!isCancelled())
+                {
+                    if(in.available() > 0)
+                    {
+                        response = (Integer)in.readObject();
+                        break;
+                    }
+                }
+                in.close();
+            }
+            catch (IOException e)
+            {
+                e.printStackTrace();
+            }
+            catch (ClassNotFoundException e)
+            {
+                e.printStackTrace();
+            }
+            Log.d("ReceiveFromServerTask","b");
+            return response.toString();
+        }
+
+        protected void onPostExecute(String result) {
+            Integer response = Integer.parseInt(result);
+            Log.d("onPostExecute",result);
+            if(response == Response.OK)
+            {
+            }
+            else if(response == Response.ERROR)
+            {
+            }
+        }
+
+        @Override
+        protected void onCancelled() {
+            Log.i("AsyncTask", "Cancelled.");
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+
+        doBindService();
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while(mBoundService == null)
+                {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+                while(mBoundService.socket == null)
+                {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+                new ReceiveFromServerTask().execute();
+            }
+        }).start();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+
+        doUnbindService();
+    }
+
+
+    private ServiceConnection mConnection = new ServiceConnection() {
+        //EDITED PART
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            // TODO Auto-generated method stub
+            mBoundService = ((SocketService.LocalBinder)service).getService();
+
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            // TODO Auto-generated method stub
+            mBoundService = null;
+        }
+
+    };
+
+
+    private void doBindService() {
+        bindService(new Intent(DashboardActivity.this, SocketService.class), mConnection, Context.BIND_AUTO_CREATE);
+        mIsBound = true;
+        if(mBoundService!=null){
+            mBoundService.IsBoundable(this);
+        }
+        Log.d("SocketService", "doBindService");
+    }
+
+
+    private void doUnbindService() {
+        if (mIsBound) {
+            // Detach our existing connection.
+            unbindService(mConnection);
+            mIsBound = false;
+        }
+        Log.d("SocketService", "doUnbindService");
     }
 }

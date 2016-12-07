@@ -142,6 +142,7 @@ public class TcpServerHandleClient implements Runnable {
             }
             System.out.println("loginnn");
             ooStream.writeObject(response);
+            System.out.println("loginc");
             ooStream.flush();
         }
         else if(command.startsWith(Command.REGISTER))

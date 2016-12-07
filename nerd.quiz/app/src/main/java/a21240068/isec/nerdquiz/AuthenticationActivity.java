@@ -18,6 +18,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
 
 import a21240068.isec.nerdquiz.Core.Command;
@@ -46,7 +47,6 @@ public class AuthenticationActivity extends Activity {
         //
 
         mBoundService.sendMessage(Command.LOGIN + " " + username + " " + password);
-        new ReceiveFromServerTask().execute();
     }
 
     public void clickNotRegisteredText(View view)
@@ -59,25 +59,29 @@ public class AuthenticationActivity extends Activity {
 
     private class ReceiveFromServerTask extends AsyncTask<Void, Void, String>
     {
+        private boolean cancelledFlag;
+        public ReceiveFromServerTask()
+        {
+            cancelledFlag = false;
+        }
+
         protected String doInBackground(Void... params)
         {
-            Log.d("ReceiveFromServerTask","a");
             Integer response = Response.ERROR;
+
             try
             {
-                ObjectInputStream in;
-                in = new ObjectInputStream(mBoundService.socket.getInputStream());
-
-                response = (Integer)in.readObject();
-                /*while(!isCancelled())
+                while(cancelledFlag == false)
                 {
-                    if(in.available() > 0)
+                    if(mBoundService.socket.getInputStream().available() > 4)
                     {
+                        ObjectInputStream in;
+                        in = new ObjectInputStream(mBoundService.socket.getInputStream());
                         response = (Integer)in.readObject();
+                        in.close();
                         break;
                     }
-                }*/
-                in.close();
+                }
             }
             catch (IOException e)
             {
@@ -87,7 +91,6 @@ public class AuthenticationActivity extends Activity {
             {
                 e.printStackTrace();
             }
-            Log.d("ReceiveFromServerTask","b");
             return response.toString();
         }
 
@@ -116,6 +119,12 @@ public class AuthenticationActivity extends Activity {
                 Toast.makeText(AuthenticationActivity.this, "An error occurred while login!", Toast.LENGTH_LONG).show();
             }
         }
+
+        @Override
+        protected void onCancelled() {
+            cancelledFlag = true;
+            Log.i("AsyncTask", "Cancelled.");
+        }
     }
 
     @Override
@@ -125,6 +134,28 @@ public class AuthenticationActivity extends Activity {
 
         doBindService();
 
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while(mBoundService == null)
+                {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+                while(mBoundService.socket == null)
+                {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+                new ReceiveFromServerTask().execute();
+            }
+        }).start();
     }
 
     @Override
