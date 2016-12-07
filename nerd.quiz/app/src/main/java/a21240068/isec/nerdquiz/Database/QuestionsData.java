@@ -1,4 +1,4 @@
-package a21240068.isec.nerdquiz;
+package a21240068.isec.nerdquiz.Database;
 
 import android.content.ContentValues;
 import android.content.Context;
@@ -10,6 +10,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Random;
+
+import a21240068.isec.nerdquiz.Database.NerdQuizContract;
+import a21240068.isec.nerdquiz.Database.NerdQuizDBHelper;
+import a21240068.isec.nerdquiz.Objects.GameQuestion;
 
 
 public class QuestionsData {

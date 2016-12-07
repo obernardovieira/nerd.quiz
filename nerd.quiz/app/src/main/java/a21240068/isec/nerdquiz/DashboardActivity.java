@@ -1,10 +1,15 @@
 package a21240068.isec.nerdquiz;
 
 import android.app.Activity;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
+import android.content.SharedPreferences;
+import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Handler;
+import android.os.IBinder;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -16,17 +21,21 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.io.InputStream;
+import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.OutputStream;
-import java.net.Socket;
-import java.net.SocketException;
 import java.util.ArrayList;
+
+import a21240068.isec.nerdquiz.Core.Response;
+import a21240068.isec.nerdquiz.Core.SocketService;
+import a21240068.isec.nerdquiz.Objects.Game;
+import a21240068.isec.nerdquiz.Database.GamesData;
+import a21240068.isec.nerdquiz.Database.QuestionsData;
 
 public class DashboardActivity extends Activity {
 
     private ArrayList<Game> games;
+    private boolean mIsBound;
+    private SocketService mBoundService;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,16 +47,6 @@ public class DashboardActivity extends Activity {
 
         ListView lv = (ListView) findViewById(R.id.lv_history);
         lv.setAdapter(new MyGamesHistoryAdapter());
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
     }
 
     @Override
@@ -112,5 +111,132 @@ public class DashboardActivity extends Activity {
 
             return layout;
         }
+    }
+
+
+    private class ReceiveFromServerTask extends AsyncTask<Void, Void, String>
+    {
+        private boolean cancelledFlag;
+        public ReceiveFromServerTask()
+        {
+            cancelledFlag = false;
+        }
+
+        protected String doInBackground(Void... params)
+        {
+            String response = "";
+            try
+            {
+                while(cancelledFlag == false)
+                {
+                    if(mBoundService.socket.getInputStream().available() > 4)
+                    {
+                        ObjectInputStream in;
+                        in = new ObjectInputStream(mBoundService.socket.getInputStream());
+                        response = (String)in.readObject();
+                        //in.close();
+                        break;
+                    }
+                }
+            }
+            catch (IOException e)
+            {
+                e.printStackTrace();
+            }
+            catch (ClassNotFoundException e)
+            {
+                e.printStackTrace();
+            }
+            Log.d("ReceiveFromServerTask","b");
+            return response;
+        }
+
+        protected void onPostExecute(String result) {
+            Log.d("onPostExecute",result);
+
+            //String contem "invited nomejogador"
+        }
+
+        @Override
+        protected void onCancelled() {
+            cancelledFlag = true;
+            Log.i("AsyncTask", "Cancelled.");
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+
+        doBindService();
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while(mBoundService == null)
+                {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+                while(mBoundService.socket == null)
+                {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+                new ReceiveFromServerTask().execute();
+            }
+        }).start();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+
+        doUnbindService();
+    }
+
+
+    private ServiceConnection mConnection = new ServiceConnection() {
+        //EDITED PART
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            // TODO Auto-generated method stub
+            mBoundService = ((SocketService.LocalBinder)service).getService();
+
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            // TODO Auto-generated method stub
+            mBoundService = null;
+        }
+
+    };
+
+
+    private void doBindService() {
+        bindService(new Intent(DashboardActivity.this, SocketService.class), mConnection, Context.BIND_AUTO_CREATE);
+        mIsBound = true;
+        if(mBoundService!=null){
+            mBoundService.IsBoundable(this);
+        }
+        Log.d("SocketService", "doBindService");
+    }
+
+
+    private void doUnbindService() {
+        if (mIsBound) {
+            // Detach our existing connection.
+            unbindService(mConnection);
+            mIsBound = false;
+        }
+        Log.d("SocketService", "doUnbindService");
     }
 }

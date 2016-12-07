@@ -136,25 +136,27 @@ public class TcpServerHandleClient implements Runnable {
             String [] params = command.split(" ");
             Integer response = database.checkLogin(params[1], params[2]);
             
-            ooStream.writeObject(Command.LOGIN);
             if(response.equals(Response.OK))
             {
                 player.setName(params[1]);
             }
+            System.out.println("loginnn");
             ooStream.writeObject(response);
+            System.out.println("loginc");
             ooStream.flush();
         }
         else if(command.startsWith(Command.REGISTER))
         {
             String [] params = command.split(" ");
             
-            ooStream.writeObject(Command.REGISTER);
             if(database.checkUser(params[1]))
             {
+                System.out.println("erro");
                 ooStream.writeObject(Response.ERROR);
             }
             else
             {
+                System.out.println("nerro");
                 database.addUser(params[1], params[2]);
                 ooStream.writeObject(Response.OK);
             }

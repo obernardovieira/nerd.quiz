@@ -1,4 +1,4 @@
-package a21240068.isec.nerdquiz;
+package a21240068.isec.nerdquiz.Database;
 
 import android.provider.BaseColumns;
 

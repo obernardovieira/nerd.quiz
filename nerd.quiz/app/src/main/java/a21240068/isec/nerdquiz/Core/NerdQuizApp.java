@@ -1,4 +1,4 @@
-package a21240068.isec.nerdquiz;
+package a21240068.isec.nerdquiz.Core;
 
 import android.app.Application;
 import android.util.Log;
@@ -15,12 +15,6 @@ import java.net.Socket;
  */
 
 public class NerdQuizApp extends Application {
-
-    public String serverIP;
-    public Integer serverPort;
-    public Socket socketToServer;
-    public Socket socketForClientServer;
-    public Socket socketForClientClient;
 
     @Override
     public void onCreate() {
