@@ -116,24 +116,28 @@ public class DashboardActivity extends Activity {
 
     private class ReceiveFromServerTask extends AsyncTask<Void, Void, String>
     {
+        private boolean cancelledFlag;
+        public ReceiveFromServerTask()
+        {
+            cancelledFlag = false;
+        }
+
         protected String doInBackground(Void... params)
         {
-            Log.d("ReceiveFromServerTask","a");
-            Integer response = Response.ERROR;
+            String response = "";
             try
             {
-                ObjectInputStream in;
-                in = new ObjectInputStream(mBoundService.socket.getInputStream());
-
-                while(!isCancelled())
+                while(cancelledFlag == false)
                 {
-                    if(in.available() > 0)
+                    if(mBoundService.socket.getInputStream().available() > 4)
                     {
-                        response = (Integer)in.readObject();
+                        ObjectInputStream in;
+                        in = new ObjectInputStream(mBoundService.socket.getInputStream());
+                        response = (String)in.readObject();
+                        //in.close();
                         break;
                     }
                 }
-                in.close();
             }
             catch (IOException e)
             {
@@ -144,22 +148,18 @@ public class DashboardActivity extends Activity {
                 e.printStackTrace();
             }
             Log.d("ReceiveFromServerTask","b");
-            return response.toString();
+            return response;
         }
 
         protected void onPostExecute(String result) {
-            Integer response = Integer.parseInt(result);
             Log.d("onPostExecute",result);
-            if(response == Response.OK)
-            {
-            }
-            else if(response == Response.ERROR)
-            {
-            }
+
+            //String contem "invited nomejogador"
         }
 
         @Override
         protected void onCancelled() {
+            cancelledFlag = true;
             Log.i("AsyncTask", "Cancelled.");
         }
     }
