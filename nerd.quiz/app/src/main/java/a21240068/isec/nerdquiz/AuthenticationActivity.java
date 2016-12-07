@@ -78,7 +78,7 @@ public class AuthenticationActivity extends Activity {
                         ObjectInputStream in;
                         in = new ObjectInputStream(mBoundService.socket.getInputStream());
                         response = (Integer)in.readObject();
-                        in.close();
+                        //in.close();
                         break;
                     }
                 }
@@ -112,6 +112,7 @@ public class AuthenticationActivity extends Activity {
                 Intent intent = new Intent(AuthenticationActivity.this, DashboardActivity.class);
                 startActivity(intent);
 
+                cancel(true);
                 finish();
             }
             else if(response == Response.ERROR)
