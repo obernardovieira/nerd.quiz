@@ -11,6 +11,7 @@ import android.widget.Toast;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.StreamCorruptedException;
 import java.net.InetAddress;
 import java.net.Socket;
 
@@ -89,7 +90,13 @@ public class SocketService extends Service {
                         Log.d("sendMessage","ENVIADO!");
                         if(object instanceof String)
                             Log.d("sendMessage", (String) object);
-                    } catch (IOException e) {
+                    }
+                    catch(StreamCorruptedException e)
+                    {
+                        Log.d("erro", "StreamCorruptedException");
+                        e.printStackTrace();
+                    }
+                    catch (IOException e) {
                         e.printStackTrace();
                     }
                 }

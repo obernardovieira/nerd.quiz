@@ -10,6 +10,7 @@ import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.util.Log;
@@ -25,6 +26,7 @@ import android.widget.Toast;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.net.ServerSocket;
 import java.util.ArrayList;
 
 import a21240068.isec.nerdquiz.Core.Command;
@@ -42,6 +44,11 @@ public class DashboardActivity extends Activity {
     private SocketService mBoundService;
     private NerdQuizApp application;
 
+    private Handler handler;
+    private Runnable myRunner;
+
+    ObjectInputStream in;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -58,6 +65,14 @@ public class DashboardActivity extends Activity {
         String defaultValue = getResources().getString(R.string.no_user_name_default);
         String username = preferences.getString(getString(R.string.user_name), defaultValue);
         application.setUsername(username);
+
+        myRunner = new Runnable(){
+            public void run() {
+                new ReceiveFromServerTask ().execute();
+            }
+        };
+
+        handler = new Handler();
     }
 
     @Override
@@ -143,8 +158,8 @@ public class DashboardActivity extends Activity {
                     //Log.d("ReceiveFromServerTask", String.valueOf(mBoundService.socket.getInputStream().available()));
                     if(mBoundService.socket.getInputStream().available() > 4)
                     {
-                        ObjectInputStream in;
-                        in = new ObjectInputStream(mBoundService.socket.getInputStream());
+                        //ObjectInputStream in;
+                        //in = new ObjectInputStream(mBoundService.socket.getInputStream());
                         response = (String)in.readObject();
                         //in.close();
                         break;
@@ -184,12 +199,28 @@ public class DashboardActivity extends Activity {
                     public void onClick(DialogInterface dialog, int id) {
                         // User clicked OK button
 
+                        Intent intent = new Intent(DashboardActivity.this, GameActivity.class);
+                        startActivity(intent);
+
+                        try {
+                            ServerSocket game_socket = new ServerSocket(5010);
+
+                            mBoundService.sendMessage(Command.ACCEPT_INV + " " + params[1]);
+                            mBoundService.sendMessage(game_socket.getInetAddress());
+                            mBoundService.sendMessage(5009);
+
+                            game_socket.close();
+                        }
+                        catch (IOException e) {
+                            e.printStackTrace();
+                        }
                     }
                 });
                 builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
                         // User cancelled the dialog
                         mBoundService.sendMessage(Command.REJECT_INV + " " + params[1]);
+                        handler.post(myRunner);
                     }
                 });
                 // Set other dialog properties
@@ -236,7 +267,12 @@ public class DashboardActivity extends Activity {
                 }
 
                 mBoundService.sendMessage(Command.AUTO_LOGIN + " " + application.getUsername());
-                new ReceiveFromServerTask().execute();
+                try {
+                    in = new ObjectInputStream(mBoundService.socket.getInputStream());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                handler.post(myRunner);
             }
         }).start();
     }

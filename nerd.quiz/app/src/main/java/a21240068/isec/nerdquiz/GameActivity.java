@@ -2,15 +2,26 @@ package a21240068.isec.nerdquiz;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketException;
 import java.util.ArrayList;
 
+import a21240068.isec.nerdquiz.Core.Command;
 import a21240068.isec.nerdquiz.Objects.GameQuestion;
 import a21240068.isec.nerdquiz.Database.QuestionsData;
 
@@ -30,6 +41,9 @@ public class GameActivity extends Activity {
     private Button                  bt_answer_three;
 
     private Handler                 handler;
+
+    private ObjectOutputStream      oostream;
+    private ObjectInputStream       oistream;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -52,7 +66,9 @@ public class GameActivity extends Activity {
         bt_answer_three     = (Button)        findViewById(R.id.bt_answer_three);
 
         pb_questions_left   .setMax(total_questions_per_round);
-        showNewQuestion();
+        //showNewQuestion();
+
+        new ReceiveFromPlayerTask().execute();
     }
 
     private void startCountdown()
@@ -131,4 +147,58 @@ public class GameActivity extends Activity {
         else
             finishQuiz();
     }
+
+    private class ReceiveFromPlayerTask extends AsyncTask<Void, Void, String>
+    {
+        private boolean cancelledFlag;
+        public ReceiveFromPlayerTask()
+        {
+            cancelledFlag = false;
+        }
+
+        protected String doInBackground(Void... params)
+        {
+            String response = "";
+
+
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+
+                    try
+                    {
+
+                        ServerSocket game_socket = new ServerSocket(5009);
+                        game_socket.setSoTimeout(5000);
+
+                        Socket socket = game_socket.accept();
+
+                        oostream = new ObjectOutputStream(socket.getOutputStream());
+                        oistream = new ObjectInputStream(socket.getInputStream());
+
+                    } catch (SocketException e) {
+                        e.printStackTrace();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }).start();
+
+
+            Log.d("ReceiveFromServerTask","b");
+            return response;
+        }
+
+        protected void onPostExecute(String result) {
+            Log.d("onPostExecute",result);
+
+        }
+
+        @Override
+        protected void onCancelled() {
+            cancelledFlag = true;
+            Log.i("AsyncTask", "Cancelled.");
+        }
+    }
+
 }
