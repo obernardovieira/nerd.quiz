@@ -41,6 +41,7 @@ class Command
 {
     public static String    REGISTER    = "register";
     public static String    LOGIN       = "login";
+    public static String    AUTO_LOGIN  = "autologin";
     public static String    PLAY        = "play";
     public static String    SEARCH      = "search";
     public static String    INVITE      = "invite";
@@ -105,14 +106,7 @@ public class TcpServerHandleClient implements Runnable {
             throws IOException, SQLException, ClassNotFoundException
     {
         //
-        if(command.equals(Command.PLAY))
-        {
-            player.setConnected(true);
-            ooStream.writeObject(Command.PLAY);
-            ooStream.writeObject(Response.OK);
-            ooStream.flush();
-        }
-        else if(command.equals(Command.SEARCH))
+        if(command.equals(Command.SEARCH))
         {
             ArrayList<Profile> profiles = new ArrayList<>();
             for(Player player_in_list : TcpServer.players)
@@ -131,6 +125,23 @@ public class TcpServerHandleClient implements Runnable {
         {
             //search for a name
         }
+        else if(command.startsWith(Command.PLAY))
+        {
+            player.setConnected(true);
+        }
+        else if(command.startsWith(Command.AUTO_LOGIN))
+        {
+            String [] params = command.split(" ");
+            if(!database.checkUser(params[1]))
+            {
+                //ooStream.writeObject(Response.ERROR);
+            }
+            else
+            {
+                player.setName(params[1]);
+                player.setConnected(true);
+            }
+        }
         else if(command.startsWith(Command.LOGIN))
         {
             String [] params = command.split(" ");
@@ -139,10 +150,9 @@ public class TcpServerHandleClient implements Runnable {
             if(response.equals(Response.OK))
             {
                 player.setName(params[1]);
+                player.setConnected(true);
             }
-            System.out.println("loginnn");
             ooStream.writeObject(response);
-            System.out.println("loginc");
             ooStream.flush();
         }
         else if(command.startsWith(Command.REGISTER))
@@ -151,14 +161,20 @@ public class TcpServerHandleClient implements Runnable {
             
             if(database.checkUser(params[1]))
             {
-                System.out.println("erro");
                 ooStream.writeObject(Response.ERROR);
             }
             else
             {
-                System.out.println("nerro");
-                database.addUser(params[1], params[2]);
-                ooStream.writeObject(Response.OK);
+                try
+                {
+                    database.addUser(params[1], params[2]);
+                    ooStream.writeObject(Response.OK);
+                }
+                catch(SQLException e)
+                {
+                    ooStream.writeObject(Response.ERROR);
+                    throw new SQLException();
+                }
             }
             ooStream.flush();
         }
@@ -166,7 +182,6 @@ public class TcpServerHandleClient implements Runnable {
         {
             String [] params = command.split(" ");
             
-            ooStream.writeObject(Command.INVITE);
             ooStream.writeObject(Response.OK);
             ooStream.flush();
             

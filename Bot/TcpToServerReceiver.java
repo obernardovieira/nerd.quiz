@@ -59,16 +59,21 @@ class TcpToServerReceiver implements Runnable
         //
         try
         {
-            String cmd;
+            Object obj;
             InputStream iStream = this.socket.getInputStream();
             ObjectInputStream oiStream = new ObjectInputStream(iStream);
             
             do
             {
-                cmd = (String)oiStream.readObject();
-                runCommand(cmd, oiStream);
+                obj = (Object)oiStream.readObject();
+                runCommand(obj, oiStream);
                 
-            }while(!cmd.equals("finish"));
+                if(obj instanceof String)
+                {
+                    if(((String)obj).equals("finish"))
+                        break;
+                }
+            }while(true);
             oiStream.close();
         }
         catch (IOException | ClassNotFoundException ex)
@@ -77,11 +82,77 @@ class TcpToServerReceiver implements Runnable
         }
     }
     
-    public void runCommand(String command, ObjectInputStream oiStream)
+    public void runCommand(Object obj, ObjectInputStream oiStream)
             throws IOException, ClassNotFoundException
     {
+        if(TcpToServer.connected == false)
+        {
+            if(TcpToServer.last_command.startsWith(Command.LOGIN))
+            {
+                Integer response = (Integer)obj;
+                if(response.equals(Response.OK))
+                {
+                    System.out.println("You are connected now!");
+                    TcpToServer.connected = true;
+                }
+                else
+                {
+                    System.out.println("An error occurred!");
+                }
+            }
+            else if(TcpToServer.last_command.startsWith(Command.REGISTER))
+            {
+                Integer response = (Integer)obj;
+                if(response.equals(Response.OK))
+                {
+                    System.out.println("You are registered now!");
+                }
+                else
+                {
+                    System.out.println("An error occurred!");
+                }
+            }
+        }
+        else
+        {
+            if(TcpToServer.playing == false)
+            {
+                //
+                if(TcpToServer.last_command.startsWith(Command.INVITE))
+                {
+                    Integer response = (Integer)obj;
+                    if(response.equals(Response.OK))
+                    {
+                        System.out.println("Invited!");
+                    }
+                    else
+                    {
+                        System.out.println("An error occurred!");
+                    }
+                }
+                else if(TcpToServer.last_command.equals(Command.SEARCH))
+                {
+                    ArrayList<Profile> response = (ArrayList<Profile>)oiStream.readObject();
+                    if(response.size() > 0)
+                    {
+                        for(Profile profile : response)
+                        {
+                            System.out.println(profile.getName());
+                        }
+                    }
+                    else
+                    {
+                        System.out.println("There is no results!");
+                    }
+                }
+            }
+            else
+            {
+                //
+            }
+        }
         //
-        if(command.equals(Command.PLAY))
+        /*if(command.equals(Command.PLAY))
         {
             Integer response = (Integer)oiStream.readObject();
             if(response.equals(Response.OK))
@@ -244,6 +315,6 @@ class TcpToServerReceiver implements Runnable
             oStreamG.writeObject(1);
 
             System.out.println("game starts");
-        }
+        }*/
     }
 }

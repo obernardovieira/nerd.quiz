@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.util.ArrayList;
 
+import a21240068.isec.nerdquiz.Core.Command;
 import a21240068.isec.nerdquiz.Core.Response;
 import a21240068.isec.nerdquiz.Core.SocketService;
 import a21240068.isec.nerdquiz.Objects.Game;
@@ -129,6 +130,7 @@ public class DashboardActivity extends Activity {
             {
                 while(cancelledFlag == false)
                 {
+                    //Log.d("ReceiveFromServerTask", String.valueOf(mBoundService.socket.getInputStream().available()));
                     if(mBoundService.socket.getInputStream().available() > 4)
                     {
                         ObjectInputStream in;
@@ -154,7 +156,13 @@ public class DashboardActivity extends Activity {
         protected void onPostExecute(String result) {
             Log.d("onPostExecute",result);
 
-            //String contem "invited nomejogador"
+            //String contem "beinvited nomejogador"
+            String [] params = result.split(" ");
+            if(params[0].equals(Command.INVITED))
+            {
+                Toast.makeText(DashboardActivity.this,
+                        "You have been invited by " + params[1], Toast.LENGTH_LONG).show();
+            }
         }
 
         @Override
@@ -190,6 +198,12 @@ public class DashboardActivity extends Activity {
                         e.printStackTrace();
                     }
                 }
+
+                SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(DashboardActivity.this);
+                String defaultValue = getResources().getString(R.string.no_user_name_default);
+                String username = preferences.getString(getString(R.string.user_name), defaultValue);
+
+                mBoundService.sendMessage(Command.AUTO_LOGIN + " " + username);
                 new ReceiveFromServerTask().execute();
             }
         }).start();
