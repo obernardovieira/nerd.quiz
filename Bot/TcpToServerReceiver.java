@@ -120,14 +120,32 @@ class TcpToServerReceiver implements Runnable
                 //
                 if(TcpToServer.last_command.startsWith(Command.INVITE))
                 {
-                    Integer response = (Integer)obj;
-                    if(response.equals(Response.OK))
+                    if(obj instanceof Integer)
                     {
-                        System.out.println("Invited!");
+                        //
+                        Integer response = (Integer)obj;
+                        if(response.equals(Response.OK))
+                        {
+                            System.out.println("Invited!");
+                        }
+                        else
+                        {
+                            System.out.println("An error occurred!");
+                        }
                     }
-                    else
+                    else if(obj instanceof String)
                     {
-                        System.out.println("An error occurred!");
+                        String response = (String)obj;
+                        if(response.startsWith(Command.REJECT_INV))
+                        {
+                            //
+                            String [] params = response.split(" ");
+                            System.out.println(params[1] + " rejected you invitation!");
+                        }
+                        else if(response.startsWith(Command.ACCEPT_INV))
+                        {
+                            //
+                        }
                     }
                 }
                 else if(TcpToServer.last_command.equals(Command.SEARCH))

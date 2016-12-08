@@ -16,10 +16,22 @@ import java.net.Socket;
 
 public class NerdQuizApp extends Application {
 
+    private String username;
+
     @Override
     public void onCreate() {
         super.onCreate();
         Log.d("onCreate", "Create nerdQuizApp class!");
+    }
+
+    public void setUsername(String username)
+    {
+        this.username = username;
+    }
+
+    public String getUsername()
+    {
+        return username;
     }
 
 }

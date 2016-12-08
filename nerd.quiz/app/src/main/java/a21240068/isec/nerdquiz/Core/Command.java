@@ -10,4 +10,6 @@ public class Command {
     public static String INVITED            = "beinvited";
     public static String PLAY               = "play";
     public static String AUTO_LOGIN         = "autologin";
+    public static String REJECT_INV         = "reject";
+    public static String ACCEPT_INV         = "accept";
 }

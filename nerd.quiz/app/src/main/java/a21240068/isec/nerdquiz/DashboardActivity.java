@@ -1,8 +1,10 @@
 package a21240068.isec.nerdquiz;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
@@ -26,6 +28,7 @@ import java.io.ObjectInputStream;
 import java.util.ArrayList;
 
 import a21240068.isec.nerdquiz.Core.Command;
+import a21240068.isec.nerdquiz.Core.NerdQuizApp;
 import a21240068.isec.nerdquiz.Core.Response;
 import a21240068.isec.nerdquiz.Core.SocketService;
 import a21240068.isec.nerdquiz.Objects.Game;
@@ -37,6 +40,7 @@ public class DashboardActivity extends Activity {
     private ArrayList<Game> games;
     private boolean mIsBound;
     private SocketService mBoundService;
+    private NerdQuizApp application;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,6 +52,12 @@ public class DashboardActivity extends Activity {
 
         ListView lv = (ListView) findViewById(R.id.lv_history);
         lv.setAdapter(new MyGamesHistoryAdapter());
+        application = (NerdQuizApp)getApplication();
+
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(DashboardActivity.this);
+        String defaultValue = getResources().getString(R.string.no_user_name_default);
+        String username = preferences.getString(getString(R.string.user_name), defaultValue);
+        application.setUsername(username);
     }
 
     @Override
@@ -157,11 +167,37 @@ public class DashboardActivity extends Activity {
             Log.d("onPostExecute",result);
 
             //String contem "beinvited nomejogador"
-            String [] params = result.split(" ");
+            final String [] params = result.split(" ");
             if(params[0].equals(Command.INVITED))
             {
-                Toast.makeText(DashboardActivity.this,
-                        "You have been invited by " + params[1], Toast.LENGTH_LONG).show();
+                /*Toast.makeText(DashboardActivity.this,
+                        "You have been invited by " + params[1], Toast.LENGTH_LONG).show();*/
+
+                // 1. Instantiate an AlertDialog.Builder with its constructor
+                AlertDialog.Builder builder = new AlertDialog.Builder(DashboardActivity.this);
+
+                // 2. Chain together various setter methods to set the dialog characteristics
+                builder.setMessage("Do you want to play with " + params[1] + " ?")
+                        .setTitle("Invited");
+
+                builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        // User clicked OK button
+
+                    }
+                });
+                builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        // User cancelled the dialog
+                        mBoundService.sendMessage(Command.REJECT_INV + " " + params[1]);
+                    }
+                });
+                // Set other dialog properties
+
+
+                // 3. Get the AlertDialog from create()
+                AlertDialog dialog = builder.create();
+                dialog.show();
             }
         }
 
@@ -199,11 +235,7 @@ public class DashboardActivity extends Activity {
                     }
                 }
 
-                SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(DashboardActivity.this);
-                String defaultValue = getResources().getString(R.string.no_user_name_default);
-                String username = preferences.getString(getString(R.string.user_name), defaultValue);
-
-                mBoundService.sendMessage(Command.AUTO_LOGIN + " " + username);
+                mBoundService.sendMessage(Command.AUTO_LOGIN + " " + application.getUsername());
                 new ReceiveFromServerTask().execute();
             }
         }).start();
