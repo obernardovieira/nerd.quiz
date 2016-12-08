@@ -26,6 +26,7 @@ import android.widget.Toast;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.Serializable;
 import java.net.ServerSocket;
 import java.util.ArrayList;
 
@@ -200,20 +201,17 @@ public class DashboardActivity extends Activity {
                         // User clicked OK button
 
                         Intent intent = new Intent(DashboardActivity.this, GameActivity.class);
+                        intent.putExtra("playerToPlay", params[1]);
                         startActivity(intent);
 
-                        try {
-                            ServerSocket game_socket = new ServerSocket(5010);
+                        /*
+                        ServerSocket game_socket = new ServerSocket(5009);
 
-                            mBoundService.sendMessage(Command.ACCEPT_INV + " " + params[1]);
-                            mBoundService.sendMessage(game_socket.getInetAddress());
-                            mBoundService.sendMessage(5009);
+                        mBoundService.sendMessage(Command.ACCEPT_INV + " " + params[1]);
+                        mBoundService.sendMessage(game_socket.getInetAddress());
+                        mBoundService.sendMessage(5009);
+                        */
 
-                            game_socket.close();
-                        }
-                        catch (IOException e) {
-                            e.printStackTrace();
-                        }
                     }
                 });
                 builder.setNegativeButton("No", new DialogInterface.OnClickListener() {

@@ -144,7 +144,27 @@ class TcpToServerReceiver implements Runnable
                         }
                         else if(response.startsWith(Command.ACCEPT_INV))
                         {
+                            String [] params = response.split(" ");
+                            System.out.println(params[1] + " accepted you invitation!");
+                            
                             //
+                            InputStream in = null;
+                            OutputStream out = null;
+
+                            InetAddress address = (InetAddress)oiStream.readObject();
+                            Socket socket = new Socket(address, (Integer)oiStream.readObject());
+
+                            in = socket.getInputStream();
+                            out = socket.getOutputStream();
+
+                            ObjectOutputStream oStreamG = new ObjectOutputStream(out);
+                            ObjectInputStream iStreamG = new ObjectInputStream(in);
+
+                            ArrayList<GameQuestion> questions = (ArrayList<GameQuestion>)iStreamG.readObject();
+
+                            oStreamG.writeObject(1);
+
+                            System.out.println("game starts");
                         }
                     }
                 }
