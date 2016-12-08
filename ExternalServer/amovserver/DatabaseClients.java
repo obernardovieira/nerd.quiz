@@ -1,4 +1,4 @@
-package paservidor;
+package amovserver;
 
 import amovserver.Response;
 import java.sql.*;
@@ -15,12 +15,12 @@ import java.util.logging.Logger;
  *
  * @author bernardovieira
  */
-public class Database {
+public class DatabaseClients {
     
     private Connection c = null;
     private Statement stmt = null;
         
-    public Database()
+    public DatabaseClients()
     {
         try
         {
@@ -32,7 +32,7 @@ public class Database {
         }
         catch (ClassNotFoundException | SQLException ex)
         {
-            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(DatabaseClients.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
     
@@ -44,7 +44,7 @@ public class Database {
         }
         catch (SQLException ex)
         {
-            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(DatabaseClients.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
     

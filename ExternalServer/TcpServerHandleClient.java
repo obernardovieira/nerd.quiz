@@ -11,6 +11,9 @@
  * @author bernardovieira
  */
 
+import Objects.DownloadQuestion;
+import Objects.DatabaseQuestions;
+import amovserver.DatabaseClients;
 import amovserver.Response;
 import java.io.IOException;
 import java.io.InputStream;
@@ -24,7 +27,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import paservidor.Database;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -49,20 +51,23 @@ class Command
     //public static String    ANSWER    = "answer";
     public static String    REJECT_INV  = "reject";
     public static String    ACCEPT_INV  = "accept";
+    public static String    UPDATE_DB   = "updatedb";
 }
 
 public class TcpServerHandleClient implements Runnable {
 
     private final Player player;
-    private final Database database;
+    private final DatabaseClients database;
+    private final DatabaseQuestions db_questions;
     
     private ObjectOutputStream ooStream;
     private ObjectInputStream oiStream;
     
-    public TcpServerHandleClient(Player player, Database database)
+    public TcpServerHandleClient(Player player, DatabaseClients database)
     {
         this.player = player;
         this.database = database;
+        this.db_questions = new DatabaseQuestions();
     }
     
     @Override
@@ -231,11 +236,33 @@ public class TcpServerHandleClient implements Runnable {
                 iooStream.writeObject(Command.ACCEPT_INV + " " + params[1]);
                 iooStream.writeObject(oiStream.readObject());//adress
                 iooStream.writeObject(oiStream.readObject());//port
+                iooStream.flush();
             }
             else
             {
                 System.out.println("Um erro!");
             }
+        }
+        else if(command.startsWith(Command.UPDATE_DB))
+        {
+            //
+            String [] params = command.split(" ");
+            
+            ArrayList<DownloadQuestion> qs =
+                    db_questions.getQuestions(Integer.parseInt(params[1]));
+            Integer v = db_questions.getLastVersionNumber();
+            
+            ooStream.writeObject(qs.size());
+            ooStream.flush();
+            
+            for(DownloadQuestion q : qs)
+            {
+                ooStream.writeObject(q);
+                ooStream.flush();
+            }
+            
+            ooStream.writeObject(v);
+            ooStream.flush();
         }
     }
 }

@@ -12,4 +12,5 @@ public class Command {
     public static String AUTO_LOGIN         = "autologin";
     public static String REJECT_INV         = "reject";
     public static String ACCEPT_INV         = "accept";
+    public static String UPDATE_DB          = "updatedb";
 }

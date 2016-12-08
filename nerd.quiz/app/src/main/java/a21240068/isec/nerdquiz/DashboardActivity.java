@@ -26,14 +26,12 @@ import android.widget.Toast;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.io.Serializable;
-import java.net.ServerSocket;
 import java.util.ArrayList;
 
 import a21240068.isec.nerdquiz.Core.Command;
 import a21240068.isec.nerdquiz.Core.NerdQuizApp;
-import a21240068.isec.nerdquiz.Core.Response;
 import a21240068.isec.nerdquiz.Core.SocketService;
+import a21240068.isec.nerdquiz.Objects.DownloadQuestion;
 import a21240068.isec.nerdquiz.Objects.Game;
 import a21240068.isec.nerdquiz.Database.GamesData;
 import a21240068.isec.nerdquiz.Database.QuestionsData;
@@ -46,7 +44,8 @@ public class DashboardActivity extends Activity {
     private NerdQuizApp application;
 
     private Handler handler;
-    private Runnable myRunner;
+    private Runnable fromServerRunner;
+    private boolean update_db_task;
 
     ObjectInputStream in;
 
@@ -67,11 +66,13 @@ public class DashboardActivity extends Activity {
         String username = preferences.getString(getString(R.string.user_name), defaultValue);
         application.setUsername(username);
 
-        myRunner = new Runnable(){
+        fromServerRunner = new Runnable(){
             public void run() {
                 new ReceiveFromServerTask ().execute();
             }
         };
+
+        update_db_task = false;
 
         handler = new Handler();
     }
@@ -91,8 +92,17 @@ public class DashboardActivity extends Activity {
         }
         else if(item.getItemId() == R.id.id_upload_questions)
         {
-            QuestionsData qdata = new QuestionsData(this);
-            qdata.updateQuestions();
+            //QuestionsData qdata = new QuestionsData(this);
+            //qdata.updateQuestions();
+
+            //mensagem ao servidor a pedir perguntas
+            SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
+            int defaultValue = 0;
+            int atualDBVersion = preferences.getInt(getString(R.string.version_dbquestions), defaultValue);
+
+            mBoundService.sendMessage(Command.UPDATE_DB + " " + atualDBVersion);
+            update_db_task = true;
+
         }
         return super.onOptionsItemSelected(item);
     }
@@ -161,7 +171,53 @@ public class DashboardActivity extends Activity {
                     {
                         //ObjectInputStream in;
                         //in = new ObjectInputStream(mBoundService.socket.getInputStream());
-                        response = (String)in.readObject();
+                        if(update_db_task == true)
+                        {
+                            //
+                            Log.d("update","c");
+                            //ObjectInputStream in;
+                            //in = new ObjectInputStream(mBoundService.socket.getInputStream());
+                            QuestionsData qdata = new QuestionsData(DashboardActivity.this);
+                            Log.d("update","c");
+
+                            ArrayList<DownloadQuestion> questions = new ArrayList<>();
+                            Log.d("update","c");
+                            Integer version;
+                            Log.d("update","c");
+
+                            Integer tq = (Integer)in.readObject();
+                            Integer z = 0;
+
+                            while(z++ < tq)
+                            {
+                                questions.add((DownloadQuestion) in.readObject());
+                            }
+
+                            //questions = (ArrayList<DownloadQuestion>)in.readObject();
+                            Log.d("update","c");
+                            version = (Integer)in.readObject();//in.readObject();
+                            Log.d("update","d");
+                            if(!questions.isEmpty())
+                            {
+                                qdata.updateQuestions(questions, version);
+
+                                SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(DashboardActivity.this);
+                                SharedPreferences.Editor editor = preferences.edit();
+                                editor.putInt(getString(R.string.version_dbquestions), version);
+                                editor.apply();
+                            }
+                            else
+                            {
+                                Log.d("UpdateDBTask","no questions to update!");
+                            }
+                            Log.d("update","e");
+                        }
+                        else
+                        {
+                            //
+                            Log.d("update","z");
+                            response = (String)in.readObject();
+                        }
                         //in.close();
                         break;
                     }
@@ -173,6 +229,7 @@ public class DashboardActivity extends Activity {
             }
             catch (ClassNotFoundException e)
             {
+                Log.d("noclass","b");
                 e.printStackTrace();
             }
             Log.d("ReceiveFromServerTask","b");
@@ -182,27 +239,37 @@ public class DashboardActivity extends Activity {
         protected void onPostExecute(String result) {
             Log.d("onPostExecute",result);
 
-            //String contem "beinvited nomejogador"
-            final String [] params = result.split(" ");
-            if(params[0].equals(Command.INVITED))
+            if(update_db_task == true)
             {
+                //
+                Toast.makeText(DashboardActivity.this, "Questions database updated!", Toast.LENGTH_LONG).show();
+                update_db_task = false;
+                handler.post(fromServerRunner);
+            }
+            else
+            {
+                //
+                //String contem "beinvited nomejogador"
+                final String [] params = result.split(" ");
+                if(params[0].equals(Command.INVITED))
+                {
                 /*Toast.makeText(DashboardActivity.this,
                         "You have been invited by " + params[1], Toast.LENGTH_LONG).show();*/
 
-                // 1. Instantiate an AlertDialog.Builder with its constructor
-                AlertDialog.Builder builder = new AlertDialog.Builder(DashboardActivity.this);
+                    // 1. Instantiate an AlertDialog.Builder with its constructor
+                    AlertDialog.Builder builder = new AlertDialog.Builder(DashboardActivity.this);
 
-                // 2. Chain together various setter methods to set the dialog characteristics
-                builder.setMessage("Do you want to play with " + params[1] + " ?")
-                        .setTitle("Invited");
+                    // 2. Chain together various setter methods to set the dialog characteristics
+                    builder.setMessage("Do you want to play with " + params[1] + " ?")
+                            .setTitle("Invited");
 
-                builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int id) {
-                        // User clicked OK button
+                    builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int id) {
+                            // User clicked OK button
 
-                        Intent intent = new Intent(DashboardActivity.this, GameActivity.class);
-                        intent.putExtra("playerToPlay", params[1]);
-                        startActivity(intent);
+                            Intent intent = new Intent(DashboardActivity.this, GameActivity.class);
+                            intent.putExtra("playerToPlay", params[1]);
+                            startActivity(intent);
 
                         /*
                         ServerSocket game_socket = new ServerSocket(5009);
@@ -212,21 +279,22 @@ public class DashboardActivity extends Activity {
                         mBoundService.sendMessage(5009);
                         */
 
-                    }
-                });
-                builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int id) {
-                        // User cancelled the dialog
-                        mBoundService.sendMessage(Command.REJECT_INV + " " + params[1]);
-                        handler.post(myRunner);
-                    }
-                });
-                // Set other dialog properties
+                        }
+                    });
+                    builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int id) {
+                            // User cancelled the dialog
+                            mBoundService.sendMessage(Command.REJECT_INV + " " + params[1]);
+                            handler.post(fromServerRunner);
+                        }
+                    });
+                    // Set other dialog properties
 
 
-                // 3. Get the AlertDialog from create()
-                AlertDialog dialog = builder.create();
-                dialog.show();
+                    // 3. Get the AlertDialog from create()
+                    AlertDialog dialog = builder.create();
+                    dialog.show();
+                }
             }
         }
 
@@ -270,7 +338,7 @@ public class DashboardActivity extends Activity {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                handler.post(myRunner);
+                handler.post(fromServerRunner);
             }
         }).start();
     }

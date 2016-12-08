@@ -2,4 +2,5 @@
     <string name="app_name">NerdQuiz</string>
     <string name="no_user_name_default">NoUserName</string>
     <string name="user_name">username</string>
+    <string name="version_dbquestions">version_dbquestions</string>
 </resources>

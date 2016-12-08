@@ -11,8 +11,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Random;
 
-import a21240068.isec.nerdquiz.Database.NerdQuizContract;
-import a21240068.isec.nerdquiz.Database.NerdQuizDBHelper;
+import a21240068.isec.nerdquiz.Objects.DownloadQuestion;
 import a21240068.isec.nerdquiz.Objects.GameQuestion;
 
 
@@ -258,9 +257,13 @@ public class QuestionsData {
         return (newRowId != -1);
     }
 
-    public void updateQuestions()
+    public void updateQuestions(ArrayList<DownloadQuestion> questions, int version)
     {
-        add("httpcode", "What is the HTTP retrieved code when the request was successful?", "200");
+        for(DownloadQuestion question : questions)
+        {
+            add(question.getType(), question.getQuestion(), question.getRanswer());
+        }
+        /*add("httpcode", "What is the HTTP retrieved code when the request was successful?", "200");
         add("httpcode", "What is the HTTP code for not found?", "404");
         add("httpcode", "What is the HTTP code for bad gateway?", "502");
         add("httpcode", "What is the HTTP retrieved code when the request is unauthorized?", "401");
@@ -270,7 +273,8 @@ public class QuestionsData {
         add("langcreator", "Who designed Ruby language?", "Yukihiro Matsumoto");
         add("langcreator", "Who designed C++ language?", "Bjarne Stroustrup");
         add("langcreator", "Who designed Java language?", "James Gosling");
-        add("langcreator", "Who designed Python language?", "Guido van Rossum");
-        Log.d("message", "Introduzido! Agora com " + countQuestions());
+        add("langcreator", "Who designed Python language?", "Guido van Rossum");*/
+
+        Log.d("message", "Introduzido! Agora com " + countQuestions() + ". Na versao " + version);
     }
 }
