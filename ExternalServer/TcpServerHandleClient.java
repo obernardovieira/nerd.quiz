@@ -11,8 +11,7 @@
  * @author bernardovieira
  */
 
-import Objects.DownloadQuestion;
-import Objects.DatabaseQuestions;
+import a21240068.isec.nerdquiz.Objects.DownloadQuestion;
 import amovserver.DatabaseClients;
 import amovserver.Response;
 import java.io.IOException;

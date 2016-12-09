@@ -20,7 +20,7 @@ import java.net.Socket;
  */
 
 public class SocketService extends Service {
-    public static final String SERVERIP = "192.168.1.3"; //your computer IP address should be written here
+    public static final String SERVERIP = "192.168.1.4"; //your computer IP address should be written here
     public static final int SERVERPORT = 5007;
     //PrintWriter out;
     ObjectOutputStream out;

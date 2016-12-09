@@ -1,4 +1,4 @@
-package Objects;
+package a21240068.isec.nerdquiz.Objects;
 
 /*
  * To change this license header, choose License Headers in Project Properties.

@@ -1,4 +1,4 @@
-package Objects;
+
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -7,6 +7,7 @@ package Objects;
  */
 
 
+import a21240068.isec.nerdquiz.Objects.DownloadQuestion;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -77,7 +78,7 @@ public class DatabaseQuestions {
         ResultSet rs = stmt.executeQuery( "SELECT * FROM questions WHERE version > " + min_version);
 
         DownloadQuestion question;
-        if(rs.next())
+        while(rs.next())
         {
             question = new DownloadQuestion(
                 rs.getString("type"),
