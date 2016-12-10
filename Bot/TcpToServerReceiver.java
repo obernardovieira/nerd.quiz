@@ -1,4 +1,6 @@
 
+import a21240068.isec.nerdquiz.Objects.Profile;
+import a21240068.isec.nerdquiz.Objects.GameQuestion;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
@@ -150,9 +152,11 @@ class TcpToServerReceiver implements Runnable
                             //
                             InputStream in = null;
                             OutputStream out = null;
+                            
+                            System.out.println(params[2]);
+                            System.out.println(params[3]);
 
-                            InetAddress address = (InetAddress)oiStream.readObject();
-                            Socket socket = new Socket(address, (Integer)oiStream.readObject());
+                            Socket socket = new Socket(params[2], Integer.parseInt(params[3]));
 
                             in = socket.getInputStream();
                             out = socket.getOutputStream();
@@ -160,9 +164,16 @@ class TcpToServerReceiver implements Runnable
                             ObjectOutputStream oStreamG = new ObjectOutputStream(out);
                             ObjectInputStream iStreamG = new ObjectInputStream(in);
 
-                            ArrayList<GameQuestion> questions = (ArrayList<GameQuestion>)iStreamG.readObject();
-
-                            oStreamG.writeObject(1);
+                            //receber 1 a 1
+                            //GameQuestion nao está na package correta
+                            ArrayList<GameQuestion> questions = new ArrayList<>();
+                                    //(ArrayList<GameQuestion>)iStreamG.readObject();
+                            Integer size = (Integer)iStreamG.readObject();
+                            Integer z = 0;
+                            while(z++ < size)
+                                questions.add((GameQuestion)iStreamG.readObject());
+                                
+                            //oStreamG.writeObject(1);
 
                             System.out.println("game starts");
                         }

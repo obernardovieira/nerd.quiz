@@ -11,6 +11,7 @@
  * @author bernardovieira
  */
 
+import a21240068.isec.nerdquiz.Objects.Profile;
 import a21240068.isec.nerdquiz.Objects.DownloadQuestion;
 import amovserver.DatabaseClients;
 import amovserver.Response;
@@ -232,9 +233,7 @@ public class TcpServerHandleClient implements Runnable {
             if(iooStream != null)
             {
                 //
-                iooStream.writeObject(Command.ACCEPT_INV + " " + params[1]);
-                iooStream.writeObject(oiStream.readObject());//adress
-                iooStream.writeObject(oiStream.readObject());//port
+                iooStream.writeObject(command);
                 iooStream.flush();
             }
             else

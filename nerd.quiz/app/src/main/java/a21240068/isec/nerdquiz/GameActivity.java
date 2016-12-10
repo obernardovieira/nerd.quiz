@@ -5,10 +5,12 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
+import android.text.format.Formatter;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -20,6 +22,7 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
@@ -27,6 +30,7 @@ import java.util.ArrayList;
 
 import a21240068.isec.nerdquiz.Core.Command;
 import a21240068.isec.nerdquiz.Core.SocketService;
+import a21240068.isec.nerdquiz.Objects.DownloadQuestion;
 import a21240068.isec.nerdquiz.Objects.GameQuestion;
 import a21240068.isec.nerdquiz.Database.QuestionsData;
 
@@ -244,16 +248,20 @@ public class GameActivity extends Activity {
                     ServerSocket game_socket = new ServerSocket(5009);
                     game_socket.setSoTimeout(5000);
 
-                    mBoundService.sendMessage(Command.ACCEPT_INV + " " + opponent_name);
-                    mBoundService.sendMessage(game_socket.getInetAddress());
-                    mBoundService.sendMessage(5009);
+                    WifiManager wm = (WifiManager) getSystemService(WIFI_SERVICE);
+                    String ip = Formatter.formatIpAddress(wm.getConnectionInfo().getIpAddress());
+
+                    mBoundService.sendMessage(Command.ACCEPT_INV + " " + opponent_name + " "
+                        + ip + " " + 5009);
 
                     Socket socket = game_socket.accept();
 
                     oostream = new ObjectOutputStream(socket.getOutputStream());
                     oistream = new ObjectInputStream(socket.getInputStream());
 
-                    oostream.writeObject(questions);
+                    oostream.writeObject(questions.size());
+                    for(GameQuestion q : questions)
+                        oostream.writeObject(q);
 
                     handler.post(myRunner);
 
