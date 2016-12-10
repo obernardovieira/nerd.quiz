@@ -12,9 +12,16 @@ public class TcpToServer
 {
     private Socket socket;
     public static ObjectOutputStream ooStream;
+    
+    public static String last_command;
+    public static boolean connected;
+    public static boolean playing;
 
     public TcpToServer(String hostname, int port)
     {
+        connected = false;
+        playing = false;
+        
         try
         {
             this.socket = new Socket(hostname, port);
@@ -32,7 +39,7 @@ public class TcpToServer
             sc = new Scanner(System.in);
             System.out.print("Login:");
             cmd = sc.nextLine();//"login ber obv";//sc.nextLine();
-            
+            last_command = cmd;
             ooStream.writeObject(cmd);
             ooStream.flush();
             
@@ -40,6 +47,7 @@ public class TcpToServer
             {
                 System.out.print("Command:");
                 cmd = sc.nextLine();
+                last_command = cmd;
                 ooStream.writeObject(cmd);
                 ooStream.flush();
                 

@@ -11,6 +11,7 @@ import android.widget.Toast;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.StreamCorruptedException;
 import java.net.InetAddress;
 import java.net.Socket;
 
@@ -19,7 +20,7 @@ import java.net.Socket;
  */
 
 public class SocketService extends Service {
-    public static final String SERVERIP = "192.168.1.4"; //your computer IP address should be written here
+    public static final String SERVERIP = "192.168.1.7"; //your computer IP address should be written here
     public static final int SERVERPORT = 5007;
     //PrintWriter out;
     ObjectOutputStream out;
@@ -87,7 +88,15 @@ public class SocketService extends Service {
                         out.writeObject(object);
                         out.flush();
                         Log.d("sendMessage","ENVIADO!");
-                    } catch (IOException e) {
+                        if(object instanceof String)
+                            Log.d("sendMessage", (String) object);
+                    }
+                    catch(StreamCorruptedException e)
+                    {
+                        Log.d("erro", "StreamCorruptedException");
+                        e.printStackTrace();
+                    }
+                    catch (IOException e) {
                         e.printStackTrace();
                     }
                 }

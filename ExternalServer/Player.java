@@ -1,6 +1,7 @@
 
 
 
+import a21240068.isec.nerdquiz.Objects.Profile;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 

@@ -1,12 +1,12 @@
 
 
+import amovserver.DatabaseClients;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.List;
-import paservidor.Database;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -26,7 +26,7 @@ public class TcpServer
     public TcpServer(int port)
     {
         initServerSocket(port);
-        Database database = new Database();
+        DatabaseClients database = new DatabaseClients();
         players = new ArrayList<>();
         try
         {

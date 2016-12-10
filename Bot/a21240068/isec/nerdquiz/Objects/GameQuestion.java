@@ -1,3 +1,5 @@
+package a21240068.isec.nerdquiz.Objects;
+
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -14,6 +16,8 @@ import java.util.ArrayList;
  */
 public class GameQuestion implements Serializable
 {
+    static final long serialVersionUID = 42L;
+    
     private String question;
     private String r_answer;
     private ArrayList<String> answers;
