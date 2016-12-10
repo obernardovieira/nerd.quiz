@@ -54,6 +54,7 @@ public class GameActivity extends Activity {
     private Handler                 handler;
     private Runnable                myRunner;
 
+    Socket                          player_socket;
     ObjectOutputStream              oostream;
     ObjectInputStream               oistream;
 
@@ -195,7 +196,22 @@ public class GameActivity extends Activity {
         protected String doInBackground(Void... params)
         {
             String response = "";
+            Log.d("reveice", "doInBackground");
+            try {
+                while (cancelledFlag == false) {
+                    //Log.d("ReceiveFromServerTask", String.valueOf(mBoundService.socket.getInputStream().available()));
+                    if (player_socket.getInputStream().available() > 4) {
+                        response = (String) oistream.readObject();
+                        Log.d("reveice", response);
+                        break;
+                    }
 
+                }
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
             Log.d("ReceiveFromServerTask","b");
 
             return response;
@@ -203,7 +219,11 @@ public class GameActivity extends Activity {
 
         protected void onPostExecute(String result) {
             Log.d("onPostExecute",result);
-
+            if(result.equals(Command.NEXT_QUEST))
+            {
+                showNewQuestion();
+                Log.d("reveice", "playerer");
+            }
         }
 
         @Override
@@ -212,7 +232,6 @@ public class GameActivity extends Activity {
             Log.i("AsyncTask", "Cancelled.");
         }
     }
-
 
     @Override
     protected void onResume() {
@@ -254,16 +273,16 @@ public class GameActivity extends Activity {
                     mBoundService.sendMessage(Command.ACCEPT_INV + " " + opponent_name + " "
                         + ip + " " + 5009);
 
-                    Socket socket = game_socket.accept();
+                    player_socket = game_socket.accept();
 
-                    oostream = new ObjectOutputStream(socket.getOutputStream());
-                    oistream = new ObjectInputStream(socket.getInputStream());
+                    oostream = new ObjectOutputStream(player_socket.getOutputStream());
+                    oistream = new ObjectInputStream(player_socket.getInputStream());
+
+                    handler.post(myRunner);
 
                     oostream.writeObject(questions.size());
                     for(GameQuestion q : questions)
                         oostream.writeObject(q);
-
-                    handler.post(myRunner);
 
                 } catch (SocketException e) {
                     e.printStackTrace();
@@ -280,7 +299,6 @@ public class GameActivity extends Activity {
 
         doUnbindService();
     }
-
 
     private ServiceConnection mConnection = new ServiceConnection() {
         //EDITED PART
@@ -299,7 +317,6 @@ public class GameActivity extends Activity {
 
     };
 
-
     private void doBindService() {
         bindService(new Intent(GameActivity.this, SocketService.class), mConnection, Context.BIND_AUTO_CREATE);
         mIsBound = true;
@@ -308,7 +325,6 @@ public class GameActivity extends Activity {
         }
         Log.d("SocketService", "doBindService");
     }
-
 
     private void doUnbindService() {
         if (mIsBound) {

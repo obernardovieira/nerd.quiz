@@ -38,6 +38,7 @@ class Command
     public static String    ANSWER      = "answer";
     public static String    REJECT_INV  = "reject";
     public static String    ACCEPT_INV  = "accept";
+    public static String    NEXT_QUEST  = "next_quest";
 }
 
 class Response
@@ -173,7 +174,8 @@ class TcpToServerReceiver implements Runnable
                             while(z++ < size)
                                 questions.add((GameQuestion)iStreamG.readObject());
                                 
-                            //oStreamG.writeObject(1);
+                            oStreamG.writeObject(Command.NEXT_QUEST);
+                            oStreamG.flush();
 
                             System.out.println("game starts");
                         }
