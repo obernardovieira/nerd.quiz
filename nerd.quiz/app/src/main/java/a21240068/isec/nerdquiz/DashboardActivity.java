@@ -79,6 +79,7 @@ public class DashboardActivity extends Activity {
 
         handler = new Handler();
 
+        first_attempt = true;
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -98,7 +99,7 @@ public class DashboardActivity extends Activity {
                         e.printStackTrace();
                     }
                 }
-                first_attempt = true;
+
                 mBoundService.sendMessage(Command.AUTO_LOGIN + " " + application.getUsername());
                 /*try {
                     in = new ObjectInputStream(mBoundService.socket.getInputStream());
@@ -187,18 +188,13 @@ public class DashboardActivity extends Activity {
 
     private class ReceiveFromServerTask extends AsyncTask<Void, Void, String>
     {
-        private boolean cancelledFlag;
-        public ReceiveFromServerTask()
-        {
-            cancelledFlag = false;
-        }
-
         protected String doInBackground(Void... params)
         {
             String response = "";
+            Log.d("doInBackground(DBA)", "started");
             try
             {
-                while(!cancelledFlag)
+                while(!isCancelled())
                 {
                     //Log.d("ReceiveFromServerTask", String.valueOf(mBoundService.socket.getInputStream().available()));
                     if(mBoundService.socket.getInputStream().available() > 4)
@@ -271,7 +267,7 @@ public class DashboardActivity extends Activity {
         }
 
         protected void onPostExecute(String result) {
-            Log.d("onPostExecute",result);
+            Log.d("onPostExecute(DBA)",result);
 
             if(update_db_task == true)
             {
@@ -332,10 +328,9 @@ public class DashboardActivity extends Activity {
             }
         }
 
-        public void fuckingStop()
+        public void onCancelled()
         {
-            cancelledFlag = true;
-            Log.d("fuckingStop", "Cancelled.");
+            Log.d("fuckingStop(DBA)", "Cancelled.");
         }
 
     }
@@ -347,10 +342,7 @@ public class DashboardActivity extends Activity {
 
         doBindService();
 
-        if(first_attempt == true) {
-            first_attempt = false;
-        }
-        else {
+        if(first_attempt == false) {
             new Thread(new Runnable() {
                 @Override
                 public void run() {
@@ -373,6 +365,9 @@ public class DashboardActivity extends Activity {
                 }
             }).start();
         }
+        else {
+            first_attempt = false;
+        }
     }
 
     @Override
@@ -382,7 +377,6 @@ public class DashboardActivity extends Activity {
         doUnbindService();
 
         fromServerTask.cancel(true);
-        fromServerTask.fuckingStop();
     }
 
 

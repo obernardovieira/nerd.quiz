@@ -198,6 +198,7 @@ public class TcpServerHandleClient implements Runnable {
                     ObjectOutputStream iooStream = p.getOoStream();
                     iooStream.writeObject(Command.INVITED + " " + player.getName());
                     iooStream.flush();
+                    break;
                 }
             }
         }

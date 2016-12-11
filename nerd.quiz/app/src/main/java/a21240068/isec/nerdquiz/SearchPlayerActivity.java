@@ -29,6 +29,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.util.ArrayList;
+import java.util.Iterator;
 
 import a21240068.isec.nerdquiz.Core.Command;
 import a21240068.isec.nerdquiz.Core.NerdQuizApp;
@@ -86,7 +87,6 @@ public class SearchPlayerActivity extends Activity {
         }
     }
 
-
     private String saveToInternalStorage(Bitmap bitmapImage)
     {
         ContextWrapper  cw          = new ContextWrapper(getApplicationContext());
@@ -141,6 +141,18 @@ public class SearchPlayerActivity extends Activity {
     public void removePlayerFromView(String name)
     {
         //
+        Iterator it = players_profile.iterator();
+        Profile p;
+        while(it.hasNext())
+        {
+            p = (Profile)it.next();
+
+            if(p.getName().equals(name))
+            {
+                players_profile.remove(p);
+                break;
+            }
+        }
     }
 
     class MyAdapter extends BaseAdapter implements ListAdapter {
@@ -208,7 +220,7 @@ public class SearchPlayerActivity extends Activity {
         }
 
         protected void onPostExecute(String result) {
-            Log.d("onPostExecute",result);
+            Log.d("onPostExecute(SPA)",result);
 
             String [] params = result.split(" ");
             if(result.startsWith(Command.JOINED))
@@ -229,7 +241,7 @@ public class SearchPlayerActivity extends Activity {
         public void fuckingStop()
         {
             cancelledFlag = true;
-            Log.d("fuckingStop", "Cancelled.");
+            Log.d("fuckingStop(SPA)", "Cancelled.");
         }
     }
 
