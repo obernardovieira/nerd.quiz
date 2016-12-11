@@ -8,10 +8,12 @@ public class Command {
     public static String REGISTER           = "register";
     public static String LOGIN              = "login";
     public static String INVITED            = "beinvited";
-    public static String PLAY               = "play";
     public static String AUTO_LOGIN         = "autologin";
     public static String REJECT_INV         = "reject";
     public static String ACCEPT_INV         = "accept";
     public static String UPDATE_DB          = "updatedb";
     public static String NEXT_QUEST         = "next_quest";
+
+    public static String JOINED             = "joined";
+    public static String LEAVED             = "leaved";
 }

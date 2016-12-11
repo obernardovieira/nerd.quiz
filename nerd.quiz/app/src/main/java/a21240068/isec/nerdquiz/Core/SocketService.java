@@ -24,7 +24,8 @@ public class SocketService extends Service {
     public static final int SERVERPORT = 5007;
     //PrintWriter out;
     ObjectOutputStream out;
-    //ObjectInputStream in;
+    ObjectInputStream in;
+    //
     public Socket socket;
     InetAddress serverAddr;
 
@@ -70,6 +71,11 @@ public class SocketService extends Service {
 
     public void IsBoundable(Context context){
         Toast.makeText(context,"I bind like butter", Toast.LENGTH_LONG).show();
+    }
+
+    public ObjectInputStream getStreamIn()
+    {
+        return in;
     }
 
     public void sendMessage(final Object object) {
@@ -139,10 +145,9 @@ public class SocketService extends Service {
 
                     //send the message to the server
                     //out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(socket.getOutputStream())), true);
-
                     Log.d("TCP Client", "Opening streams.");
                     out = new ObjectOutputStream(socket.getOutputStream());
-                    //in = new ObjectInputStream(socket.getInputStream());
+                    in = new ObjectInputStream(socket.getInputStream());
                     //out.writeObject("Ola");
 
                     Log.d("TCP Client", "C: Sent.");

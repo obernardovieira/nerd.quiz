@@ -221,7 +221,14 @@ public class GameActivity extends Activity {
             Log.d("onPostExecute",result);
             if(result.equals(Command.NEXT_QUEST))
             {
+
+                //iniciou jogo
+
                 showNewQuestion();
+
+
+
+
                 Log.d("reveice", "playerer");
             }
         }

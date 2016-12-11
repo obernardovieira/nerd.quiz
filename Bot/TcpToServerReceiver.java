@@ -92,6 +92,9 @@ class TcpToServerReceiver implements Runnable
         {
             if(TcpToServer.last_command.startsWith(Command.LOGIN))
             {
+                if(!(obj instanceof Integer))
+                    return;
+                
                 Integer response = (Integer)obj;
                 if(response.equals(Response.OK))
                 {

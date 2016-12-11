@@ -52,6 +52,9 @@ class Command
     public static String    REJECT_INV  = "reject";
     public static String    ACCEPT_INV  = "accept";
     public static String    UPDATE_DB   = "updatedb";
+    
+    public static String    JOINED      = "joined";
+    public static String    LEAVED      = "leaved";
 }
 
 public class TcpServerHandleClient implements Runnable {
@@ -130,10 +133,6 @@ public class TcpServerHandleClient implements Runnable {
         {
             //search for a name
         }
-        else if(command.startsWith(Command.PLAY))
-        {
-            player.setConnected(true);
-        }
         else if(command.startsWith(Command.AUTO_LOGIN))
         {
             String [] params = command.split(" ");
@@ -145,6 +144,7 @@ public class TcpServerHandleClient implements Runnable {
             {
                 player.setName(params[1]);
                 player.setConnected(true);
+                TcpServer.notifyAllPlayers(Command.JOINED + " " + params[1]);
             }
         }
         else if(command.startsWith(Command.LOGIN))
@@ -156,6 +156,7 @@ public class TcpServerHandleClient implements Runnable {
             {
                 player.setName(params[1]);
                 player.setConnected(true);
+                TcpServer.notifyAllPlayers(Command.JOINED + " " + params[1]);
             }
             ooStream.writeObject(response);
             ooStream.flush();

@@ -1,30 +1,52 @@
 package a21240068.isec.nerdquiz;
 
 import android.app.Activity;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.Intent;
+import android.content.ServiceConnection;
+import android.database.DataSetObserver;
 import android.graphics.Bitmap;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.IBinder;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
+import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.util.ArrayList;
 
+import a21240068.isec.nerdquiz.Core.Command;
+import a21240068.isec.nerdquiz.Core.NerdQuizApp;
+import a21240068.isec.nerdquiz.Core.SocketService;
 import a21240068.isec.nerdquiz.Objects.Profile;
 
 public class SearchPlayerActivity extends Activity {
 
+    private MyAdapter adapter;
     ArrayList<Profile> players_profile;
     Handler mainHandler;
+    private boolean mIsBound;
+    private SocketService mBoundService;
+
+    private Runnable fromServerRunner;
+
+    ObjectInputStream in;
+    private ReceiveFromServerTask fromServerTask;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,6 +57,13 @@ public class SearchPlayerActivity extends Activity {
         players_profile = new ArrayList<>();
         getConnectedPlayers();
         updatePlayersList();
+
+        fromServerRunner = new Runnable(){
+            public void run() {
+                fromServerTask = new ReceiveFromServerTask();
+                fromServerTask.execute();
+            }
+        };
     }
 
     public void getConnectedPlayers()
@@ -46,10 +75,10 @@ public class SearchPlayerActivity extends Activity {
     {
         if(search_for_name.equals("a21240068.isec.nerdquiz"))
         {
-            players_profile.add(new Profile("User1", "user"));
+            /*players_profile.add(new Profile("User1", "user"));
             players_profile.add(new Profile("User2", "user"));
             players_profile.add(new Profile("User3", "user"));
-            players_profile.add(new Profile("User4", "user"));
+            players_profile.add(new Profile("User4", "user"));*/
         }
         else
         {
@@ -84,7 +113,8 @@ public class SearchPlayerActivity extends Activity {
     public void updatePlayersList()
     {
         ListView lv = (ListView) findViewById(R.id.lv_players);
-        lv.setAdapter(new MyAdapter());
+        adapter = new MyAdapter();
+        lv.setAdapter(adapter);
 
         lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -101,7 +131,19 @@ public class SearchPlayerActivity extends Activity {
         getActionBar().setDisplayHomeAsUpEnabled(true);
     }
 
-    class MyAdapter extends BaseAdapter {
+    public void addPlayerToView(String name)
+    {
+        //
+        players_profile.add(new Profile(name, ""));
+        adapter.notifyDataSetChanged();
+    }
+
+    public void removePlayerFromView(String name)
+    {
+        //
+    }
+
+    class MyAdapter extends BaseAdapter implements ListAdapter {
 
         @Override
         public int getCount() {
@@ -135,4 +177,145 @@ public class SearchPlayerActivity extends Activity {
         }
     }
 
+    private class ReceiveFromServerTask extends AsyncTask<Void, Void, String>
+    {
+        private boolean cancelledFlag;
+        public ReceiveFromServerTask()
+        {
+            cancelledFlag = false;
+        }
+
+        protected String doInBackground(Void... params)
+        {
+            String response = "";
+
+            try {
+                while (cancelledFlag == false) {
+                    //Log.d("ReceiveFromServerTask", String.valueOf(mBoundService.socket.getInputStream().available()));
+                    if (mBoundService.socket.getInputStream().available() > 4) {
+                        //
+                        response = (String) in.readObject();
+                        break;
+                    }
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            }
+            Log.d("ReceiveFromServerTask","b");
+            return response;
+        }
+
+        protected void onPostExecute(String result) {
+            Log.d("onPostExecute",result);
+
+            String [] params = result.split(" ");
+            if(result.startsWith(Command.JOINED))
+            {
+                //
+                Toast.makeText(SearchPlayerActivity.this, params[1] + " joined the game!", Toast.LENGTH_LONG).show();
+                addPlayerToView(params[1]);
+            }
+            else if(result.startsWith(Command.LEAVED))
+            {
+                //
+                Toast.makeText(SearchPlayerActivity.this, params[1] + " leaved the game!", Toast.LENGTH_LONG).show();
+                removePlayerFromView(params[1]);
+            }
+            mainHandler.post(fromServerRunner);
+        }
+
+        public void fuckingStop()
+        {
+            cancelledFlag = true;
+            Log.d("fuckingStop", "Cancelled.");
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+
+        doBindService();
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while(mBoundService == null)
+                {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+                while(mBoundService.socket == null)
+                {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+                /*try {
+                    in = new ObjectInputStream(mBoundService.socket.getInputStream());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }*/
+                in = mBoundService.getStreamIn();
+                mainHandler.post(fromServerRunner);
+            }
+        }).start();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+
+        doUnbindService();
+
+        fromServerTask.cancel(true);
+        fromServerTask.fuckingStop();
+    }
+
+
+    private ServiceConnection mConnection = new ServiceConnection() {
+        //EDITED PART
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            // TODO Auto-generated method stub
+            mBoundService = ((SocketService.LocalBinder)service).getService();
+
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            // TODO Auto-generated method stub
+            mBoundService = null;
+        }
+
+    };
+
+
+    private void doBindService() {
+        bindService(new Intent(SearchPlayerActivity.this, SocketService.class), mConnection, Context.BIND_AUTO_CREATE);
+        mIsBound = true;
+        if(mBoundService!=null){
+            mBoundService.IsBoundable(this);
+        }
+        Log.d("SocketService", "doBindService");
+    }
+
+
+    private void doUnbindService() {
+        if (mIsBound) {
+            // Detach our existing connection.
+            unbindService(mConnection);
+            mIsBound = false;
+        }
+        Log.d("SocketService", "doUnbindService");
+    }
 }
