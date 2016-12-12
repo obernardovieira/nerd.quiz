@@ -93,10 +93,7 @@ public class NewGameActivity extends Activity {
 
     public void clickPlayGameButton(View view)
     {
-        Intent intent = new Intent(this, GameActivity.class);
-        startActivity(intent);
 
-        finish();
     }
 
     private void invitePlayer(String username)
@@ -125,8 +122,12 @@ public class NewGameActivity extends Activity {
             Toast.makeText(NewGameActivity.this, params[1] +
                     " accepted your invitation!", Toast.LENGTH_LONG).show();
 
-            Button play = (Button)findViewById(R.id.bt_play);
-            play.setEnabled(true);
+            Intent intent = new Intent(this, GameActivity.class);
+            intent.putExtra("playerToPlay", params[1]);
+            intent.putExtra("isInviting", true);
+            startActivity(intent);
+
+            finish();
         }
         else if(answer.startsWith(Command.REJECT_INV))
         {
