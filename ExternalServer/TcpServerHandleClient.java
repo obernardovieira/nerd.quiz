@@ -15,8 +15,15 @@ import a21240068.isec.nerdquiz.Objects.Profile;
 import a21240068.isec.nerdquiz.Objects.DownloadQuestion;
 import amovserver.DatabaseClients;
 import amovserver.Response;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
@@ -55,6 +62,9 @@ class Command
     
     public static String    JOINED      = "joined";
     public static String    LEAVED      = "leaved";
+    
+    public static String    PROFILE_PIC_UP     = "profilepup";
+    public static String    PRFILE_PIC_DOWN    = "profilepdown";
 }
 
 public class TcpServerHandleClient implements Runnable {
@@ -96,13 +106,11 @@ public class TcpServerHandleClient implements Runnable {
             
             oiStream.close();
         }
-        catch (IOException | ClassNotFoundException ex)
-        {
-            System.out.println("O cliente desligou-se!");
-        }
         catch (SQLException ex)
         {
             System.out.println("Erro na base de dados!");
+        } catch (IOException | ClassNotFoundException ex) {
+            Logger.getLogger(TcpServerHandleClient.class.getName()).log(Level.SEVERE, null, ex);
         }
         finally
         {
@@ -128,6 +136,31 @@ public class TcpServerHandleClient implements Runnable {
             ooStream.writeObject(Command.SEARCH);
             ooStream.writeObject(profiles);
             ooStream.flush();
+        }
+        else if(command.equals(Command.PROFILE_PIC_UP))
+        {
+            //
+            System.out.println("ppp");
+            Integer size = (Integer)oiStream.readObject();
+            Integer received = 0;
+            BufferedInputStream in = new BufferedInputStream(
+                player.getSocket().getInputStream());
+            
+            OutputStream out = new FileOutputStream("recv.jpg");
+            System.out.println("receiving file");
+            
+            byte[] buf = new byte[8192];
+            int len = 0;
+            while ((len = in.read(buf)) != -1) {
+                out.write(buf, 0, len);
+                if(received + len == size)
+                    break;
+                else
+                    received += len;
+            }
+            
+            System.out.println("received");
+            out.close();
         }
         else if(command.startsWith(Command.SEARCH))
         {

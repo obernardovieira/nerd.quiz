@@ -8,9 +8,14 @@ import android.os.IBinder;
 import android.util.Log;
 import android.widget.Toast;
 
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.io.StreamCorruptedException;
 import java.net.InetAddress;
 import java.net.Socket;
@@ -113,6 +118,52 @@ public class SocketService extends Service {
             }
         }).start();
     }
+
+    public void sendFile(final String path) {
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                if(out != null)
+                {
+
+                    try {
+
+                        Log.d("uploadPhoto","uploading");
+                        out.writeObject(Command.PROFILE_PIC_UP);
+                        out.flush();
+                        Log.d("uploadPhoto","uploading");
+
+                        InputStream in = new FileInputStream(path);
+                        out.writeObject(in.available());
+                        out.flush();
+                        OutputStream out = socket.getOutputStream();
+
+                        byte[] buf = new byte[8192];
+                        int len = 0;
+                        while ((len = in.read(buf)) != -1) {
+                            out.write(buf, 0, len);
+                            out.flush();
+                        }
+
+                        in.close();
+                        //out.close();
+
+                        Log.d("uploadPhoto","uploaded");
+                    }
+                    catch(IOException e)
+                    {
+                        e.printStackTrace();
+                    }
+                }
+                else
+                {
+                    Log.d("sendMessage","Erro");
+                }
+            }
+        }).start();
+    }
+
 
     @Override
     public int onStartCommand(Intent intent,int flags, int startId){

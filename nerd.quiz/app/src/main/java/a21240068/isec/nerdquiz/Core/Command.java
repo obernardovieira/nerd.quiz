@@ -17,4 +17,7 @@ public class Command {
 
     public static String JOINED             = "joined";
     public static String LEAVED             = "leaved";
+
+    public static String PROFILE_PIC_UP     = "profilepup";
+    public static String PRFILE_PIC_DOWN    = "profilepdown";
 }

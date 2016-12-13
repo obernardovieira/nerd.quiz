@@ -2,6 +2,7 @@ package a21240068.isec.nerdquiz;
 
 import android.app.Activity;
 import android.content.ComponentName;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
@@ -16,8 +17,14 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 
 import a21240068.isec.nerdquiz.Core.Command;
 import a21240068.isec.nerdquiz.Core.NerdQuizApp;
@@ -38,27 +45,17 @@ public class RegisterActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_register);
 
-        selectedImageUri = null;
+        selectedImageUri = Uri.fromFile(new File("/mnt/sdcard/bluetooth/IMG_20160902_224532.JPG"));
+        ((ImageView) findViewById(R.id.iv_profile_pic)).setImageURI(selectedImageUri);
         nerdQuizApp = (NerdQuizApp)getApplication();
-
-
-        mBoundService = null;
     }
 
     public void changeProfilePhoto(View view)
     {
-        try
-        {
-            Intent gintent = new Intent();
-            gintent.setType("image/*");
-            gintent.setAction(Intent.ACTION_GET_CONTENT);
-            startActivityForResult(Intent.createChooser(gintent, "Select Picture"), PICK_IMAGE);
-        }
-        catch (Exception e)
-        {
-            Toast.makeText(getApplicationContext(), e.getMessage(), Toast.LENGTH_LONG).show();
-            Log.e(e.getClass().getName(), e.getMessage(), e);
-        }
+        Intent gintent = new Intent();
+        gintent.setType("image/*");
+        gintent.setAction(Intent.ACTION_GET_CONTENT);
+        startActivityForResult(Intent.createChooser(gintent, "Select Picture"), PICK_IMAGE);
     }
 
     public void clickRegisterButton(View view)
@@ -66,12 +63,56 @@ public class RegisterActivity extends Activity {
         EditText et_username = (EditText)findViewById(R.id.et_username);
         EditText et_password = (EditText)findViewById(R.id.et_password);
 
-        registerOnServer(et_username.getText().toString(), et_password.getText().toString());
+        if (selectedImageUri != null)
+        {
+            registerOnServer(et_username.getText().toString(), et_password.getText().toString());
+        }
     }
 
     public void registerOnServer(String username, String password)
     {
-        mBoundService.sendMessage(Command.REGISTER + " " + username + " " + password);
+        Log.d("fick", "me");
+        uploadPhoto();
+    }
+
+    public void uploadPhoto()
+    {
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+
+
+
+                    /*int count;
+                    byte[] buffer = new byte[1024];
+
+                    OutputStream out = mBoundService.socket.getOutputStream();
+                    InputStream in = new FileInputStream(new File("/mnt/sdcard/bluetooth/IMG_20160902_224532.JPG"));
+                    //getContentResolver().openInputStream(selectedImageUri);
+                    //BufferedInputStream in = new BufferedInputStream(new FileInputStream(myFile));
+
+                    Log.d("uploadPhoto","uploading");
+
+                    ObjectOutputStream oout = new ObjectOutputStream(out);
+                    oout.writeObject(Command.PROFILE_PIC_UP);
+                    oout.flush();
+
+                    Log.d("uploadPhoto","uploading");
+                    while ((count = in.read(buffer)) > 0) {
+                        out.write(buffer, 0, count);
+                        out.flush();
+                    }
+                    Log.d("uploadPhoto","uploaded");*/
+
+
+                    mBoundService.sendFile("/mnt/sdcard/bluetooth/IMG_20160902_224532.JPG");
+
+
+
+
+            }
+        }).start();
     }
 
     public void clickRegisteredText(View view)
@@ -98,83 +139,12 @@ public class RegisterActivity extends Activity {
         }
     }
 
-    private class ReceiveFromServerTask extends AsyncTask<Void, Void, String>
-    {
-        protected String doInBackground(Void... params)
-        {
-            Integer response = Response.ERROR;
-            try
-            {
-                ObjectInputStream in;
-                in = new ObjectInputStream(mBoundService.socket.getInputStream());
-                while(!isCancelled())
-                {
-                    if(in.available() > 0)
-                    {
-                        response = (Integer)in.readObject();
-                        break;
-                    }
-                }
-                in.close();
-            }
-            catch (IOException e)
-            {
-                e.printStackTrace();
-            }
-            catch (ClassNotFoundException e)
-            {
-                e.printStackTrace();
-            }
-            return response.toString();
-        }
-
-        protected void onPostExecute(String result) {
-            Integer response = Integer.parseInt(result);
-            Log.d("onPostExecute",result);
-            if(response == Response.OK)
-            {
-                Toast.makeText(RegisterActivity.this, "You are registered now!", Toast.LENGTH_LONG).show();
-                Intent intent = new Intent(RegisterActivity.this, AuthenticationActivity.class);
-                startActivity(intent);
-                finish();
-            }
-            else if(response == Response.ERROR)
-            {
-                Toast.makeText(RegisterActivity.this, "An error occurred while registering!", Toast.LENGTH_LONG).show();
-            }
-        }
-    }
-
     @Override
     protected void onResume() {
         super.onResume();
 
 
         doBindService();
-
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while(mBoundService == null)
-                {
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-                while(mBoundService.socket == null)
-                {
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-                new ReceiveFromServerTask().execute();
-            }
-        }).start();
-
     }
 
     @Override
