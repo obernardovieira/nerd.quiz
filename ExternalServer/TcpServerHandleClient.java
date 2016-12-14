@@ -146,7 +146,7 @@ public class TcpServerHandleClient implements Runnable {
             BufferedInputStream in = new BufferedInputStream(
                 player.getSocket().getInputStream());
             
-            OutputStream out = new FileOutputStream("recv.jpg");
+            OutputStream out = new FileOutputStream(player.getName() + ".jpg");
             System.out.println("receiving file");
             
             byte[] buf = new byte[8192];

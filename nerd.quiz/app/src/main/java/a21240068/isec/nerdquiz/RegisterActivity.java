@@ -33,7 +33,8 @@ import a21240068.isec.nerdquiz.Core.SocketService;
 
 public class RegisterActivity extends Activity {
 
-    private static final int PICK_IMAGE = 1;
+    private final int TAKE_NEW_PHOTO = 0;
+
     private Uri selectedImageUri;
     NerdQuizApp nerdQuizApp;
 
@@ -45,17 +46,12 @@ public class RegisterActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_register);
 
-        selectedImageUri = Uri.fromFile(new File("/mnt/sdcard/bluetooth/IMG_20160902_224532.JPG"));
-        ((ImageView) findViewById(R.id.iv_profile_pic)).setImageURI(selectedImageUri);
         nerdQuizApp = (NerdQuizApp)getApplication();
     }
 
     public void changeProfilePhoto(View view)
     {
-        Intent gintent = new Intent();
-        gintent.setType("image/*");
-        gintent.setAction(Intent.ACTION_GET_CONTENT);
-        startActivityForResult(Intent.createChooser(gintent, "Select Picture"), PICK_IMAGE);
+        startActivityForResult(new Intent(this, TakePhotoActivity.class), TAKE_NEW_PHOTO);
     }
 
     public void clickRegisterButton(View view)
@@ -106,7 +102,7 @@ public class RegisterActivity extends Activity {
                     Log.d("uploadPhoto","uploaded");*/
 
 
-                    mBoundService.sendFile("/mnt/sdcard/bluetooth/IMG_20160902_224532.JPG");
+                    mBoundService.sendFile(new File(getApplicationContext().getFilesDir(), "picture.jpg"));
 
 
 
@@ -127,13 +123,11 @@ public class RegisterActivity extends Activity {
     {
         switch (requestCode)
         {
-            case PICK_IMAGE:
+            case TAKE_NEW_PHOTO:
                 if (resultCode == Activity.RESULT_OK)
                 {
-                    ImageView iv_profile_pic = (ImageView) findViewById(R.id.iv_profile_pic);
-                    selectedImageUri = data.getData();
-                    iv_profile_pic.setImageURI(selectedImageUri);
-                    Log.d("Uri", data.getData().toString());
+                    selectedImageUri = Uri.fromFile(new File(getApplicationContext().getFilesDir(), "picture.jpg"));
+                    ((ImageView) findViewById(R.id.iv_profile_pic)).setImageURI(selectedImageUri);
                 }
                 break;
         }

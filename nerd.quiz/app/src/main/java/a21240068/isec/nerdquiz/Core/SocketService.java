@@ -119,7 +119,7 @@ public class SocketService extends Service {
         }).start();
     }
 
-    public void sendFile(final String path) {
+    public void sendFile(final File file) {
 
         new Thread(new Runnable() {
             @Override
@@ -134,7 +134,7 @@ public class SocketService extends Service {
                         out.flush();
                         Log.d("uploadPhoto","uploading");
 
-                        InputStream in = new FileInputStream(path);
+                        InputStream in = new FileInputStream(file);
                         out.writeObject(in.available());
                         out.flush();
                         OutputStream out = socket.getOutputStream();
