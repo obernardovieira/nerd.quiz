@@ -135,6 +135,10 @@ public class NewGameActivity extends Activity {
             Toast.makeText(NewGameActivity.this, params[1] +
                     " rejected your invitation!", Toast.LENGTH_LONG).show();
         }
+        else if(answer.startsWith(Command.INVITED))
+        {
+            //what if being invited meanwhile?
+        }
     }
 
     @Override
@@ -174,10 +178,10 @@ public class NewGameActivity extends Activity {
                             //in.close();
                             break;
                         }
-                        else if(obj instanceof Integer)
+                        /*else if(obj instanceof Integer)
                         {
                             Log.d("mqsqdsf",String.valueOf((Integer)obj));
-                        }
+                        }*/
                     }
                 }
             }

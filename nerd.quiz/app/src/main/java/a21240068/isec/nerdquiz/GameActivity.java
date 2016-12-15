@@ -14,6 +14,7 @@ import android.text.format.Formatter;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
@@ -26,6 +27,7 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 
 import a21240068.isec.nerdquiz.Core.Command;
@@ -58,6 +60,8 @@ public class GameActivity extends Activity {
     Socket                          player_socket;
     ObjectOutputStream              oostream;
     ObjectInputStream               oistream;
+
+    private boolean                 theOtherAnswered;
 
     private boolean mIsBound;
     private SocketService mBoundService;
@@ -96,7 +100,7 @@ public class GameActivity extends Activity {
             else
             {
                 opponent_name = extras.getString("playerToPlay");
-                isInviting = extras.getBoolean("isInvited", false);
+                isInviting = extras.getBoolean("isInviting");
             }
         }
         /*else
@@ -162,7 +166,28 @@ public class GameActivity extends Activity {
         bt_answer_two   .setText(answers.get(1));
         bt_answer_three .setText(answers.get(2));
         //
+        theOtherAnswered = false;
         startCountdown();
+    }
+
+    public void gameStart()
+    {
+        //
+        /*TextView tv_wait = (TextView)findViewById(R.id.tv_wait);
+
+        for(int i = 3; i > 0; i--)
+        {
+            tv_wait.setText(String.valueOf(i));
+            try { Thread.sleep(1000); } catch (InterruptedException e) { }
+        }
+
+        LinearLayout layout_game = (LinearLayout)findViewById(R.id.layout_game);
+        LinearLayout layout_wait = (LinearLayout)findViewById(R.id.layout_wait);
+
+        layout_wait.setVisibility(View.GONE);
+        layout_game.setVisibility(View.VISIBLE);*/
+
+        showNewQuestion();
     }
 
     public void finishQuiz()
@@ -179,33 +204,65 @@ public class GameActivity extends Activity {
     public void clickAnswerButton(View view)
     {
         Button btn = (Button) view.findViewById(view.getId());
-        if(btn.getText().equals(questions.get(in_question).getRightAnswer()))
-            answered_right ++;
 
-        if(++in_question < total_questions_per_round)
-            showNewQuestion();
+        if(btn.getText().equals(questions.get(in_question).getRightAnswer()))
+        {
+            answered_right ++;
+        }
+
+        if(theOtherAnswered == true)
+        {
+            //
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        oostream.writeObject(Command.NEXT_QUEST);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }).start();
+            //next question
+            if (++in_question < total_questions_per_round)
+                showNewQuestion();
+            else
+                finishQuiz();
+        }
         else
-            finishQuiz();
+        {
+            //
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        oostream.writeObject(Command.OTHER_ANSWERED);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }).start();
+            //command telling that answered
+        }
+
+
     }
 
     private class ReceiveFromPlayerTask extends AsyncTask<Void, Void, String>
     {
-        private boolean cancelledFlag;
-        public ReceiveFromPlayerTask()
-        {
-            cancelledFlag = false;
-        }
-
-        protected String doInBackground(Void... params)
+        protected String doInBackground(Void... pms)
         {
             String response = "";
             Log.d("reveice", "doInBackground");
             try {
-                while (cancelledFlag == false) {
+                while (isCancelled()) {
                     //Log.d("ReceiveFromServerTask", String.valueOf(mBoundService.socket.getInputStream().available()));
                     if (player_socket.getInputStream().available() > 4) {
                         response = (String) oistream.readObject();
                         Log.d("reveice", response);
+
+
+
                         break;
                     }
 
@@ -222,23 +279,118 @@ public class GameActivity extends Activity {
 
         protected void onPostExecute(String result) {
             Log.d("onPostExecute",result);
-            if(result.equals(Command.NEXT_QUEST))
+
+            //iniciou jogo
+            if(result.equals(Command.RECEIVE_QUESTIONS))
             {
+                try {
+                    Log.d("Aceitou", "conectado.parte.1");
 
-                //iniciou jogo
+                    Integer total = (Integer) oistream.readObject();
+                    for (int i = 0; i < total; i++) {
+                        questions.add((GameQuestion) oistream.readObject());
+                    }
 
-                showNewQuestion();
+                    Log.d("Aceitou", "conectado.parte.1");
 
+                    handler.post(myRunner);
 
+                    oostream.writeObject(Command.GAME_START);
+                    oostream.flush();
 
-
-                Log.d("reveice", "playerer");
+                    gameStart();
+                } catch (ClassNotFoundException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
+            if(result.startsWith(Command.GAME_START))
+            {
+                gameStart();
+            }
+            else if(result.startsWith(Command.NEXT_QUEST))
+            {
+                showNewQuestion();
+            }
+            else if(result.equals(Command.OTHER_ANSWERED))
+            {
+                theOtherAnswered = true;
+            }
+
+
+
+            Log.d("reveice", "playerer");
         }
 
         @Override
         protected void onCancelled() {
-            cancelledFlag = true;
+            Log.i("AsyncTask", "Cancelled.");
+        }
+    }
+
+    private class ReceiveFromServerTask extends AsyncTask<Void, Void, String>
+    {
+        protected String doInBackground(Void... pms)
+        {
+            String response = "";
+            Log.d("reveice", "doInBackground");
+            try {
+                while (isCancelled()) {
+                    //Log.d("ReceiveFromServerTask", String.valueOf(mBoundService.socket.getInputStream().available()));
+                    if (mBoundService.socket.getInputStream().available() > 4) {
+                        response = (String) mBoundService.getObjectStreamIn().readObject();
+                        Log.d("reveice", response);
+
+
+
+                        break;
+                    }
+
+                }
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            Log.d("ReceiveFromServerTask","b");
+
+            return response;
+        }
+
+        protected void onPostExecute(String result) {
+            Log.d("onPostExecute",result);
+
+            //iniciou jogo
+
+
+            try
+            {
+                if (result.startsWith(Command.ACCEPT_INV))
+                {
+                    String[] params = result.split(" ");
+                    opponent_name = params[1];
+                    player_socket = new Socket(params[2], Integer.parseInt(params[3]));
+
+                    Log.d("Aceitou", "conectado.parte.1");
+
+                    oostream = new ObjectOutputStream(player_socket.getOutputStream());
+                    oistream = new ObjectInputStream(player_socket.getInputStream());
+
+                    handler.post(myRunner);
+
+                }
+            } catch (UnknownHostException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            Log.d("reveice", "playerer");
+        }
+
+        @Override
+        protected void onCancelled() {
             Log.i("AsyncTask", "Cancelled.");
         }
     }
@@ -270,12 +422,7 @@ public class GameActivity extends Activity {
                     }
                 }
 
-                if(isInviting)
-                {
-                    //
-                    //receber perguntas
-                }
-                else
+                if(!isInviting)
                 {
                     try {
 
@@ -296,6 +443,7 @@ public class GameActivity extends Activity {
 
                         handler.post(myRunner);
 
+                        oostream.writeObject(Command.RECEIVE_QUESTIONS);
                         oostream.writeObject(questions.size());
                         for (GameQuestion q : questions)
                             oostream.writeObject(q);
@@ -305,6 +453,10 @@ public class GameActivity extends Activity {
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
+                }
+                else
+                {
+                    new ReceiveFromServerTask().execute();
                 }
             }
         }).start();

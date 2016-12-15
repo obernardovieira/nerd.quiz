@@ -2,11 +2,16 @@ package a21240068.isec.nerdquiz.Objects;
 
 import android.graphics.drawable.Drawable;
 
+import java.io.Serializable;
+
 /**
  * Created by bernardovieira on 06-11-2016.
  */
 
-public class Profile {
+public class Profile implements Serializable {
+
+    static final long serialVersionUID = 42L;
+
     private String name;
     private String profile_pic;
 

@@ -124,17 +124,23 @@ public class TcpServerHandleClient implements Runnable {
         //
         if(command.equals(Command.SEARCH))
         {
-            ArrayList<Profile> profiles = new ArrayList<>();
+            //ArrayList<Profile> profiles = new ArrayList<>();
+            ooStream.writeObject(Command.SEARCH);
             for(Player player_in_list : TcpServer.players)
             {
                 if(player_in_list.isConnected() && !player_in_list.isPlaying())
                 {
                     if(player_in_list != player)
-                        profiles.add(player_in_list.getProfile());
+                    {
+                        ooStream.writeObject(new Profile(player_in_list.getName(),
+                            player_in_list.getProfilePicture()));
+                        System.out.println("vai!");
+                    }
+                        //profiles.add(player_in_list.getProfile());
                 }
             }
             ooStream.writeObject(Command.SEARCH);
-            ooStream.writeObject(profiles);
+            //ooStream.writeObject(profiles);
             ooStream.flush();
         }
         else if(command.startsWith(Command.SEARCH))
@@ -241,8 +247,8 @@ public class TcpServerHandleClient implements Runnable {
         {
             String [] params = command.split(" ");
             
-            ooStream.writeObject(Response.OK);
-            ooStream.flush();
+            //ooStream.writeObject(Response.OK);
+            //ooStream.flush();
             
             for(Player p : TcpServer.players)
             {

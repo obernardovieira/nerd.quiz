@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 import a21240068.isec.nerdquiz.Core.Command;
 import a21240068.isec.nerdquiz.Core.NerdQuizApp;
@@ -56,8 +57,8 @@ public class SearchPlayerActivity extends Activity {
 
         mainHandler = new Handler();
         players_profile = new ArrayList<>();
-        getConnectedPlayers();
-        updatePlayersList();
+        //getConnectedPlayers();
+        //updatePlayersList();
 
         fromServerRunner = new Runnable(){
             public void run() {
@@ -80,6 +81,7 @@ public class SearchPlayerActivity extends Activity {
             players_profile.add(new Profile("User2", "user"));
             players_profile.add(new Profile("User3", "user"));
             players_profile.add(new Profile("User4", "user"));*/
+            mBoundService.sendMessage(Command.SEARCH);
         }
         else
         {
@@ -191,23 +193,31 @@ public class SearchPlayerActivity extends Activity {
 
     private class ReceiveFromServerTask extends AsyncTask<Void, Void, String>
     {
-        private boolean cancelledFlag;
-        public ReceiveFromServerTask()
-        {
-            cancelledFlag = false;
-        }
+        List<Profile> profiles = new ArrayList<>();
 
         protected String doInBackground(Void... params)
         {
             String response = "";
+            Object obj;
 
             try {
-                while (cancelledFlag == false) {
+                while (!isCancelled()) {
                     //Log.d("ReceiveFromServerTask", String.valueOf(mBoundService.socket.getInputStream().available()));
                     if (mBoundService.socket.getInputStream().available() > 4) {
                         //
                         response = (String) in.readObject();
-                        break;
+                        if(response.equals(Command.SEARCH))
+                        {
+                            obj = in.readObject();
+                            while(obj instanceof Profile)
+                            {
+                                profiles.add((Profile) obj);
+                                obj = in.readObject();
+                            }
+                            response = "newSearch";
+                            break;
+                        }
+                        else break;
                     }
                 }
             } catch (IOException e) {
@@ -235,12 +245,18 @@ public class SearchPlayerActivity extends Activity {
                 Toast.makeText(SearchPlayerActivity.this, params[1] + " leaved the game!", Toast.LENGTH_LONG).show();
                 removePlayerFromView(params[1]);
             }
+            else if(result.equals("newSearch"))
+            {
+                for(Profile p : profiles)
+                {
+                    addPlayerToView(p.getName());
+                }
+            }
             mainHandler.post(fromServerRunner);
         }
 
-        public void fuckingStop()
+        public void onCancelled()
         {
-            cancelledFlag = true;
             Log.d("fuckingStop(SPA)", "Cancelled.");
         }
     }
@@ -279,6 +295,15 @@ public class SearchPlayerActivity extends Activity {
                 }*/
                 in = mBoundService.getObjectStreamIn();
                 mainHandler.post(fromServerRunner);
+
+                mainHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        getConnectedPlayers();
+                        updatePlayersList();
+                    }
+                });
+
             }
         }).start();
     }
@@ -290,7 +315,6 @@ public class SearchPlayerActivity extends Activity {
         doUnbindService();
 
         fromServerTask.cancel(true);
-        fromServerTask.fuckingStop();
     }
 
 
