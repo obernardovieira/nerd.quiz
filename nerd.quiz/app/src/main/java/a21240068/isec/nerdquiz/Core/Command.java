@@ -14,6 +14,7 @@ public class Command {
     public static String REJECT_INV         = "reject";
     public static String ACCEPT_INV         = "accept";
     public static String UPDATE_DB          = "updatedb";
+    public static String NEW_GAME           = "new_game";
     public static String NEXT_QUEST         = "next_quest";
     public static String GAME_START         = "game_start";
     public static String OTHER_ANSWERED     = "other_answered";

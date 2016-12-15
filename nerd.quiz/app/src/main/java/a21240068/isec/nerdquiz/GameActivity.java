@@ -52,10 +52,13 @@ public class GameActivity extends Activity {
     private Button                  bt_answer_three;
 
     private String                  opponent_name;
-    private boolean                 isInviting;
+    private boolean                 isInvited;
 
     private Handler                 handler;
     private Runnable                myRunner;
+
+    private int                     points;
+    private Thread                  the_final_countdown;
 
     Socket                          player_socket;
     ObjectOutputStream              oostream;
@@ -72,12 +75,13 @@ public class GameActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_game);
 
-        QuestionsData qdata         = new QuestionsData(this);
+
         total_questions_per_round   = 4;
-        questions                   = qdata.getRandomQuestions(total_questions_per_round);
+        questions                   = new ArrayList<>();
         in_question                 = 0;
         handler                     = new Handler();
         answered_right              = 0;
+        points                      = 0;
 
         pb_questions_left   = (ProgressBar)   findViewById(R.id.pb_questions_left);
         tv_time             = (TextView)      findViewById(R.id.tv_time);
@@ -95,12 +99,12 @@ public class GameActivity extends Activity {
             if(extras == null)
             {
                 opponent_name = null;
-                isInviting = false;
+                isInvited = false;
             }
             else
             {
                 opponent_name = extras.getString("playerToPlay");
-                isInviting = extras.getBoolean("isInviting");
+                isInvited = extras.getBoolean("isInvited");
             }
         }
         /*else
@@ -117,12 +121,11 @@ public class GameActivity extends Activity {
 
     private void startCountdown()
     {
-        Thread t = new Thread()
+        the_final_countdown = new Thread()
         {
-            private int order = in_question;
             public void run()
             {
-                while (order == in_question)
+                while (!isInterrupted())
                 {
                     try
                     {
@@ -140,6 +143,19 @@ public class GameActivity extends Activity {
                             time--;
                             if(time < 0)
                             {
+                                if((!theOtherAnswered && isInvited) || theOtherAnswered)
+                                {
+                                    new Thread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            try {
+                                                oostream.writeObject(Command.NEXT_QUEST);
+                                            } catch (IOException e) {
+                                                e.printStackTrace();
+                                            }
+                                        }
+                                    }).start();
+                                }
                                 if(++in_question < total_questions_per_round)
                                     showNewQuestion();
                                 else
@@ -151,7 +167,7 @@ public class GameActivity extends Activity {
                 }
             }
         };
-        t.start();
+        the_final_countdown.start();
     }
 
     public void showNewQuestion()
@@ -198,6 +214,16 @@ public class GameActivity extends Activity {
         intent.putExtra("ans_right", answered_right);
         startActivity(intent);
 
+        try
+        {
+            oostream.close();
+            oistream.close();
+            player_socket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
         finish();
     }
 
@@ -242,6 +268,7 @@ public class GameActivity extends Activity {
                     }
                 }
             }).start();
+            the_final_countdown.interrupt();
             //command telling that answered
         }
 
@@ -255,7 +282,7 @@ public class GameActivity extends Activity {
             String response = "";
             Log.d("reveice", "doInBackground");
             try {
-                while (isCancelled()) {
+                while (!isCancelled()) {
                     //Log.d("ReceiveFromServerTask", String.valueOf(mBoundService.socket.getInputStream().available()));
                     if (player_socket.getInputStream().available() > 4) {
                         response = (String) oistream.readObject();
@@ -283,27 +310,40 @@ public class GameActivity extends Activity {
             //iniciou jogo
             if(result.equals(Command.RECEIVE_QUESTIONS))
             {
-                try {
-                    Log.d("Aceitou", "conectado.parte.1");
 
-                    Integer total = (Integer) oistream.readObject();
-                    for (int i = 0; i < total; i++) {
-                        questions.add((GameQuestion) oistream.readObject());
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            Log.d("Aceitou", "conectado.parte.1");
+
+                            Integer total = (Integer) oistream.readObject();
+                            for (int i = 0; i < total; i++) {
+                                questions.add((GameQuestion) oistream.readObject());
+                            }
+
+                            Log.d("Aceitou", "conectado.parte.1");
+
+                            handler.post(myRunner);
+
+                            oostream.writeObject(Command.GAME_START);
+                            oostream.flush();
+
+                            handler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    gameStart();
+                                }
+                            });
+                        } catch (ClassNotFoundException e) {
+                            e.printStackTrace();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
                     }
+                }).start();
 
-                    Log.d("Aceitou", "conectado.parte.1");
 
-                    handler.post(myRunner);
-
-                    oostream.writeObject(Command.GAME_START);
-                    oostream.flush();
-
-                    gameStart();
-                } catch (ClassNotFoundException e) {
-                    e.printStackTrace();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
             }
             if(result.startsWith(Command.GAME_START))
             {
@@ -311,7 +351,10 @@ public class GameActivity extends Activity {
             }
             else if(result.startsWith(Command.NEXT_QUEST))
             {
-                showNewQuestion();
+                if (++in_question < total_questions_per_round)
+                    showNewQuestion();
+                else
+                    finishQuiz();
             }
             else if(result.equals(Command.OTHER_ANSWERED))
             {
@@ -336,7 +379,7 @@ public class GameActivity extends Activity {
             String response = "";
             Log.d("reveice", "doInBackground");
             try {
-                while (isCancelled()) {
+                while (!isCancelled()) {
                     //Log.d("ReceiveFromServerTask", String.valueOf(mBoundService.socket.getInputStream().available()));
                     if (mBoundService.socket.getInputStream().available() > 4) {
                         response = (String) mBoundService.getObjectStreamIn().readObject();
@@ -358,33 +401,39 @@ public class GameActivity extends Activity {
             return response;
         }
 
-        protected void onPostExecute(String result) {
+        protected void onPostExecute(final String result) {
             Log.d("onPostExecute",result);
 
             //iniciou jogo
 
+            if (result.startsWith(Command.NEW_GAME)) {
 
-            try
-            {
-                if (result.startsWith(Command.ACCEPT_INV))
-                {
-                    String[] params = result.split(" ");
-                    opponent_name = params[1];
-                    player_socket = new Socket(params[2], Integer.parseInt(params[3]));
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
 
-                    Log.d("Aceitou", "conectado.parte.1");
+                            String[] params = result.split(" ");
+                            opponent_name = params[1];
+                            player_socket = new Socket(params[2], Integer.parseInt(params[3]));
 
-                    oostream = new ObjectOutputStream(player_socket.getOutputStream());
-                    oistream = new ObjectInputStream(player_socket.getInputStream());
+                            Log.d("Aceitou", "conectado.parte.1");
 
-                    handler.post(myRunner);
+                            oostream = new ObjectOutputStream(player_socket.getOutputStream());
+                            oistream = new ObjectInputStream(player_socket.getInputStream());
 
-                }
-            } catch (UnknownHostException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
+                            handler.post(myRunner);
+
+                        } catch (UnknownHostException e) {
+                            e.printStackTrace();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }).start();
             }
+
+
 
             Log.d("reveice", "playerer");
         }
@@ -422,7 +471,7 @@ public class GameActivity extends Activity {
                     }
                 }
 
-                if(!isInviting)
+                if(isInvited)
                 {
                     try {
 
@@ -433,10 +482,13 @@ public class GameActivity extends Activity {
                         WifiManager wm = (WifiManager) getSystemService(WIFI_SERVICE);
                         String ip = Formatter.formatIpAddress(wm.getConnectionInfo().getIpAddress());
 
-                        mBoundService.sendMessage(Command.ACCEPT_INV + " " + opponent_name + " "
+                        mBoundService.sendMessage(Command.NEW_GAME + " " + opponent_name + " "
                                 + ip + " " + 5009);
 
                         player_socket = game_socket.accept();
+
+                        QuestionsData qdata = new QuestionsData(GameActivity.this);
+                        questions = qdata.getRandomQuestions(total_questions_per_round);
 
                         oostream = new ObjectOutputStream(player_socket.getOutputStream());
                         oistream = new ObjectInputStream(player_socket.getInputStream());

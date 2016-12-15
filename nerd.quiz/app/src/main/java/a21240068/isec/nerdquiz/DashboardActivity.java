@@ -298,9 +298,11 @@ public class DashboardActivity extends Activity {
                         public void onClick(DialogInterface dialog, int id) {
                             // User clicked OK button
 
+                            mBoundService.sendMessage(Command.ACCEPT_INV + " " + params[1]);
+
                             Intent intent = new Intent(DashboardActivity.this, GameActivity.class);
                             intent.putExtra("playerToPlay", params[1]);
-                            intent.putExtra("isInviting", false);
+                            intent.putExtra("isInvited", true);
                             startActivity(intent);
 
                         /*

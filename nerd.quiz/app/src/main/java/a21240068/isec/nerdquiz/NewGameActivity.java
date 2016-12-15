@@ -124,7 +124,7 @@ public class NewGameActivity extends Activity {
 
             Intent intent = new Intent(this, GameActivity.class);
             intent.putExtra("playerToPlay", params[1]);
-            intent.putExtra("isInviting", true);
+            intent.putExtra("isInvited", false);
             startActivity(intent);
 
             finish();
