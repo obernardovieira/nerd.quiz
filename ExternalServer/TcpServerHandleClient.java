@@ -137,31 +137,6 @@ public class TcpServerHandleClient implements Runnable {
             ooStream.writeObject(profiles);
             ooStream.flush();
         }
-        else if(command.equals(Command.PROFILE_PIC_UP))
-        {
-            //
-            System.out.println("ppp");
-            Integer size = (Integer)oiStream.readObject();
-            Integer received = 0;
-            BufferedInputStream in = new BufferedInputStream(
-                player.getSocket().getInputStream());
-            
-            OutputStream out = new FileOutputStream(player.getName() + ".jpg");
-            System.out.println("receiving file");
-            
-            byte[] buf = new byte[8192];
-            int len = 0;
-            while ((len = in.read(buf)) != -1) {
-                out.write(buf, 0, len);
-                if(received + len == size)
-                    break;
-                else
-                    received += len;
-            }
-            
-            System.out.println("received");
-            out.close();
-        }
         else if(command.startsWith(Command.SEARCH))
         {
             //search for a name
@@ -187,9 +162,9 @@ public class TcpServerHandleClient implements Runnable {
             
             if(response.equals(Response.OK))
             {
+                TcpServer.notifyAllPlayers(Command.JOINED + " " + params[1]);
                 player.setName(params[1]);
                 player.setConnected(true);
-                TcpServer.notifyAllPlayers(Command.JOINED + " " + params[1]);
             }
             ooStream.writeObject(response);
             ooStream.flush();
@@ -208,6 +183,30 @@ public class TcpServerHandleClient implements Runnable {
                 {
                     database.addUser(params[1], params[2]);
                     ooStream.writeObject(Response.OK);
+                    
+                    
+                    System.out.println("ppp");
+                    Integer size = (Integer)oiStream.readObject();
+                    Integer received = 0;
+                    BufferedInputStream in = new BufferedInputStream(
+                        player.getSocket().getInputStream());
+
+                    OutputStream out = new FileOutputStream(params[1] + ".jpg");
+                    System.out.println("receiving file");
+
+                    byte[] buf = new byte[8192];
+                    int len = 0;
+                    while ((len = in.read(buf)) != -1) {
+                        out.write(buf, 0, len);
+                        if(received + len == size)
+                            break;
+                        else
+                            received += len;
+                    }
+
+                    System.out.println("received");
+                    out.close();
+                    
                 }
                 catch(SQLException e)
                 {
@@ -216,6 +215,27 @@ public class TcpServerHandleClient implements Runnable {
                 }
             }
             ooStream.flush();
+        }
+        else if(command.startsWith(Command.PRFILE_PIC_DOWN))
+        {
+            String [] params = command.split(" ");
+            
+            InputStream in = new FileInputStream(
+                    new File(params[1] + ".jpg"));
+            ooStream.writeObject((Integer)in.available());
+            ooStream.flush();
+            
+            OutputStream outs = player.getSocket().getOutputStream();
+
+            byte[] buf = new byte[8192];
+            int len = 0;
+            while ((len = in.read(buf)) != -1) {
+                outs.write(buf, 0, len);
+                outs.flush();
+            }
+
+            in.close();
+            //out.close();
         }
         else if(command.startsWith(Command.INVITE))
         {

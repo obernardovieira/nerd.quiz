@@ -277,7 +277,7 @@ public class SearchPlayerActivity extends Activity {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }*/
-                in = mBoundService.getStreamIn();
+                in = mBoundService.getObjectStreamIn();
                 mainHandler.post(fromServerRunner);
             }
         }).start();

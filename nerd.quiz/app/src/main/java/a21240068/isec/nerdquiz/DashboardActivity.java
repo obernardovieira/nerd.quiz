@@ -106,7 +106,7 @@ public class DashboardActivity extends Activity {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }*/
-                in = mBoundService.getStreamIn();
+                in = mBoundService.getObjectStreamIn();
                 handler.post(fromServerRunner);
             }
         }).start();

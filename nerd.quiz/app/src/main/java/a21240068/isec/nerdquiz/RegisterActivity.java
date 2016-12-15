@@ -47,6 +47,7 @@ public class RegisterActivity extends Activity {
         setContentView(R.layout.activity_register);
 
         nerdQuizApp = (NerdQuizApp)getApplication();
+        selectedImageUri = null;
     }
 
     public void changeProfilePhoto(View view)
@@ -59,56 +60,31 @@ public class RegisterActivity extends Activity {
         EditText et_username = (EditText)findViewById(R.id.et_username);
         EditText et_password = (EditText)findViewById(R.id.et_password);
 
-        if (selectedImageUri != null)
+        if(et_username.length() == 0)
         {
-            registerOnServer(et_username.getText().toString(), et_password.getText().toString());
+            Toast.makeText(this, "Needs username!", Toast.LENGTH_LONG).show();
+            return;
         }
+        else if(et_password.length() == 0)
+        {
+            Toast.makeText(this, "Needs password!", Toast.LENGTH_LONG).show();
+            return;
+        }
+        else if (selectedImageUri == null)
+        {
+            Toast.makeText(this, "Needs image!", Toast.LENGTH_LONG).show();
+            return;
+        }
+        registerOnServer(et_username.getText().toString(), et_password.getText().toString());
     }
 
-    public void registerOnServer(String username, String password)
+    public void registerOnServer(final String username, final String password)
     {
         Log.d("fick", "me");
-        uploadPhoto();
-    }
 
-    public void uploadPhoto()
-    {
+        mBoundService.sendMessage(Command.REGISTER + " " + username + " " + password);
 
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-
-
-
-                    /*int count;
-                    byte[] buffer = new byte[1024];
-
-                    OutputStream out = mBoundService.socket.getOutputStream();
-                    InputStream in = new FileInputStream(new File("/mnt/sdcard/bluetooth/IMG_20160902_224532.JPG"));
-                    //getContentResolver().openInputStream(selectedImageUri);
-                    //BufferedInputStream in = new BufferedInputStream(new FileInputStream(myFile));
-
-                    Log.d("uploadPhoto","uploading");
-
-                    ObjectOutputStream oout = new ObjectOutputStream(out);
-                    oout.writeObject(Command.PROFILE_PIC_UP);
-                    oout.flush();
-
-                    Log.d("uploadPhoto","uploading");
-                    while ((count = in.read(buffer)) > 0) {
-                        out.write(buffer, 0, count);
-                        out.flush();
-                    }
-                    Log.d("uploadPhoto","uploaded");*/
-
-
-                    mBoundService.sendFile(new File(getApplicationContext().getFilesDir(), "picture.jpg"));
-
-
-
-
-            }
-        }).start();
+        new ReceiveFromServerTask().execute();
     }
 
     public void clickRegisteredText(View view)
@@ -146,6 +122,114 @@ public class RegisterActivity extends Activity {
         super.onPause();
 
         doUnbindService();
+    }
+
+    private class ReceiveFromServerTask extends AsyncTask<Void, Void, String>
+    {
+        protected String doInBackground(Void... params)
+        {
+            String response = "";
+            Log.d("doInBackground(DBA)", "started");
+            try
+            {
+                while(!isCancelled())
+                {
+                    //Log.d("ReceiveFromServerTask", String.valueOf(mBoundService.socket.getInputStream().available()));
+                    if(mBoundService.socket.getInputStream().available() > 4)
+                    {
+                        ObjectInputStream ins = mBoundService.getObjectStreamIn();
+                        //in = new ObjectInputStream(mBoundService.socket.getInputStream());
+
+                        Integer tq = (Integer)ins.readObject();
+
+                        if(tq.equals(Response.OK))
+                        {
+                            ObjectOutputStream out = mBoundService.getObjectStreamOut();
+                            if(out != null)
+                            {
+
+                                try {
+
+                                    /*Log.d("uploadPhoto","uploading");
+                                    out.writeObject(Command.PROFILE_PIC_UP);
+                                    out.flush();*/
+                                    Log.d("uploadPhoto","uploading");
+
+                                    InputStream in = new FileInputStream(
+                                            new File(getApplicationContext().getFilesDir(), "picture.jpg"));
+                                    out.writeObject(in.available());
+                                    out.flush();
+                                    OutputStream outs = mBoundService.getStreamOut();
+
+                                    byte[] buf = new byte[8192];
+                                    int len = 0;
+                                    while ((len = in.read(buf)) != -1) {
+                                        outs.write(buf, 0, len);
+                                        outs.flush();
+                                    }
+
+                                    in.close();
+                                    //out.close();
+
+                                    Log.d("uploadPhoto","uploaded");
+                                    response = "OK";
+                                    break;
+                                }
+                                catch(IOException e)
+                                {
+                                    e.printStackTrace();
+                                }
+                            }
+                            else
+                            {
+                                Log.d("sendMessage","Erro");
+                            }
+
+
+                        }
+                        else
+                        {
+                            throw new IOException("Response.ERROR");
+                        }
+
+
+                        //in.close();
+                        break;
+                    }
+                }
+            }
+            catch (IOException e)
+            {
+                e.printStackTrace();
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            }
+            Log.d("ReceiveFromServerTask","b");
+            return response;
+        }
+
+        protected void onPostExecute(String result)
+        {
+            Log.d("onPostExecute(DBA)",result);
+
+            if(result.equals("OK"))
+            {
+                Intent intent = new Intent(RegisterActivity.this, AuthenticationActivity.class);
+                startActivity(intent);
+
+                finish();
+            }
+            else
+            {
+                //error uploading photo
+            }
+        }
+
+        public void onCancelled()
+        {
+            Log.d("fuckingStop(DBA)", "Cancelled.");
+        }
+
     }
 
 

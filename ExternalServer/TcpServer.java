@@ -72,9 +72,12 @@ public class TcpServer
     {
         for(Player p : players)
         {
-            ObjectOutputStream iooStream = p.getOoStream();
-            iooStream.writeObject(message);
-            iooStream.flush();
+            if(p.isConnected() && !p.isPlaying())
+            {
+                ObjectOutputStream iooStream = p.getOoStream();
+                iooStream.writeObject(message);
+                iooStream.flush(); 
+            }
         }
     }
 

@@ -80,7 +80,7 @@ public class NewGameActivity extends Activity {
                     }
                 }
 
-                in = mBoundService.getStreamIn();
+                in = mBoundService.getObjectStreamIn();
                 handler.post(fromServerRunner);
             }
         }).start();

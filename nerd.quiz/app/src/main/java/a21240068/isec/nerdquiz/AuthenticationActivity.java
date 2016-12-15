@@ -17,9 +17,13 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
+import java.io.OutputStream;
 
 import a21240068.isec.nerdquiz.Core.Command;
 import a21240068.isec.nerdquiz.Core.Response;
@@ -47,6 +51,8 @@ public class AuthenticationActivity extends Activity {
         //
 
         mBoundService.sendMessage(Command.LOGIN + " " + username + " " + password);
+
+        new ReceiveFromServerTask().execute();
     }
 
     public void clickNotRegisteredText(View view)
@@ -59,25 +65,25 @@ public class AuthenticationActivity extends Activity {
 
     private class ReceiveFromServerTask extends AsyncTask<Void, Void, String>
     {
-        private boolean cancelledFlag;
-        public ReceiveFromServerTask()
-        {
-            cancelledFlag = false;
-        }
-
         protected String doInBackground(Void... params)
         {
             Integer response = Response.ERROR;
 
             try
             {
-                while(cancelledFlag == false)
+                while(!isCancelled())
                 {
                     if(mBoundService.socket.getInputStream().available() > 4)
                     {
+                        Object obj;
                         ObjectInputStream in;
-                        in = new ObjectInputStream(mBoundService.socket.getInputStream());
-                        response = (Integer)in.readObject();
+                        in = mBoundService.getObjectStreamIn();
+                        obj = in.readObject();
+
+                        if(obj instanceof String)
+                            Log.d("sdfghj", (String)obj);
+                        else if(obj instanceof Integer)
+                            response = (Integer)obj;
                         //in.close();
                         break;
                     }
@@ -109,11 +115,21 @@ public class AuthenticationActivity extends Activity {
 
                 Toast.makeText(AuthenticationActivity.this, "You are logged now!", Toast.LENGTH_LONG).show();
 
-                Intent intent = new Intent(AuthenticationActivity.this, DashboardActivity.class);
-                startActivity(intent);
+                File profile_pic = new File(getApplicationContext().getFilesDir(), "profile_pic.jpg");
+                if(profile_pic.exists())
+                {
+                    Intent intent = new Intent(AuthenticationActivity.this, DashboardActivity.class);
+                    startActivity(intent);
 
-                cancel(true);
-                finish();
+                    finish();
+                }
+                else
+                {
+                    mBoundService.sendMessage(Command.PRFILE_PIC_DOWN + " " + username);
+                    new ReceiveProfilePhotoServerTask().execute();
+                }
+
+
             }
             else if(response == Response.ERROR)
             {
@@ -123,7 +139,83 @@ public class AuthenticationActivity extends Activity {
 
         @Override
         protected void onCancelled() {
-            cancelledFlag = true;
+            Log.i("AsyncTask", "Cancelled.");
+        }
+    }
+
+    private class ReceiveProfilePhotoServerTask extends AsyncTask<Void, Void, String>
+    {
+        protected String doInBackground(Void... params)
+        {
+            String response = "ERROR";
+
+            try
+            {
+                while(!isCancelled())
+                {
+                    if(mBoundService.socket.getInputStream().available() > 4)
+                    {
+                        ObjectInputStream oiStream;
+                        oiStream = mBoundService.getObjectStreamIn();
+
+
+                        System.out.println("ppp");
+                        Integer size = (Integer)oiStream.readObject();
+                        Integer received = 0;
+                        BufferedInputStream in = new BufferedInputStream(mBoundService.getStreamIn());
+
+                        OutputStream out = new FileOutputStream(
+                                new File(getApplicationContext().getFilesDir(), "profile_pic.jpg"));
+                        System.out.println("receiving file");
+
+                        byte[] buf = new byte[8192];
+                        int len = 0;
+                        while ((len = in.read(buf)) != -1) {
+                            out.write(buf, 0, len);
+                            if(received + len == size)
+                                break;
+                            else
+                                received += len;
+                        }
+
+                        System.out.println("received");
+                        out.close();
+
+                        response = "OK";
+                        //in.close();
+                        break;
+                    }
+                }
+            }
+            catch (IOException e)
+            {
+                e.printStackTrace();
+            }
+            catch (ClassNotFoundException e)
+            {
+                e.printStackTrace();
+            }
+            return response;
+        }
+
+        protected void onPostExecute(String result) {
+            Log.d("onPostExecute",result);
+
+            if(result.equals("OK"))
+            {
+                Intent intent = new Intent(AuthenticationActivity.this, DashboardActivity.class);
+                startActivity(intent);
+
+                finish();
+            }
+            else
+            {
+                //error downloading photo
+            }
+        }
+
+        @Override
+        protected void onCancelled() {
             Log.i("AsyncTask", "Cancelled.");
         }
     }
@@ -154,7 +246,7 @@ public class AuthenticationActivity extends Activity {
                         e.printStackTrace();
                     }
                 }
-                new ReceiveFromServerTask().execute();
+
             }
         }).start();
     }
