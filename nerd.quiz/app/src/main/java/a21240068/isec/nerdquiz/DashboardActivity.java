@@ -44,8 +44,10 @@ public class DashboardActivity extends Activity {
     private NerdQuizApp application;
 
     private Handler handler;
-    private Runnable fromServerRunner;
+    Runnable fromServerRunner;
+    private ReceiveFromServerTask fromServerTask;
     private boolean update_db_task;
+    private boolean first_attempt;
 
     ObjectInputStream in;
 
@@ -68,13 +70,46 @@ public class DashboardActivity extends Activity {
 
         fromServerRunner = new Runnable(){
             public void run() {
-                new ReceiveFromServerTask ().execute();
+                fromServerTask = new ReceiveFromServerTask ();
+                fromServerTask.execute();
             }
         };
 
         update_db_task = false;
 
         handler = new Handler();
+
+        first_attempt = true;
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while(mBoundService == null)
+                {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+                while(mBoundService.socket == null)
+                {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+                mBoundService.sendMessage(Command.AUTO_LOGIN + " " + application.getUsername());
+                /*try {
+                    in = new ObjectInputStream(mBoundService.socket.getInputStream());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }*/
+                in = mBoundService.getObjectStreamIn();
+                handler.post(fromServerRunner);
+            }
+        }).start();
     }
 
     @Override
@@ -153,25 +188,20 @@ public class DashboardActivity extends Activity {
 
     private class ReceiveFromServerTask extends AsyncTask<Void, Void, String>
     {
-        private boolean cancelledFlag;
-        public ReceiveFromServerTask()
-        {
-            cancelledFlag = false;
-        }
-
         protected String doInBackground(Void... params)
         {
             String response = "";
+            Log.d("doInBackground(DBA)", "started");
             try
             {
-                while(cancelledFlag == false)
+                while(!isCancelled())
                 {
                     //Log.d("ReceiveFromServerTask", String.valueOf(mBoundService.socket.getInputStream().available()));
                     if(mBoundService.socket.getInputStream().available() > 4)
                     {
                         //ObjectInputStream in;
                         //in = new ObjectInputStream(mBoundService.socket.getInputStream());
-                        if(update_db_task == true)
+                        if(update_db_task)
                         {
                             //
                             Log.d("update","c");
@@ -237,7 +267,7 @@ public class DashboardActivity extends Activity {
         }
 
         protected void onPostExecute(String result) {
-            Log.d("onPostExecute",result);
+            Log.d("onPostExecute(DBA)",result);
 
             if(update_db_task == true)
             {
@@ -298,11 +328,11 @@ public class DashboardActivity extends Activity {
             }
         }
 
-        @Override
-        protected void onCancelled() {
-            cancelledFlag = true;
-            Log.i("AsyncTask", "Cancelled.");
+        public void onCancelled()
+        {
+            Log.d("fuckingStop(DBA)", "Cancelled.");
         }
+
     }
 
     @Override
@@ -312,35 +342,32 @@ public class DashboardActivity extends Activity {
 
         doBindService();
 
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while(mBoundService == null)
-                {
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
+        if(first_attempt == false) {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    while (mBoundService == null) {
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
                     }
-                }
-                while(mBoundService.socket == null)
-                {
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
+                    while (mBoundService.socket == null) {
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
                     }
-                }
 
-                mBoundService.sendMessage(Command.AUTO_LOGIN + " " + application.getUsername());
-                try {
-                    in = new ObjectInputStream(mBoundService.socket.getInputStream());
-                } catch (IOException e) {
-                    e.printStackTrace();
+                    handler.post(fromServerRunner);
                 }
-                handler.post(fromServerRunner);
-            }
-        }).start();
+            }).start();
+        }
+        else {
+            first_attempt = false;
+        }
     }
 
     @Override
@@ -348,6 +375,8 @@ public class DashboardActivity extends Activity {
         super.onPause();
 
         doUnbindService();
+
+        fromServerTask.cancel(true);
     }
 
 

@@ -27,7 +27,7 @@ public class MainActivity extends Activity {
 
         if(username.equals(defaultValue))
         {
-            Intent intent = new Intent(this, AuthenticationActivity.class);
+            Intent intent = new Intent(this, RegisterActivity.class);
             startActivity(intent);
         }
         else

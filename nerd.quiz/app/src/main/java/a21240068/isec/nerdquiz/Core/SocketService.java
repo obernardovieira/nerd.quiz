@@ -8,9 +8,14 @@ import android.os.IBinder;
 import android.util.Log;
 import android.widget.Toast;
 
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.io.StreamCorruptedException;
 import java.net.InetAddress;
 import java.net.Socket;
@@ -24,7 +29,8 @@ public class SocketService extends Service {
     public static final int SERVERPORT = 5007;
     //PrintWriter out;
     ObjectOutputStream out;
-    //ObjectInputStream in;
+    ObjectInputStream in;
+    //
     public Socket socket;
     InetAddress serverAddr;
 
@@ -70,6 +76,26 @@ public class SocketService extends Service {
 
     public void IsBoundable(Context context){
         Toast.makeText(context,"I bind like butter", Toast.LENGTH_LONG).show();
+    }
+
+    public ObjectInputStream getObjectStreamIn()
+    {
+        return in;
+    }
+
+    public InputStream getStreamIn() throws IOException
+    {
+        return socket.getInputStream();
+    }
+
+    public ObjectOutputStream getObjectStreamOut()
+    {
+        return out;
+    }
+
+    public OutputStream getStreamOut() throws IOException
+    {
+        return socket.getOutputStream();
     }
 
     public void sendMessage(final Object object) {
@@ -139,10 +165,9 @@ public class SocketService extends Service {
 
                     //send the message to the server
                     //out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(socket.getOutputStream())), true);
-
                     Log.d("TCP Client", "Opening streams.");
                     out = new ObjectOutputStream(socket.getOutputStream());
-                    //in = new ObjectInputStream(socket.getInputStream());
+                    in = new ObjectInputStream(socket.getInputStream());
                     //out.writeObject("Ola");
 
                     Log.d("TCP Client", "C: Sent.");

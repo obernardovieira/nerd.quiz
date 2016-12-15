@@ -2,6 +2,7 @@
 
 import amovserver.DatabaseClients;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
@@ -63,6 +64,19 @@ public class TcpServer
                 System.err.println("Unable to close an open socket.");
                 System.err.println(ioe.toString());
                 System.exit(1);
+            }
+        }
+    }
+    
+    public static void notifyAllPlayers(String message) throws IOException
+    {
+        for(Player p : players)
+        {
+            if(p.isConnected() && !p.isPlaying())
+            {
+                ObjectOutputStream iooStream = p.getOoStream();
+                iooStream.writeObject(message);
+                iooStream.flush(); 
             }
         }
     }

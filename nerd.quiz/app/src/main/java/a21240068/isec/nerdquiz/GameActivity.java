@@ -50,6 +50,7 @@ public class GameActivity extends Activity {
     private Button                  bt_answer_three;
 
     private String                  opponent_name;
+    private boolean                 isInviting;
 
     private Handler                 handler;
     private Runnable                myRunner;
@@ -90,16 +91,18 @@ public class GameActivity extends Activity {
             if(extras == null)
             {
                 opponent_name = null;
+                isInviting = false;
             }
             else
             {
                 opponent_name = extras.getString("playerToPlay");
+                isInviting = extras.getBoolean("isInvited", false);
             }
         }
-        else
+        /*else
         {
             opponent_name = (String) savedInstanceState.getSerializable("playerToPlay");
-        }
+        }*/
 
         myRunner = new Runnable(){
             public void run() {
@@ -221,7 +224,14 @@ public class GameActivity extends Activity {
             Log.d("onPostExecute",result);
             if(result.equals(Command.NEXT_QUEST))
             {
+
+                //iniciou jogo
+
                 showNewQuestion();
+
+
+
+
                 Log.d("reveice", "playerer");
             }
         }
@@ -260,34 +270,41 @@ public class GameActivity extends Activity {
                     }
                 }
 
-                try
+                if(isInviting)
                 {
+                    //
+                    //receber perguntas
+                }
+                else
+                {
+                    try {
 
 
-                    ServerSocket game_socket = new ServerSocket(5009);
-                    game_socket.setSoTimeout(5000);
+                        ServerSocket game_socket = new ServerSocket(5009);
+                        game_socket.setSoTimeout(5000);
 
-                    WifiManager wm = (WifiManager) getSystemService(WIFI_SERVICE);
-                    String ip = Formatter.formatIpAddress(wm.getConnectionInfo().getIpAddress());
+                        WifiManager wm = (WifiManager) getSystemService(WIFI_SERVICE);
+                        String ip = Formatter.formatIpAddress(wm.getConnectionInfo().getIpAddress());
 
-                    mBoundService.sendMessage(Command.ACCEPT_INV + " " + opponent_name + " "
-                        + ip + " " + 5009);
+                        mBoundService.sendMessage(Command.ACCEPT_INV + " " + opponent_name + " "
+                                + ip + " " + 5009);
 
-                    player_socket = game_socket.accept();
+                        player_socket = game_socket.accept();
 
-                    oostream = new ObjectOutputStream(player_socket.getOutputStream());
-                    oistream = new ObjectInputStream(player_socket.getInputStream());
+                        oostream = new ObjectOutputStream(player_socket.getOutputStream());
+                        oistream = new ObjectInputStream(player_socket.getInputStream());
 
-                    handler.post(myRunner);
+                        handler.post(myRunner);
 
-                    oostream.writeObject(questions.size());
-                    for(GameQuestion q : questions)
-                        oostream.writeObject(q);
+                        oostream.writeObject(questions.size());
+                        for (GameQuestion q : questions)
+                            oostream.writeObject(q);
 
-                } catch (SocketException e) {
-                    e.printStackTrace();
-                } catch (IOException e) {
-                    e.printStackTrace();
+                    } catch (SocketException e) {
+                        e.printStackTrace();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
         }).start();

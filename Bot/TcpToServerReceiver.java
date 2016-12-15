@@ -92,6 +92,9 @@ class TcpToServerReceiver implements Runnable
         {
             if(TcpToServer.last_command.startsWith(Command.LOGIN))
             {
+                if(!(obj instanceof Integer))
+                    return;
+                
                 Integer response = (Integer)obj;
                 if(response.equals(Response.OK))
                 {
@@ -194,6 +197,42 @@ class TcpToServerReceiver implements Runnable
                     else
                     {
                         System.out.println("There is no results!");
+                    }
+                }
+                else
+                {
+                    if(obj instanceof String)
+                    {
+                        String command = (String)obj;
+                        if(command.startsWith(Command.INVITED))
+                        {
+                            String [] params = command.split(" ");
+                            System.out.println("You have been invited by " + params[1]);
+
+                            System.out.print("Accept? (y/n)");
+                            //Scanner question = new Scanner(System.in);
+                            String ans = "y";//question.nextLine();
+                            
+                            try {
+                                Thread.sleep(1000);
+                            } catch (InterruptedException ex) {
+                                Logger.getLogger(TcpToServerReceiver.class.getName()).log(Level.SEVERE, null, ex);
+                            }
+
+                            if(ans.equals("y") || ans.equals("Y"))
+                            {
+
+                                TcpToServer.ooStream.writeObject(Command.ACCEPT_INV + " " + params[1]);
+                                TcpToServer.ooStream.flush();
+
+                            }
+                            else
+                            {
+                                TcpToServer.ooStream.writeObject(Command.REJECT_INV + " " + params[1]);
+                                TcpToServer.ooStream.flush();
+                            }
+                        }
+                        
                     }
                 }
             }

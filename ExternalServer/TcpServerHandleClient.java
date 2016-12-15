@@ -15,8 +15,15 @@ import a21240068.isec.nerdquiz.Objects.Profile;
 import a21240068.isec.nerdquiz.Objects.DownloadQuestion;
 import amovserver.DatabaseClients;
 import amovserver.Response;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
@@ -52,6 +59,12 @@ class Command
     public static String    REJECT_INV  = "reject";
     public static String    ACCEPT_INV  = "accept";
     public static String    UPDATE_DB   = "updatedb";
+    
+    public static String    JOINED      = "joined";
+    public static String    LEAVED      = "leaved";
+    
+    public static String    PROFILE_PIC_UP     = "profilepup";
+    public static String    PRFILE_PIC_DOWN    = "profilepdown";
 }
 
 public class TcpServerHandleClient implements Runnable {
@@ -93,13 +106,11 @@ public class TcpServerHandleClient implements Runnable {
             
             oiStream.close();
         }
-        catch (IOException | ClassNotFoundException ex)
-        {
-            System.out.println("O cliente desligou-se!");
-        }
         catch (SQLException ex)
         {
             System.out.println("Erro na base de dados!");
+        } catch (IOException | ClassNotFoundException ex) {
+            Logger.getLogger(TcpServerHandleClient.class.getName()).log(Level.SEVERE, null, ex);
         }
         finally
         {
@@ -130,10 +141,6 @@ public class TcpServerHandleClient implements Runnable {
         {
             //search for a name
         }
-        else if(command.startsWith(Command.PLAY))
-        {
-            player.setConnected(true);
-        }
         else if(command.startsWith(Command.AUTO_LOGIN))
         {
             String [] params = command.split(" ");
@@ -145,6 +152,7 @@ public class TcpServerHandleClient implements Runnable {
             {
                 player.setName(params[1]);
                 player.setConnected(true);
+                TcpServer.notifyAllPlayers(Command.JOINED + " " + params[1]);
             }
         }
         else if(command.startsWith(Command.LOGIN))
@@ -154,6 +162,7 @@ public class TcpServerHandleClient implements Runnable {
             
             if(response.equals(Response.OK))
             {
+                TcpServer.notifyAllPlayers(Command.JOINED + " " + params[1]);
                 player.setName(params[1]);
                 player.setConnected(true);
             }
@@ -174,6 +183,30 @@ public class TcpServerHandleClient implements Runnable {
                 {
                     database.addUser(params[1], params[2]);
                     ooStream.writeObject(Response.OK);
+                    
+                    
+                    System.out.println("ppp");
+                    Integer size = (Integer)oiStream.readObject();
+                    Integer received = 0;
+                    BufferedInputStream in = new BufferedInputStream(
+                        player.getSocket().getInputStream());
+
+                    OutputStream out = new FileOutputStream(params[1] + ".jpg");
+                    System.out.println("receiving file");
+
+                    byte[] buf = new byte[8192];
+                    int len = 0;
+                    while ((len = in.read(buf)) != -1) {
+                        out.write(buf, 0, len);
+                        if(received + len == size)
+                            break;
+                        else
+                            received += len;
+                    }
+
+                    System.out.println("received");
+                    out.close();
+                    
                 }
                 catch(SQLException e)
                 {
@@ -182,6 +215,27 @@ public class TcpServerHandleClient implements Runnable {
                 }
             }
             ooStream.flush();
+        }
+        else if(command.startsWith(Command.PRFILE_PIC_DOWN))
+        {
+            String [] params = command.split(" ");
+            
+            InputStream in = new FileInputStream(
+                    new File(params[1] + ".jpg"));
+            ooStream.writeObject((Integer)in.available());
+            ooStream.flush();
+            
+            OutputStream outs = player.getSocket().getOutputStream();
+
+            byte[] buf = new byte[8192];
+            int len = 0;
+            while ((len = in.read(buf)) != -1) {
+                outs.write(buf, 0, len);
+                outs.flush();
+            }
+
+            in.close();
+            //out.close();
         }
         else if(command.startsWith(Command.INVITE))
         {
@@ -197,6 +251,7 @@ public class TcpServerHandleClient implements Runnable {
                     ObjectOutputStream iooStream = p.getOoStream();
                     iooStream.writeObject(Command.INVITED + " " + player.getName());
                     iooStream.flush();
+                    break;
                 }
             }
         }

@@ -9,22 +9,17 @@
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
     android:orientation="vertical"
-    tools:context="a21240068.isec.nerdquiz.NewGameActivity">
+    tools:context="a21240068.isec.nerdquiz.NewGameActivity"
+    android:gravity="center_vertical">
 
     <TextView
-        android:text="Create by obernardovieira"
+        android:text="You haven't invited anyone yet!"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/et_created"
-        android:textAlignment="center" />
-
-    <TextView
-        android:text="Player"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/et_player"
+        android:id="@+id/tv_message"
         android:textAlignment="center"
-        android:textSize="20sp" />
+        android:padding="40sp"
+        android:textSize="18sp" />
 
     <LinearLayout
         android:orientation="vertical"
@@ -40,10 +35,11 @@
         android:onClick="clickSearchPlayerButton"/>
 
     <Button
-        android:text="Play"
+        android:text="Play Game"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/bt_play"
-        android:onClick="clickPlayGameButton"/>
+        android:onClick="clickPlayGameButton"
+        android:enabled="false"/>
 
 </LinearLayout>
