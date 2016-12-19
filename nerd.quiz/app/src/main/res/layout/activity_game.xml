@@ -14,59 +14,84 @@
     <LinearLayout
         android:orientation="vertical"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="match_parent"
+        android:id="@+id/layout_game"
+        android:visibility="visible">
 
-        <ProgressBar
-            style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+        <LinearLayout
+            android:orientation="vertical"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:id="@+id/pb_questions_left"
-            android:max="10"
-            android:progress="5" />
+            android:layout_height="wrap_content">
 
-        <TextView
-            android:text="30"
+            <ProgressBar
+                style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/pb_questions_left"
+                android:max="10"
+                android:progress="5" />
+
+            <TextView
+                android:text="30"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/tv_time"
+                android:textAlignment="center" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:orientation="vertical"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:id="@+id/tv_time"
-            android:textAlignment="center" />
+            android:layout_height="match_parent"
+            android:gravity="center_vertical">
 
+            <TextView
+                android:text="Who designed the C language?"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/tv_question"
+                android:textAlignment="center"
+                android:padding="20dp" />
+
+            <Button
+                android:text="Button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/bt_answer_one"
+                android:onClick="clickAnswerButton"/>
+
+            <Button
+                android:text="Button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/bt_answer_two"
+                android:onClick="clickAnswerButton"/>
+
+            <Button
+                android:text="Button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/bt_answer_three"
+                android:onClick="clickAnswerButton"/>
+        </LinearLayout>
     </LinearLayout>
 
     <LinearLayout
         android:orientation="vertical"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:gravity="center_vertical">
+        android:gravity="center_vertical"
+        android:id="@+id/layout_wait"
+        android:visibility="gone">
 
         <TextView
-            android:text="Who designed the C language?"
+            android:text="Waiting ..."
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:id="@+id/tv_question"
+            android:id="@+id/tv_wait"
             android:textAlignment="center"
-            android:padding="20dp" />
-
-        <Button
-            android:text="Button"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:id="@+id/bt_answer_one"
-            android:onClick="clickAnswerButton"/>
-
-        <Button
-            android:text="Button"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:id="@+id/bt_answer_two"
-            android:onClick="clickAnswerButton"/>
-
-        <Button
-            android:text="Button"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:id="@+id/bt_answer_three"
-            android:onClick="clickAnswerButton"/>
+            android:textSize="35sp" />
     </LinearLayout>
 
 </LinearLayout>

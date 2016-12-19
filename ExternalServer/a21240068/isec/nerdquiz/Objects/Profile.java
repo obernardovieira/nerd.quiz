@@ -14,6 +14,9 @@ import java.io.Serializable;
  * @author bernardovieira
  */
 public class Profile implements Serializable {
+    
+    static final long serialVersionUID = 42L;
+    
     private String name;
     private String profile_pic;
 

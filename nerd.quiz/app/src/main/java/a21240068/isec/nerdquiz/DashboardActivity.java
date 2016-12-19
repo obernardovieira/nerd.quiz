@@ -135,8 +135,9 @@ public class DashboardActivity extends Activity {
             int defaultValue = 0;
             int atualDBVersion = preferences.getInt(getString(R.string.version_dbquestions), defaultValue);
 
-            mBoundService.sendMessage(Command.UPDATE_DB + " " + atualDBVersion);
             update_db_task = true;
+            mBoundService.sendMessage(Command.UPDATE_DB + " " + atualDBVersion);
+
 
         }
         return super.onOptionsItemSelected(item);
@@ -297,8 +298,11 @@ public class DashboardActivity extends Activity {
                         public void onClick(DialogInterface dialog, int id) {
                             // User clicked OK button
 
+                            mBoundService.sendMessage(Command.ACCEPT_INV + " " + params[1]);
+
                             Intent intent = new Intent(DashboardActivity.this, GameActivity.class);
                             intent.putExtra("playerToPlay", params[1]);
+                            intent.putExtra("isInvited", true);
                             startActivity(intent);
 
                         /*
@@ -324,6 +328,11 @@ public class DashboardActivity extends Activity {
                     // 3. Get the AlertDialog from create()
                     AlertDialog dialog = builder.create();
                     dialog.show();
+                }
+                else
+                {
+                    handler.post(fromServerRunner);
+                    Log.d("adsfgthj", "por aqui");
                 }
             }
         }
