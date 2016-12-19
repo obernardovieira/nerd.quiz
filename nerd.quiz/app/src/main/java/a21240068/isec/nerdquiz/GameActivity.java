@@ -29,12 +29,16 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 import a21240068.isec.nerdquiz.Core.Command;
 import a21240068.isec.nerdquiz.Core.SocketService;
 import a21240068.isec.nerdquiz.Objects.DownloadQuestion;
 import a21240068.isec.nerdquiz.Objects.GameQuestion;
 import a21240068.isec.nerdquiz.Database.QuestionsData;
+
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class GameActivity extends Activity {
 
@@ -58,13 +62,15 @@ public class GameActivity extends Activity {
     private Runnable                myRunner;
 
     private int                     points;
-    private Thread                  the_final_countdown;
+    //private Thread                  the_final_countdown;
+    private ScheduledExecutorService    scheduler;
 
     Socket                          player_socket;
     ObjectOutputStream              oostream;
     ObjectInputStream               oistream;
 
     private boolean                 theOtherAnswered;
+    private boolean                 IAnswered;
 
     private boolean mIsBound;
     private SocketService mBoundService;
@@ -121,7 +127,52 @@ public class GameActivity extends Activity {
 
     private void startCountdown()
     {
-        the_final_countdown = new Thread()
+        scheduler = Executors.newScheduledThreadPool(1);
+
+        final Runnable beeper = new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                handler.post(new Runnable()
+                {
+                    @Override
+                    public void run()
+                    {
+                        tv_time.setText(Integer.toString(time));
+                        time--;
+                        if(time < 0)
+                        {
+                            scheduler.shutdownNow();
+                            if((!theOtherAnswered && isInvited) || theOtherAnswered)
+                            {
+                                new Thread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        try {
+                                            oostream.writeObject(Command.NEXT_QUEST);
+                                        } catch (IOException e) {
+                                            e.printStackTrace();
+                                        }
+                                    }
+                                }).start();
+                                if(++in_question < total_questions_per_round)
+                                {
+                                    handler.post(myRunner);
+                                    showNewQuestion();
+                                }
+                                else
+                                {
+                                    finishQuiz();
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        };
+        scheduler.scheduleAtFixedRate(beeper, 1, 1, SECONDS);
+        /*the_final_countdown = new Thread()
         {
             public void run()
             {
@@ -167,7 +218,7 @@ public class GameActivity extends Activity {
                 }
             }
         };
-        the_final_countdown.start();
+        the_final_countdown.start();*/
     }
 
     public void showNewQuestion()
@@ -182,7 +233,8 @@ public class GameActivity extends Activity {
         bt_answer_two   .setText(answers.get(1));
         bt_answer_three .setText(answers.get(2));
         //
-        theOtherAnswered = false;
+        theOtherAnswered    = false;
+        IAnswered           = false;
         startCountdown();
     }
 
@@ -236,6 +288,7 @@ public class GameActivity extends Activity {
             answered_right ++;
         }
 
+        scheduler.shutdownNow();
         if(theOtherAnswered == true)
         {
             //
@@ -251,9 +304,14 @@ public class GameActivity extends Activity {
             }).start();
             //next question
             if (++in_question < total_questions_per_round)
+            {
+                handler.post(myRunner);
                 showNewQuestion();
+            }
             else
+            {
                 finishQuiz();
+            }
         }
         else
         {
@@ -268,8 +326,9 @@ public class GameActivity extends Activity {
                     }
                 }
             }).start();
-            the_final_countdown.interrupt();
+            //the_final_countdown.interrupt();
             //command telling that answered
+            IAnswered = true;
         }
 
 
@@ -298,6 +357,7 @@ public class GameActivity extends Activity {
                 e.printStackTrace();
             } catch (IOException e) {
                 e.printStackTrace();
+                Log.d("closed sutpid playr", "not playing now");
             }
             Log.d("ReceiveFromServerTask","b");
 
@@ -348,17 +408,50 @@ public class GameActivity extends Activity {
             if(result.startsWith(Command.GAME_START))
             {
                 gameStart();
+                handler.post(myRunner);
             }
             else if(result.startsWith(Command.NEXT_QUEST))
             {
                 if (++in_question < total_questions_per_round)
+                {
+                    handler.post(myRunner);
                     showNewQuestion();
+                }
                 else
+                {
                     finishQuiz();
+                }
             }
             else if(result.equals(Command.OTHER_ANSWERED))
             {
-                theOtherAnswered = true;
+                if(IAnswered)
+                {
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                oostream.writeObject(Command.NEXT_QUEST);
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }).start();
+                    //
+                    if (++in_question < total_questions_per_round)
+                    {
+                        handler.post(myRunner);
+                        showNewQuestion();
+                    }
+                    else
+                    {
+                        finishQuiz();
+                    }
+                }
+                else
+                {
+                    theOtherAnswered = true;
+                }
+                //if I already answered
             }
 
 

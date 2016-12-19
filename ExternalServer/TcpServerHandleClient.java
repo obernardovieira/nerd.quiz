@@ -55,6 +55,7 @@ class Command
     public static String    SEARCH      = "search";
     public static String    INVITE      = "invite";
     public static String    INVITED     = "beinvited";
+    public static String    NEW_GAME    = "new_game";
     //public static String    ANSWER    = "answer";
     public static String    REJECT_INV  = "reject";
     public static String    ACCEPT_INV  = "accept";
@@ -272,6 +273,20 @@ public class TcpServerHandleClient implements Runnable {
                 {
                     ObjectOutputStream iooStream = p.getOoStream();
                     iooStream.writeObject(Command.REJECT_INV + " " + player.getName());
+                    iooStream.flush();
+                }
+            }
+        }
+        else if(command.startsWith(Command.NEW_GAME))
+        {
+            String [] params = command.split(" ");
+            
+            for(Player p : TcpServer.players)
+            {
+                if(p.getName().equals(params[1]))
+                {
+                    ObjectOutputStream iooStream = p.getOoStream();
+                    iooStream.writeObject(command);
                     iooStream.flush();
                 }
             }
