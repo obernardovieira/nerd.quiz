@@ -286,7 +286,7 @@ public class TcpServerHandleClient implements Runnable {
                 if(p.getName().equals(params[1]))
                 {
                     ObjectOutputStream iooStream = p.getOoStream();
-                    iooStream.writeObject(command);
+                    iooStream.writeObject(params[0] + " " + params[2] + " " + params[3]);
                     iooStream.flush();
                 }
             }
@@ -309,7 +309,7 @@ public class TcpServerHandleClient implements Runnable {
             if(iooStream != null)
             {
                 //
-                iooStream.writeObject(command);
+                iooStream.writeObject(Command.ACCEPT_INV + " " + player.getName());
                 iooStream.flush();
             }
             else

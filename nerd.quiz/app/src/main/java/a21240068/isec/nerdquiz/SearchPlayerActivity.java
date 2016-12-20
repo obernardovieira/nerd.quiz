@@ -212,6 +212,14 @@ public class SearchPlayerActivity extends Activity {
                             while(obj instanceof Profile)
                             {
                                 profiles.add((Profile) obj);
+                                //search photo
+                                File p_pic = new File(getApplicationContext().getFilesDir(),
+                                        ((Profile)obj).getProfilePicture());
+                                if(!p_pic.exists())
+                                {
+                                    //request new photo
+                                }
+                                //
                                 obj = in.readObject();
                             }
                             response = "newSearch";
@@ -317,7 +325,6 @@ public class SearchPlayerActivity extends Activity {
         fromServerTask.cancel(true);
     }
 
-
     private ServiceConnection mConnection = new ServiceConnection() {
         //EDITED PART
         @Override
@@ -335,7 +342,6 @@ public class SearchPlayerActivity extends Activity {
 
     };
 
-
     private void doBindService() {
         bindService(new Intent(SearchPlayerActivity.this, SocketService.class), mConnection, Context.BIND_AUTO_CREATE);
         mIsBound = true;
@@ -344,7 +350,6 @@ public class SearchPlayerActivity extends Activity {
         }
         Log.d("SocketService", "doBindService");
     }
-
 
     private void doUnbindService() {
         if (mIsBound) {

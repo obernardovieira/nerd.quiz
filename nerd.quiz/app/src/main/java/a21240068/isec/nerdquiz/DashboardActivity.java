@@ -170,10 +170,10 @@ public class DashboardActivity extends Activity {
         public View getView(int i, View view, ViewGroup viewGroup) {
             View layout = getLayoutInflater().inflate(R.layout.layout_item_dashboard,null);
 
-            String opponent_name = (String) games.get(i).getOpponentName();
-            String opponent_points = String.valueOf((int) games.get(i).getOpponentPoints());
-            String player_points = String.valueOf((int) games.get(i).getPlayerPoints());
-            String date = (String) games.get(i).getDate();
+            String opponent_name = games.get(i).getOpponentName();
+            String opponent_points = String.valueOf(games.get(i).getOpponentPoints());
+            String player_points = String.valueOf(games.get(i).getPlayerPoints());
+            String date = games.get(i).getDate();
 
             ((TextView)layout.findViewById(R.id.tv_opponent_name)).setText(opponent_name);
             ((TextView)layout.findViewById(R.id.tv_opponent_points)).setText(opponent_points);
