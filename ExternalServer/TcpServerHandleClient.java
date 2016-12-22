@@ -31,6 +31,7 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -65,7 +66,7 @@ class Command
     public static String    LEAVED      = "leaved";
     
     public static String    PROFILE_PIC_UP     = "profilepup";
-    public static String    PRFILE_PIC_DOWN    = "profilepdown";
+    public static String    PROFILE_PIC_DOWN   = "profilepdown";
 }
 
 public class TcpServerHandleClient implements Runnable {
@@ -109,6 +110,7 @@ public class TcpServerHandleClient implements Runnable {
         }
         catch (SQLException ex)
         {
+            ex.printStackTrace();
             System.out.println("Erro na base de dados!");
         } catch (IOException | ClassNotFoundException ex) {
             Logger.getLogger(TcpServerHandleClient.class.getName()).log(Level.SEVERE, null, ex);
@@ -167,13 +169,16 @@ public class TcpServerHandleClient implements Runnable {
             String [] params = command.split(" ");
             Integer response = database.checkLogin(params[1], params[2]);
             
+            ooStream.writeObject(response);
             if(response.equals(Response.OK))
             {
                 TcpServer.notifyAllPlayers(Command.JOINED + " " + params[1]);
                 player.setName(params[1]);
                 player.setConnected(true);
+                //
+                ooStream.writeObject(database.getProfilePhotoName(params[1]));
             }
-            ooStream.writeObject(response);
+            //
             ooStream.flush();
         }
         else if(command.startsWith(Command.REGISTER))
@@ -188,7 +193,9 @@ public class TcpServerHandleClient implements Runnable {
             {
                 try
                 {
-                    database.addUser(params[1], params[2]);
+                    String profile_pic = new Date().getTime() + "" + Math.random() * 128 + ".jpg";
+                    System.out.println(profile_pic);
+                    database.addUser(params[1], params[2], profile_pic);
                     ooStream.writeObject(Response.OK);
                     
                     
@@ -198,19 +205,30 @@ public class TcpServerHandleClient implements Runnable {
                     BufferedInputStream in = new BufferedInputStream(
                         player.getSocket().getInputStream());
 
-                    OutputStream out = new FileOutputStream(params[1] + ".jpg");
+                    OutputStream out = new FileOutputStream(profile_pic);
                     System.out.println("receiving file");
 
                     byte[] buf = new byte[8192];
                     int len = 0;
-                    while ((len = in.read(buf)) != -1) {
-                        out.write(buf, 0, len);
-                        if(received + len == size)
-                            break;
-                        else
-                            received += len;
+                    try
+                    {
+                        while ((len = in.read(buf)) != -1) {
+                            out.write(buf, 0, len);
+                            if(received + len == size)
+                                break;
+                            else
+                                received += len;
+                        }
+                    }
+                    catch(IOException ex)
+                    {
+                        database.removeUser(params[1]);
+                        throw new IOException();
                     }
 
+                    //send file name to client
+                    ooStream.writeObject(profile_pic);
+                    
                     System.out.println("received");
                     out.close();
                     
@@ -223,12 +241,12 @@ public class TcpServerHandleClient implements Runnable {
             }
             ooStream.flush();
         }
-        else if(command.startsWith(Command.PRFILE_PIC_DOWN))
+        else if(command.startsWith(Command.PROFILE_PIC_DOWN))
         {
             String [] params = command.split(" ");
             
             InputStream in = new FileInputStream(
-                    new File(params[1] + ".jpg"));
+                    new File(params[1]));
             ooStream.writeObject((Integer)in.available());
             ooStream.flush();
             

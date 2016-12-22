@@ -385,7 +385,8 @@ public class DashboardActivity extends Activity {
 
         doUnbindService();
 
-        fromServerTask.cancel(true);
+        if(fromServerTask != null)
+            fromServerTask.cancel(true);
     }
 
 

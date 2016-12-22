@@ -115,11 +115,6 @@ public class NewGameActivity extends Activity {
         startActivityForResult(new Intent(this, SearchPlayerActivity.class), INVITE_PLAYER_CODE);
     }
 
-    public void clickPlayGameButton(View view)
-    {
-
-    }
-
     private void invitePlayer(String username)
     {
         //

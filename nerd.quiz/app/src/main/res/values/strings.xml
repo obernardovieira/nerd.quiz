@@ -3,4 +3,5 @@
     <string name="no_user_name_default">NoUserName</string>
     <string name="user_name">username</string>
     <string name="version_dbquestions">version_dbquestions</string>
+    <string name="profile_pic">profile_pic</string>
 </resources>

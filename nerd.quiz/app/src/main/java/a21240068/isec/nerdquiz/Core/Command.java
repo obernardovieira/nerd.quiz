@@ -24,5 +24,5 @@ public class Command {
     public static String LEAVED             = "leaved";
 
     public static String PROFILE_PIC_UP     = "profilepup";
-    public static String PRFILE_PIC_DOWN    = "profilepdown";
+    public static String PROFILE_PIC_DOWN   = "profilepdown";
 }

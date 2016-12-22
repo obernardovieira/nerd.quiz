@@ -24,10 +24,12 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -35,6 +37,7 @@ import java.util.List;
 import a21240068.isec.nerdquiz.Core.Command;
 import a21240068.isec.nerdquiz.Core.NerdQuizApp;
 import a21240068.isec.nerdquiz.Core.SocketService;
+import a21240068.isec.nerdquiz.Database.ProfilesData;
 import a21240068.isec.nerdquiz.Objects.Profile;
 
 public class SearchPlayerActivity extends Activity {
@@ -49,6 +52,8 @@ public class SearchPlayerActivity extends Activity {
 
     ObjectInputStream in;
     private ReceiveFromServerTask fromServerTask;
+
+    ProfilesData pdata;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,6 +71,8 @@ public class SearchPlayerActivity extends Activity {
                 fromServerTask.execute();
             }
         };
+
+        pdata = new ProfilesData(SearchPlayerActivity.this);
     }
 
     public void getConnectedPlayers()
@@ -179,10 +186,14 @@ public class SearchPlayerActivity extends Activity {
             View layout;
             String username;
             //Drawable profile_pic;
+            String profile_pic;
 
             layout = getLayoutInflater().inflate(R.layout.player_profile_for_lv,null);
             username = (String) players_profile.get(i).getName();
             //profile_pic = (Drawable) players_profile.get(i).getProfilePicture();
+            profile_pic = players_profile.get(i).getProfilePicture();
+
+            //
 
             ((TextView)layout.findViewById(R.id.tv_username)).setText(username);
             ((ImageView)layout.findViewById(R.id.iv_profile_pic)).setImageResource(R.drawable.user);
@@ -199,6 +210,7 @@ public class SearchPlayerActivity extends Activity {
         {
             String response = "";
             Object obj;
+            Profile profile;
 
             try {
                 while (!isCancelled()) {
@@ -211,14 +223,52 @@ public class SearchPlayerActivity extends Activity {
                             obj = in.readObject();
                             while(obj instanceof Profile)
                             {
-                                profiles.add((Profile) obj);
                                 //search photo
+                                profile = (Profile)obj;
                                 File p_pic = new File(getApplicationContext().getFilesDir(),
-                                        ((Profile)obj).getProfilePicture());
+                                        profile.getProfilePicture());
                                 if(!p_pic.exists())
                                 {
+
                                     //request new photo
+                                    mBoundService.sendMessage(Command.PROFILE_PIC_DOWN +
+                                            " " + profile.getProfilePicture());
+
+                                    //
+
+                                    Log.d("ppp", "abc");
+                                    Integer size = (Integer)in.readObject();
+                                    Integer received = 0;
+                                    BufferedInputStream in = new BufferedInputStream(mBoundService.getStreamIn());
+
+                                    OutputStream out = new FileOutputStream(
+                                            new File(getApplicationContext().getFilesDir(), profile.getProfilePicture()));
+                                    Log.d("receiving file", "abc");
+
+                                    byte[] buf = new byte[8192];
+                                    int len = 0;
+                                    while ((len = in.read(buf)) != -1) {
+                                        out.write(buf, 0, len);
+                                        if(received + len == size)
+                                            break;
+                                        else
+                                            received += len;
+                                    }
+
+                                    Log.d("received","abc");
+                                    out.close();
+                                    //
+
+                                    //save name of new photo
+                                    if(pdata.updateProfilePic(profile.getName(), profile.getProfilePicture()))
+                                        Log.d("new-photo", "updated");
+
+                                    //search for old photo and delete
+                                    File old_pic = new File(getApplicationContext().getFilesDir(),
+                                            pdata.getOldProfilePic(profile.getName()));
+                                    old_pic.delete();
                                 }
+                                profiles.add((Profile) obj);
                                 //
                                 obj = in.readObject();
                             }
