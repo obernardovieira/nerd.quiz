@@ -34,6 +34,8 @@ public class AuthenticationActivity extends Activity {
     private boolean mIsBound;
     private SocketService mBoundService;
 
+    String profile_pic_file_name;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -106,7 +108,7 @@ public class AuthenticationActivity extends Activity {
             if(response == Response.OK)
             {
                 TextView tv_username = (TextView) findViewById(R.id.et_username);
-                String username = tv_username.getText().toString();
+                final String username = tv_username.getText().toString();
 
                 SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(AuthenticationActivity.this);
                 SharedPreferences.Editor editor = preferences.edit();
@@ -115,20 +117,38 @@ public class AuthenticationActivity extends Activity {
 
                 Toast.makeText(AuthenticationActivity.this, "You are logged now!", Toast.LENGTH_LONG).show();
 
-                File profile_pic = new File(getApplicationContext().getFilesDir(), "profile_pic.jpg");
-                if(profile_pic.exists())
-                {
-                    Intent intent = new Intent(AuthenticationActivity.this, DashboardActivity.class);
-                    startActivity(intent);
+                //receber nome da foto de perfil
+                //verificar se existe
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        ObjectInputStream in;
+                        in = mBoundService.getObjectStreamIn();
 
-                    finish();
-                }
-                else
-                {
-                    mBoundService.sendMessage(Command.PRFILE_PIC_DOWN + " " + username);
-                    new ReceiveProfilePhotoServerTask().execute();
-                }
+                        try {
+                            profile_pic_file_name = (String)in.readObject();
 
+                            File profile_pic = new File(getApplicationContext().getFilesDir(), profile_pic_file_name);
+                            if(profile_pic.exists())
+                            {
+                                Intent intent = new Intent(AuthenticationActivity.this, DashboardActivity.class);
+                                startActivity(intent);
+
+                                finish();
+                            }
+                            else
+                            {
+                                mBoundService.sendMessage(Command.PROFILE_PIC_DOWN + " " + username);
+                                new ReceiveProfilePhotoServerTask().execute();
+                            }
+
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        } catch (ClassNotFoundException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }).start();
 
             }
             else if(response == Response.ERROR)
@@ -159,14 +179,14 @@ public class AuthenticationActivity extends Activity {
                         oiStream = mBoundService.getObjectStreamIn();
 
 
-                        System.out.println("ppp");
+                        Log.d("ppp", "abc");
                         Integer size = (Integer)oiStream.readObject();
                         Integer received = 0;
                         BufferedInputStream in = new BufferedInputStream(mBoundService.getStreamIn());
 
                         OutputStream out = new FileOutputStream(
-                                new File(getApplicationContext().getFilesDir(), "profile_pic.jpg"));
-                        System.out.println("receiving file");
+                                new File(getApplicationContext().getFilesDir(), profile_pic_file_name));
+                        Log.d("receiving file", "abc");
 
                         byte[] buf = new byte[8192];
                         int len = 0;
@@ -178,8 +198,13 @@ public class AuthenticationActivity extends Activity {
                                 received += len;
                         }
 
-                        System.out.println("received");
+                        Log.d("received", "abc");
                         out.close();
+
+                        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(AuthenticationActivity.this);
+                        SharedPreferences.Editor editor = preferences.edit();
+                        editor.putString(getString(R.string.profile_pic), profile_pic_file_name);
+                        editor.apply();
 
                         response = "OK";
                         //in.close();

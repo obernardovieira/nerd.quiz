@@ -41,6 +41,7 @@ public class NewGameActivity extends Activity {
     Runnable fromServerRunner;
     private ReceiveFromServerTask fromServerTask;
     private boolean first_attempt;
+    private String reInvite;
 
     private Handler handler;
     ObjectInputStream in;
@@ -49,6 +50,19 @@ public class NewGameActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_new_game);
+
+        if (savedInstanceState == null)
+        {
+            Bundle extras = getIntent().getExtras();
+            if(extras == null)
+            {
+                reInvite = null;
+            }
+            else
+            {
+                reInvite = extras.getString("reInvite");
+            }
+        }
 
         fromServerRunner = new Runnable(){
             public void run() {
@@ -82,6 +96,16 @@ public class NewGameActivity extends Activity {
 
                 in = mBoundService.getObjectStreamIn();
                 handler.post(fromServerRunner);
+                if(reInvite != null)
+                {
+                    handler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            invitePlayer(reInvite);
+                        }
+                    });
+
+                }
             }
         }).start();
     }
@@ -89,11 +113,6 @@ public class NewGameActivity extends Activity {
     public void clickSearchPlayerButton(View view)
     {
         startActivityForResult(new Intent(this, SearchPlayerActivity.class), INVITE_PLAYER_CODE);
-    }
-
-    public void clickPlayGameButton(View view)
-    {
-
     }
 
     private void invitePlayer(String username)

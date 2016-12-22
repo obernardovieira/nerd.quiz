@@ -17,6 +17,7 @@ import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -47,6 +48,7 @@ public class GameActivity extends Activity {
     private int                     total_questions_per_round;
     private ArrayList<GameQuestion> questions;
     private int                     answered_right;
+    private int                     other_answered_right;
 
     private ProgressBar             pb_questions_left;
     private TextView                tv_time;
@@ -62,6 +64,7 @@ public class GameActivity extends Activity {
     private Runnable                myRunner;
 
     private int                     points;
+    private int                     other_points;
     //private Thread                  the_final_countdown;
     private ScheduledExecutorService    scheduler;
 
@@ -87,6 +90,7 @@ public class GameActivity extends Activity {
         in_question                 = 0;
         handler                     = new Handler();
         answered_right              = 0;
+        other_answered_right        = 0;
         points                      = 0;
 
         pb_questions_left   = (ProgressBar)   findViewById(R.id.pb_questions_left);
@@ -264,6 +268,9 @@ public class GameActivity extends Activity {
         //passar dados
         intent.putExtra("t_questions", total_questions_per_round);
         intent.putExtra("ans_right", answered_right);
+        intent.putExtra("p_points", points);
+        intent.putExtra("o_points", other_points);
+        intent.putExtra("op_name", opponent_name);
         startActivity(intent);
 
         try
@@ -507,8 +514,7 @@ public class GameActivity extends Activity {
                         try {
 
                             String[] params = result.split(" ");
-                            opponent_name = params[1];
-                            player_socket = new Socket(params[2], Integer.parseInt(params[3]));
+                            player_socket = new Socket(params[1], Integer.parseInt(params[2]));
 
                             Log.d("Aceitou", "conectado.parte.1");
 
@@ -594,7 +600,9 @@ public class GameActivity extends Activity {
                             oostream.writeObject(q);
 
                     } catch (SocketException e) {
-                        e.printStackTrace();
+                        //e.printStackTrace();
+                        Toast.makeText(GameActivity.this, "Timout!", Toast.LENGTH_SHORT).show();
+                        finish();
                     } catch (IOException e) {
                         e.printStackTrace();
                     }

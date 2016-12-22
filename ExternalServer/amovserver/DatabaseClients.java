@@ -55,7 +55,8 @@ public class DatabaseClients {
         String sql = "CREATE TABLE  IF NOT EXISTS users " +
                "(id             INTEGER PRIMARY KEY   AUTOINCREMENT," +
                " name           TEXT    NOT NULL," + 
-               " password       TEXT    NOT NULL)"; 
+               " password       TEXT    NOT NULL," +
+               " profile_pic    TEXT    NOT NULL)"; 
         stmt.executeUpdate(sql);
 
         stmt.close();
@@ -64,21 +65,51 @@ public class DatabaseClients {
         System.out.println("Tables created!");
     }
     
-    public boolean addUser(String username, String password) throws SQLException
+    public void addUser(String username, String password, String profile_pic)
+            throws SQLException
     {
         stmt = c.createStatement();
             
-        String sql = "INSERT INTO users(name, password) VALUES('" +
-                username + "','" + password + "')"; 
+        String sql = "INSERT INTO users(name, password, profile_pic) VALUES('" +
+                username + "','" + password + "', '" + profile_pic + "')"; 
         stmt.executeUpdate(sql);
 
         stmt.close();
         c.commit();
-
-        return true;
     }
     
-    public int checkLogin(String username, String password) throws SQLException
+    public String getProfilePhotoName(String username)
+            throws SQLException
+    {
+        String found = "";
+        stmt = c.createStatement();
+        ResultSet rs = stmt.executeQuery(
+                "SELECT profile_pic FROM users WHERE name='" + username + "'");
+
+        if(rs.next())
+        {
+            found = rs.getString("profile_pic");
+        }
+        rs.close();
+        stmt.close();
+
+        return found;
+    }
+    
+    public void removeUser(String username)
+            throws SQLException
+    {
+        stmt = c.createStatement();
+            
+        String sql = "DELETE FROM users WHERE name = '" + username + "')"; 
+        stmt.executeUpdate(sql);
+
+        stmt.close();
+        c.commit();
+    }
+    
+    public int checkLogin(String username, String password)
+            throws SQLException
     {
         if(!checkUser(username))
             return Response.ERROR;
@@ -98,7 +129,8 @@ public class DatabaseClients {
         return found;
     }
     
-    public boolean checkUser(String username) throws SQLException
+    public boolean checkUser(String username)
+            throws SQLException
     {
         boolean found = false;
         stmt = c.createStatement();

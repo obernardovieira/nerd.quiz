@@ -12,6 +12,14 @@
     tools:context="a21240068.isec.nerdquiz.FinishGameActivity"
     android:gravity="center_vertical">
 
+
+    <TextView
+        android:text="Playing with\njosefino!"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textAlignment="center"
+        android:id="@+id/tv_playing" />
+
     <TextView
         android:text="Game over!"
         android:layout_width="match_parent"

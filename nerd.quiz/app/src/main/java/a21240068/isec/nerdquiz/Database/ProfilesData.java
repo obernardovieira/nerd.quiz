@@ -18,12 +18,13 @@ public class ProfilesData
         mDbHelper = new NerdQuizDBHelper(context);
     }
 
-    public boolean add(String username)
+    public boolean add(String username, String photo)
     {
         SQLiteDatabase db = mDbHelper.getWritableDatabase();
 
         ContentValues values = new ContentValues();
         values.put(NerdQuizContract.ProfilesTable.COLUMN_NAME, username);
+        values.put(NerdQuizContract.ProfilesTable.COLUMN_PHOTO, photo);
         long newRowId = db.insert(NerdQuizContract.ProfilesTable.TABLE_NAME, null, values);
 
         return (newRowId != -1);
@@ -39,6 +40,42 @@ public class ProfilesData
         _deleted = db.delete(NerdQuizContract.ProfilesTable.TABLE_NAME, selection, selectionArgs);
 
         return (_deleted != 0);
+    }
+
+    public String getOldProfilePic(String username)
+    {
+        SQLiteDatabase db = mDbHelper.getReadableDatabase();
+
+        String[] projection = {
+                NerdQuizContract.ProfilesTable.COLUMN_PHOTO
+        };
+
+        String selection = NerdQuizContract.ProfilesTable.COLUMN_NAME + " = ?";
+        String[] selectionArgs = { username };
+
+        Cursor c = db.query(
+                NerdQuizContract.ProfilesTable.TABLE_NAME,
+                projection,
+                selection,
+                selectionArgs,
+                null,
+                null,
+                null
+        );
+
+        return c.getString(c.getColumnIndexOrThrow(NerdQuizContract.ProfilesTable.COLUMN_PHOTO));
+    }
+    public boolean updateProfilePic(String username, String profile_pic)
+    {
+        SQLiteDatabase db = mDbHelper.getReadableDatabase();
+
+        ContentValues values = new ContentValues();
+        values.put(NerdQuizContract.ProfilesTable.COLUMN_PHOTO, profile_pic);
+        //
+        int id = db.update(NerdQuizContract.ProfilesTable.TABLE_NAME, values,
+                NerdQuizContract.ProfilesTable.COLUMN_NAME + "=" + username, null);
+
+        return (id != 0);
     }
 
     public boolean search(String username)
