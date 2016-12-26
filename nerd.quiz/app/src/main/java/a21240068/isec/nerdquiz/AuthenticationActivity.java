@@ -138,7 +138,7 @@ public class AuthenticationActivity extends Activity {
                             }
                             else
                             {
-                                mBoundService.sendMessage(Command.PROFILE_PIC_DOWN + " " + username);
+                                mBoundService.sendMessage(Command.PROFILE_PIC_DOWN + " " + profile_pic_file_name);
                                 new ReceiveProfilePhotoServerTask().execute();
                             }
 

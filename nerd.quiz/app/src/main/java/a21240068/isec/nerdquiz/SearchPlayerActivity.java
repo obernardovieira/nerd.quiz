@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.database.DataSetObserver;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
@@ -140,11 +141,26 @@ public class SearchPlayerActivity extends Activity {
         getActionBar().setDisplayHomeAsUpEnabled(true);
     }
 
-    public void addPlayerToView(String name)
+    public void addPlayerToView(String username, String profile_pic)
     {
         //
-        players_profile.add(new Profile(name, ""));
-        adapter.notifyDataSetChanged();
+        if(pdata.search(username))
+        {
+            Log.d("ghj","kmjnhgjnhbgv");
+            Log.d("ghj",pdata.getProfilePic(username));
+            players_profile.add(new Profile(username, pdata.getProfilePic(username)));
+            adapter.notifyDataSetChanged();
+        }
+
+        Log.d("pic","z");
+        Log.d("pic",profile_pic);
+        File p_pic = new File(getApplicationContext().getFilesDir(), profile_pic);
+        if(!p_pic.exists())
+        {
+            Log.d("pic","b");
+            new ReceivePhotoFromServerTask().execute(username, profile_pic);
+        }
+        //new ReceivePhotoFromServerTask().execute(username, profile_pic);
     }
 
     public void removePlayerFromView(String name)
@@ -196,9 +212,120 @@ public class SearchPlayerActivity extends Activity {
             //
 
             ((TextView)layout.findViewById(R.id.tv_username)).setText(username);
-            ((ImageView)layout.findViewById(R.id.iv_profile_pic)).setImageResource(R.drawable.user);
+            //((ImageView)layout.findViewById(R.id.iv_profile_pic)).setImageResource(R.drawable.user);
+
+            File imgFile = new File(getApplicationContext().getFilesDir(), profile_pic);
+
+            if(imgFile.exists())
+            {
+                Bitmap myBitmap = BitmapFactory.decodeFile(imgFile.getAbsolutePath());
+                ((ImageView)layout.findViewById(R.id.iv_profile_pic)).setImageBitmap(myBitmap);
+            }
 
             return layout;
+        }
+    }
+
+    private class ReceivePhotoFromServerTask extends AsyncTask<String, Void, String>
+    {
+        protected String doInBackground(String... params)
+        {
+            String response = "";
+
+            try {
+
+                //Log.d("ReceiveFromServerTask", String.valueOf(mBoundService.socket.getInputStream().available()));
+
+                //
+
+
+                //request new photo
+                mBoundService.sendMessage(Command.PROFILE_PIC_DOWN +
+                        " " + params[1]);
+
+                //
+
+                Log.d("ppp", "abc");
+
+                while (!isCancelled()) {
+
+                    if (mBoundService.socket.getInputStream().available() > 4) {
+
+                        Integer size = (Integer)in.readObject();
+                        Integer received = 0;
+                        BufferedInputStream in = new BufferedInputStream(mBoundService.getStreamIn());
+
+                        OutputStream out = new FileOutputStream(
+                                new File(getApplicationContext().getFilesDir(), params[1]));
+                        Log.d("receiving file", "abc");
+
+                        byte[] buf = new byte[8192];
+                        int len = 0;
+                        while ((len = in.read(buf)) != -1) {
+                            out.write(buf, 0, len);
+                            if(received + len == size)
+                                break;
+                            else
+                                received += len;
+                        }
+
+                        Log.d("received","abc");
+                        out.close();
+                        //
+
+
+                        response = params[0] + " " + params[1];
+                        break;
+                    }
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            }
+            Log.d("ReceiveFromServerTask","b");
+            return response;
+        }
+
+        protected void onPostExecute(String result) {
+            Log.d("onPostExecute(SPA)",result);
+            String [] params = result.split(" ");
+
+            if(!pdata.search(params[0]))
+            {
+                if(pdata.add(params[0], params[1]))
+                {
+                    Log.d("posttt","adicionado");
+                }
+                else
+                {
+                    Log.d("posttt","errrrror");
+                }
+                //save name of new photo
+                players_profile.add(new Profile(params[0], params[1]));
+                adapter.notifyDataSetChanged();
+            }
+            else if(!pdata.getProfilePic(params[0]).equals(params[1]))
+            {
+                if(pdata.updateProfilePic(params[0], params[1]))
+                {
+                    Log.d("new-photo", "updated");
+                    //search for old photo and delete
+                /*File old_pic = new File(getApplicationContext().getFilesDir(),
+                        pdata.getProfilePic(params[0]));
+                old_pic.delete();*/
+                    players_profile.add(new Profile(params[0], params[1]));
+                    adapter.notifyDataSetChanged();
+                }
+            }
+
+
+
+        }
+
+        public void onCancelled()
+        {
+            Log.d("fuckingStop(SPA)", "Cancelled.");
         }
     }
 
@@ -225,49 +352,7 @@ public class SearchPlayerActivity extends Activity {
                             {
                                 //search photo
                                 profile = (Profile)obj;
-                                File p_pic = new File(getApplicationContext().getFilesDir(),
-                                        profile.getProfilePicture());
-                                if(!p_pic.exists())
-                                {
-
-                                    //request new photo
-                                    mBoundService.sendMessage(Command.PROFILE_PIC_DOWN +
-                                            " " + profile.getProfilePicture());
-
-                                    //
-
-                                    Log.d("ppp", "abc");
-                                    Integer size = (Integer)in.readObject();
-                                    Integer received = 0;
-                                    BufferedInputStream in = new BufferedInputStream(mBoundService.getStreamIn());
-
-                                    OutputStream out = new FileOutputStream(
-                                            new File(getApplicationContext().getFilesDir(), profile.getProfilePicture()));
-                                    Log.d("receiving file", "abc");
-
-                                    byte[] buf = new byte[8192];
-                                    int len = 0;
-                                    while ((len = in.read(buf)) != -1) {
-                                        out.write(buf, 0, len);
-                                        if(received + len == size)
-                                            break;
-                                        else
-                                            received += len;
-                                    }
-
-                                    Log.d("received","abc");
-                                    out.close();
-                                    //
-
-                                    //save name of new photo
-                                    if(pdata.updateProfilePic(profile.getName(), profile.getProfilePicture()))
-                                        Log.d("new-photo", "updated");
-
-                                    //search for old photo and delete
-                                    File old_pic = new File(getApplicationContext().getFilesDir(),
-                                            pdata.getOldProfilePic(profile.getName()));
-                                    old_pic.delete();
-                                }
+                                //
                                 profiles.add((Profile) obj);
                                 //
                                 obj = in.readObject();
@@ -295,7 +380,7 @@ public class SearchPlayerActivity extends Activity {
             {
                 //
                 Toast.makeText(SearchPlayerActivity.this, params[1] + " joined the game!", Toast.LENGTH_LONG).show();
-                addPlayerToView(params[1]);
+                addPlayerToView(params[1], params[2]);
             }
             else if(result.startsWith(Command.LEAVED))
             {
@@ -307,7 +392,9 @@ public class SearchPlayerActivity extends Activity {
             {
                 for(Profile p : profiles)
                 {
-                    addPlayerToView(p.getName());
+                    Log.d("xyz","111");
+                    Log.d("xyz",p.getProfilePicture());
+                    addPlayerToView(p.getName(), p.getProfilePicture());
                 }
             }
             mainHandler.post(fromServerRunner);

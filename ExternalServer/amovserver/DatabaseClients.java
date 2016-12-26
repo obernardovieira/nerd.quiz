@@ -86,9 +86,11 @@ public class DatabaseClients {
         ResultSet rs = stmt.executeQuery(
                 "SELECT profile_pic FROM users WHERE name='" + username + "'");
 
+        System.out.println("pic for " + username);
         if(rs.next())
         {
             found = rs.getString("profile_pic");
+            System.out.println("found " + found);
         }
         rs.close();
         stmt.close();

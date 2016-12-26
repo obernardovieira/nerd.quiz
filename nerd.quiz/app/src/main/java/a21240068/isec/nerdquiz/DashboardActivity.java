@@ -8,6 +8,8 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
@@ -24,17 +26,24 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 
 import a21240068.isec.nerdquiz.Core.Command;
 import a21240068.isec.nerdquiz.Core.NerdQuizApp;
 import a21240068.isec.nerdquiz.Core.SocketService;
+import a21240068.isec.nerdquiz.Database.ProfilesData;
 import a21240068.isec.nerdquiz.Objects.DownloadQuestion;
 import a21240068.isec.nerdquiz.Objects.Game;
 import a21240068.isec.nerdquiz.Database.GamesData;
 import a21240068.isec.nerdquiz.Database.QuestionsData;
+import a21240068.isec.nerdquiz.Objects.Profile;
 
 public class DashboardActivity extends Activity {
 
@@ -49,6 +58,8 @@ public class DashboardActivity extends Activity {
     private boolean update_db_task;
     private boolean first_attempt;
 
+    private MyGamesHistoryAdapter adapter;
+
     ObjectInputStream in;
 
     @Override
@@ -56,11 +67,11 @@ public class DashboardActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_dashboard);
 
-        GamesData gdata = new GamesData(this);
-        games = gdata.listAll();
+        games = new ArrayList<>();
 
+        adapter = new MyGamesHistoryAdapter();
         ListView lv = (ListView) findViewById(R.id.lv_history);
-        lv.setAdapter(new MyGamesHistoryAdapter());
+        lv.setAdapter(adapter);
         application = (NerdQuizApp)getApplication();
 
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(DashboardActivity.this);
@@ -180,7 +191,18 @@ public class DashboardActivity extends Activity {
             ((TextView)layout.findViewById(R.id.tv_player_points)).setText(player_points);
             ((TextView)layout.findViewById(R.id.tv_date)).setText(date);
 
-            ((ImageView)layout.findViewById(R.id.iv_profile_pic)).setImageResource(android.R.drawable.btn_star_big_on);
+            ProfilesData pdata = new ProfilesData(DashboardActivity.this);
+            Log.d("interface",games.get(i).getOpponentName());
+            File imgFile = new File(getApplicationContext().getFilesDir(),
+                    pdata.getProfilePic(games.get(i).getOpponentName()));
+
+            if(imgFile.exists())
+            {
+                Bitmap myBitmap = BitmapFactory.decodeFile(imgFile.getAbsolutePath());
+                ((ImageView)layout.findViewById(R.id.iv_profile_pic)).setImageBitmap(myBitmap);
+            }
+
+            //((ImageView)layout.findViewById(R.id.iv_profile_pic)).setImageResource(android.R.drawable.btn_star_big_on);
 
             return layout;
         }
@@ -298,12 +320,82 @@ public class DashboardActivity extends Activity {
                         public void onClick(DialogInterface dialog, int id) {
                             // User clicked OK button
 
-                            mBoundService.sendMessage(Command.ACCEPT_INV + " " + params[1]);
+                            final ProfilesData pdata = new ProfilesData(DashboardActivity.this);
+                            if(!pdata.search(params[1]))
+                            {
 
-                            Intent intent = new Intent(DashboardActivity.this, GameActivity.class);
-                            intent.putExtra("playerToPlay", params[1]);
-                            intent.putExtra("isInvited", true);
-                            startActivity(intent);
+                                new Thread(new Runnable() {
+                                    @Override
+                                    public void run() {
+
+                                        try {
+                                            String profile_pic = "";
+
+                                            mBoundService.sendMessage("getppic" +
+                                                    " " + params[1]);
+
+                                            profile_pic = (String)in.readObject();
+
+                                            mBoundService.sendMessage(Command.PROFILE_PIC_DOWN +
+                                                    " " + profile_pic);
+
+                                            Integer size = (Integer) in.readObject();
+                                            Integer received = 0;
+                                            BufferedInputStream in = new BufferedInputStream(mBoundService.getStreamIn());
+
+                                            OutputStream out = new FileOutputStream(
+                                                    new File(getApplicationContext().getFilesDir(), profile_pic));
+                                            Log.d("receiving file", "abc");
+
+                                            byte[] buf = new byte[8192];
+                                            int len = 0;
+                                            while ((len = in.read(buf)) != -1) {
+                                                out.write(buf, 0, len);
+                                                if (received + len == size)
+                                                    break;
+                                                else
+                                                    received += len;
+                                            }
+
+                                            Log.d("received", "abc");
+                                            out.close();
+
+                                            if(pdata.add(params[1], profile_pic))
+                                            {
+                                                Log.d("posttt","adicionado");
+                                            }
+                                            else
+                                            {
+                                                Log.d("posttt","errrrror");
+                                            }
+
+                                            handler.post(new Runnable() {
+                                                @Override
+                                                public void run() {
+
+                                                    mBoundService.sendMessage(Command.ACCEPT_INV + " " + params[1]);
+
+                                                    Intent intent = new Intent(DashboardActivity.this, GameActivity.class);
+                                                    intent.putExtra("playerToPlay", params[1]);
+                                                    intent.putExtra("isInvited", true);
+                                                    startActivity(intent);
+                                                }
+                                            });
+
+                                        } catch (FileNotFoundException e) {
+                                            e.printStackTrace();
+                                        } catch (IOException e) {
+                                            e.printStackTrace();
+                                        } catch (ClassNotFoundException e) {
+                                            e.printStackTrace();
+                                        }
+                                    }
+                                }).start();
+
+
+
+
+                            }
 
                         /*
                         ServerSocket game_socket = new ServerSocket(5009);
@@ -377,6 +469,11 @@ public class DashboardActivity extends Activity {
         else {
             first_attempt = false;
         }
+
+        GamesData gdata = new GamesData(this);
+        games = gdata.listAll();
+
+        adapter.notifyDataSetChanged();
     }
 
     @Override
@@ -385,8 +482,7 @@ public class DashboardActivity extends Activity {
 
         doUnbindService();
 
-        if(fromServerTask != null)
-            fromServerTask.cancel(true);
+        fromServerTask.cancel(true);
     }
 
 
