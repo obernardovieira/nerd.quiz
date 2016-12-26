@@ -137,7 +137,9 @@ public class TcpServerHandleClient implements Runnable {
                     {
                         ooStream.writeObject(new Profile(player_in_list.getName(),
                             player_in_list.getProfilePicture()));
-                        System.out.println("vai!");
+                        System.out.println("vai! " +
+                                player_in_list.getName() + " " +
+                                player_in_list.getProfilePicture());
                     }
                         //profiles.add(player_in_list.getProfile());
                 }
@@ -145,6 +147,20 @@ public class TcpServerHandleClient implements Runnable {
             ooStream.writeObject(Command.SEARCH);
             //ooStream.writeObject(profiles);
             ooStream.flush();
+        }
+        else if(command.startsWith("getppic"))
+        {
+            String [] params = command.split(" ");
+            for(Player player_in_list : TcpServer.players)
+            {
+                if(player_in_list.getName().equals(params[1]))
+                {
+                    ooStream.writeObject(player_in_list.getProfilePicture());
+                    //ooStream.writeObject(profiles);
+                    ooStream.flush();
+                    break;
+                }
+            }
         }
         else if(command.startsWith(Command.SEARCH))
         {
@@ -160,6 +176,7 @@ public class TcpServerHandleClient implements Runnable {
             else
             {
                 player.setName(params[1]);
+                player.setProfilePicture(database.getProfilePhotoName(params[1]));
                 player.setConnected(true);
                 TcpServer.notifyAllPlayers(Command.JOINED + " " + params[1]);
             }
@@ -172,8 +189,10 @@ public class TcpServerHandleClient implements Runnable {
             ooStream.writeObject(response);
             if(response.equals(Response.OK))
             {
-                TcpServer.notifyAllPlayers(Command.JOINED + " " + params[1]);
+                TcpServer.notifyAllPlayers(Command.JOINED + " " + params[1] +
+                        " " + database.getProfilePhotoName(params[1]));
                 player.setName(params[1]);
+                player.setProfilePicture(database.getProfilePhotoName(params[1]));
                 player.setConnected(true);
                 //
                 ooStream.writeObject(database.getProfilePhotoName(params[1]));
@@ -193,7 +212,7 @@ public class TcpServerHandleClient implements Runnable {
             {
                 try
                 {
-                    String profile_pic = new Date().getTime() + "" + Math.random() * 128 + ".jpg";
+                    String profile_pic = new Date().getTime() + "_" + Math.random() * 128 + ".jpg";
                     System.out.println(profile_pic);
                     database.addUser(params[1], params[2], profile_pic);
                     ooStream.writeObject(Response.OK);

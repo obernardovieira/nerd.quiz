@@ -10,10 +10,10 @@
         android:layout_height="wrap_content">
 
         <ImageView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
             app:srcCompat="@android:drawable/btn_star_big_on"
-            android:id="@+id/iv_profile_pic"/>
+            android:id="@+id/iv_profile_pic"
+            android:layout_width="35sp"
+            android:layout_height="35sp" />
 
         <LinearLayout
             android:orientation="vertical"

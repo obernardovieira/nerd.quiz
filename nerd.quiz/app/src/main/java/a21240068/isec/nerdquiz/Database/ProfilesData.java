@@ -42,7 +42,7 @@ public class ProfilesData
         return (_deleted != 0);
     }
 
-    public String getOldProfilePic(String username)
+    public String getProfilePic(String username)
     {
         SQLiteDatabase db = mDbHelper.getReadableDatabase();
 
@@ -62,6 +62,7 @@ public class ProfilesData
                 null,
                 null
         );
+        c.moveToFirst();
 
         return c.getString(c.getColumnIndexOrThrow(NerdQuizContract.ProfilesTable.COLUMN_PHOTO));
     }
