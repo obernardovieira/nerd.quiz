@@ -48,7 +48,6 @@ public class GameActivity extends Activity {
     private int                     total_questions_per_round;
     private ArrayList<GameQuestion> questions;
     private int                     answered_right;
-    private int                     other_answered_right;
 
     private ProgressBar             pb_questions_left;
     private TextView                tv_time;
@@ -63,9 +62,11 @@ public class GameActivity extends Activity {
     private Handler                 handler;
     private Runnable                myRunner;
 
+    private ReceiveFromServerTask   server_task;
+    private ReceiveFromPlayerTask   player_task;
+
     private int                     points;
     private int                     other_points;
-    //private Thread                  the_final_countdown;
     private ScheduledExecutorService    scheduler;
 
     Socket                          player_socket;
@@ -90,7 +91,6 @@ public class GameActivity extends Activity {
         in_question                 = 0;
         handler                     = new Handler();
         answered_right              = 0;
-        other_answered_right        = 0;
         points                      = 0;
 
         pb_questions_left   = (ProgressBar)   findViewById(R.id.pb_questions_left);
@@ -101,7 +101,6 @@ public class GameActivity extends Activity {
         bt_answer_three     = (Button)        findViewById(R.id.bt_answer_three);
 
         pb_questions_left   .setMax(total_questions_per_round);
-        //showNewQuestion();
 
         if (savedInstanceState == null)
         {
@@ -117,14 +116,13 @@ public class GameActivity extends Activity {
                 isInvited = extras.getBoolean("isInvited");
             }
         }
-        /*else
-        {
-            opponent_name = (String) savedInstanceState.getSerializable("playerToPlay");
-        }*/
 
-        myRunner = new Runnable(){
-            public void run() {
-                new ReceiveFromPlayerTask().execute();
+        myRunner = new Runnable()
+        {
+            public void run()
+            {
+                player_task = new ReceiveFromPlayerTask();
+                player_task.execute();
             }
         };
     }
@@ -150,13 +148,18 @@ public class GameActivity extends Activity {
                             scheduler.shutdownNow();
                             if((!theOtherAnswered && isInvited) || theOtherAnswered)
                             {
-                                new Thread(new Runnable() {
+                                new Thread(new Runnable()
+                                {
                                     @Override
-                                    public void run() {
-                                        try {
+                                    public void run()
+                                    {
+                                        try
+                                        {
                                             oostream.writeObject(Command.NEXT_QUEST);
-                                        } catch (IOException e) {
-                                            e.printStackTrace();
+                                        }
+                                        catch (IOException e)
+                                        {
+                                            mBoundService.errorConnection();
                                         }
                                     }
                                 }).start();
@@ -176,96 +179,34 @@ public class GameActivity extends Activity {
             }
         };
         scheduler.scheduleAtFixedRate(beeper, 1, 1, SECONDS);
-        /*the_final_countdown = new Thread()
-        {
-            public void run()
-            {
-                while (!isInterrupted())
-                {
-                    try
-                    {
-                        Thread.sleep(1000);
-                    }
-                    catch (InterruptedException e)
-                    {
-                        e.printStackTrace();
-                    }
-                    handler.post(new Runnable()
-                    {
-                        public void run()
-                        {
-                            tv_time.setText(Integer.toString(time));
-                            time--;
-                            if(time < 0)
-                            {
-                                if((!theOtherAnswered && isInvited) || theOtherAnswered)
-                                {
-                                    new Thread(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            try {
-                                                oostream.writeObject(Command.NEXT_QUEST);
-                                            } catch (IOException e) {
-                                                e.printStackTrace();
-                                            }
-                                        }
-                                    }).start();
-                                }
-                                if(++in_question < total_questions_per_round)
-                                    showNewQuestion();
-                                else
-                                    finishQuiz();
-
-                            }
-                        }
-                    });
-                }
-            }
-        };
-        the_final_countdown.start();*/
     }
 
     public void showNewQuestion()
     {
-        ArrayList<String> answers   = questions.get(in_question).getAnswers();
-        time                        = 30;
-        pb_questions_left           .setProgress(in_question);
-        tv_time                     .setText(Integer.toString(time));
+        ArrayList<String> answers = questions.get(in_question).getAnswers();
+        time = 30;
+        pb_questions_left.setProgress(in_question);
+        tv_time.setText(Integer.toString(time));
         //
-        tv_question     .setText(questions.get(in_question).getQuestion());
-        bt_answer_one   .setText(answers.get(0));
-        bt_answer_two   .setText(answers.get(1));
-        bt_answer_three .setText(answers.get(2));
+        tv_question.setText(questions.get(in_question).getQuestion());
+        bt_answer_one.setText(answers.get(0));
+        bt_answer_two.setText(answers.get(1));
+        bt_answer_three.setText(answers.get(2));
         //
-        theOtherAnswered    = false;
-        IAnswered           = false;
+        theOtherAnswered = false;
+        IAnswered = false;
         startCountdown();
     }
 
     public void gameStart()
     {
         //
-        /*TextView tv_wait = (TextView)findViewById(R.id.tv_wait);
-
-        for(int i = 3; i > 0; i--)
-        {
-            tv_wait.setText(String.valueOf(i));
-            try { Thread.sleep(1000); } catch (InterruptedException e) { }
-        }
-
-        LinearLayout layout_game = (LinearLayout)findViewById(R.id.layout_game);
-        LinearLayout layout_wait = (LinearLayout)findViewById(R.id.layout_wait);
-
-        layout_wait.setVisibility(View.GONE);
-        layout_game.setVisibility(View.VISIBLE);*/
-
         showNewQuestion();
     }
 
     public void finishQuiz()
     {
         Intent intent = new Intent(this, FinishGameActivity.class);
-        //passar dados
         intent.putExtra("t_questions", total_questions_per_round);
         intent.putExtra("ans_right", answered_right);
         intent.putExtra("p_points", points);
@@ -278,38 +219,40 @@ public class GameActivity extends Activity {
             oostream.close();
             oistream.close();
             player_socket.close();
-        } catch (IOException e) {
-            e.printStackTrace();
         }
-
-
+        catch (IOException e)
+        {
+           mBoundService.errorConnection();
+        }
         finish();
     }
 
     public void clickAnswerButton(View view)
     {
         Button btn = (Button) view.findViewById(view.getId());
-
         if(btn.getText().equals(questions.get(in_question).getRightAnswer()))
         {
             answered_right ++;
         }
 
         scheduler.shutdownNow();
-        if(theOtherAnswered == true)
+        if(theOtherAnswered)
         {
-            //
-            new Thread(new Runnable() {
+            new Thread(new Runnable()
+            {
                 @Override
-                public void run() {
-                    try {
+                public void run()
+                {
+                    try
+                    {
                         oostream.writeObject(Command.NEXT_QUEST);
-                    } catch (IOException e) {
-                        e.printStackTrace();
+                    }
+                    catch (IOException e)
+                    {
+                        mBoundService.errorConnection();
                     }
                 }
             }).start();
-            //next question
             if (++in_question < total_questions_per_round)
             {
                 handler.post(myRunner);
@@ -322,23 +265,23 @@ public class GameActivity extends Activity {
         }
         else
         {
-            //
-            new Thread(new Runnable() {
+            new Thread(new Runnable()
+            {
                 @Override
-                public void run() {
-                    try {
+                public void run()
+                {
+                    try
+                    {
                         oostream.writeObject(Command.OTHER_ANSWERED);
-                    } catch (IOException e) {
-                        e.printStackTrace();
+                    }
+                    catch (IOException e)
+                    {
+                        mBoundService.errorConnection();
                     }
                 }
             }).start();
-            //the_final_countdown.interrupt();
-            //command telling that answered
             IAnswered = true;
         }
-
-
     }
 
     private class ReceiveFromPlayerTask extends AsyncTask<Void, Void, String>
@@ -346,66 +289,55 @@ public class GameActivity extends Activity {
         protected String doInBackground(Void... pms)
         {
             String response = "";
-            Log.d("reveice", "doInBackground");
-            try {
-                while (!isCancelled()) {
-                    //Log.d("ReceiveFromServerTask", String.valueOf(mBoundService.socket.getInputStream().available()));
-                    if (player_socket.getInputStream().available() > 4) {
+            try
+            {
+                while (!isCancelled())
+                {
+                    if (player_socket.getInputStream().available() > 4)
+                    {
                         response = (String) oistream.readObject();
-                        Log.d("reveice", response);
-
-
-
                         break;
                     }
-
                 }
-            } catch (ClassNotFoundException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-                Log.d("closed sutpid playr", "not playing now");
             }
-            Log.d("ReceiveFromServerTask","b");
-
+            catch (ClassNotFoundException | IOException ignored)
+            {
+                response = "";
+            }
             return response;
         }
 
-        protected void onPostExecute(String result) {
-            Log.d("onPostExecute",result);
-
-            //iniciou jogo
+        protected void onPostExecute(String result)
+        {
             if(result.equals(Command.RECEIVE_QUESTIONS))
             {
-
-                new Thread(new Runnable() {
+                new Thread(new Runnable()
+                {
                     @Override
-                    public void run() {
-                        try {
-                            Log.d("Aceitou", "conectado.parte.1");
-
+                    public void run()
+                    {
+                        try
+                        {
                             Integer total = (Integer) oistream.readObject();
-                            for (int i = 0; i < total; i++) {
+                            for (int i = 0; i < total; i++)
+                            {
                                 questions.add((GameQuestion) oistream.readObject());
                             }
-
-                            Log.d("Aceitou", "conectado.parte.1");
-
                             handler.post(myRunner);
-
                             oostream.writeObject(Command.GAME_START);
                             oostream.flush();
-
-                            handler.post(new Runnable() {
+                            handler.post(new Runnable()
+                            {
                                 @Override
-                                public void run() {
+                                public void run()
+                                {
                                     gameStart();
                                 }
                             });
-                        } catch (ClassNotFoundException e) {
-                            e.printStackTrace();
-                        } catch (IOException e) {
-                            e.printStackTrace();
+                        }
+                        catch (IOException | ClassNotFoundException e)
+                        {
+                            mBoundService.errorConnection();
                         }
                     }
                 }).start();
@@ -433,13 +365,18 @@ public class GameActivity extends Activity {
             {
                 if(IAnswered)
                 {
-                    new Thread(new Runnable() {
+                    new Thread(new Runnable()
+                    {
                         @Override
-                        public void run() {
-                            try {
+                        public void run()
+                        {
+                            try
+                            {
                                 oostream.writeObject(Command.NEXT_QUEST);
-                            } catch (IOException e) {
-                                e.printStackTrace();
+                            }
+                            catch (IOException e)
+                            {
+                                mBoundService.errorConnection();
                             }
                         }
                     }).start();
@@ -458,18 +395,16 @@ public class GameActivity extends Activity {
                 {
                     theOtherAnswered = true;
                 }
-                //if I already answered
             }
-
-
-
-            Log.d("reveice", "playerer");
+            else if(result.equals(""))
+            {
+                mBoundService.errorConnection();
+            }
         }
 
         @Override
-        protected void onCancelled() {
-            Log.i("AsyncTask", "Cancelled.");
-        }
+        protected void onCancelled()
+        { }
     }
 
     private class ReceiveFromServerTask extends AsyncTask<Void, Void, String>
@@ -477,104 +412,74 @@ public class GameActivity extends Activity {
         protected String doInBackground(Void... pms)
         {
             String response = "";
-            Log.d("reveice", "doInBackground");
-            try {
-                while (!isCancelled()) {
-                    //Log.d("ReceiveFromServerTask", String.valueOf(mBoundService.socket.getInputStream().available()));
-                    if (mBoundService.socket.getInputStream().available() > 4) {
-                        response = (String) mBoundService.getObjectStreamIn().readObject();
-                        Log.d("reveice", response);
-
-
-
-                        break;
+            try
+            {
+                while (!isCancelled())
+                {
+                    if (mBoundService.socket.getInputStream().available() < 4)
+                    {
+                        continue;
                     }
+                    response = (String) mBoundService.getObjectStreamIn().readObject();
+                    if (response.startsWith(Command.NEW_GAME))
+                    {
+                        String[] params = response.split(" ");
+                        player_socket = new Socket(params[1], Integer.parseInt(params[2]));
 
+                        oostream = new ObjectOutputStream(player_socket.getOutputStream());
+                        oistream = new ObjectInputStream(player_socket.getInputStream());
+
+                        handler.post(myRunner);
+                    }
+                    break;
                 }
-            } catch (ClassNotFoundException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
             }
-            Log.d("ReceiveFromServerTask","b");
-
+            catch (IOException | ClassNotFoundException ignored)
+            {
+                response = "ERROR";
+            }
             return response;
         }
 
-        protected void onPostExecute(final String result) {
-            Log.d("onPostExecute",result);
-
-            //iniciou jogo
-
-            if (result.startsWith(Command.NEW_GAME)) {
-
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-
-                            String[] params = result.split(" ");
-                            player_socket = new Socket(params[1], Integer.parseInt(params[2]));
-
-                            Log.d("Aceitou", "conectado.parte.1");
-
-                            oostream = new ObjectOutputStream(player_socket.getOutputStream());
-                            oistream = new ObjectInputStream(player_socket.getInputStream());
-
-                            handler.post(myRunner);
-
-                        } catch (UnknownHostException e) {
-                            e.printStackTrace();
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }).start();
+        protected void onPostExecute(String result)
+        {
+            if(result.equals("ERROR"))
+            {
+                mBoundService.errorConnection();
             }
-
-
-
-            Log.d("reveice", "playerer");
         }
 
         @Override
-        protected void onCancelled() {
-            Log.i("AsyncTask", "Cancelled.");
-        }
+        protected void onCancelled()
+        { }
     }
 
     @Override
-    protected void onResume() {
+    protected void onResume()
+    {
         super.onResume();
-
-
         doBindService();
+    }
 
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while(mBoundService == null)
-                {
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-                while(mBoundService.socket == null)
-                {
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
+    @Override
+    protected void onPause()
+    {
+        super.onPause();
+        doUnbindService();
+    }
 
+    private ServiceConnection mConnection = new ServiceConnection()
+    {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service)
+        {
+            mBoundService = ((SocketService.LocalBinder)service).getService();
+            if(mBoundService.isConnected())
+            {
                 if(isInvited)
                 {
-                    try {
-
-
+                    try
+                    {
                         ServerSocket game_socket = new ServerSocket(5009);
                         game_socket.setSoTimeout(5000);
 
@@ -599,62 +504,55 @@ public class GameActivity extends Activity {
                         for (GameQuestion q : questions)
                             oostream.writeObject(q);
 
-                    } catch (SocketException e) {
-                        //e.printStackTrace();
-                        Toast.makeText(GameActivity.this, "Timout!", Toast.LENGTH_SHORT).show();
+                    }
+                    catch (SocketException e)
+                    {
+                        Toast.makeText(GameActivity.this, "TimeOut!", Toast.LENGTH_SHORT).show();
                         finish();
-                    } catch (IOException e) {
-                        e.printStackTrace();
+                    }
+                    catch (IOException e)
+                    {
+                        mBoundService.errorConnection();
                     }
                 }
                 else
                 {
-                    new ReceiveFromServerTask().execute();
+                    server_task = new ReceiveFromServerTask();
+                    server_task.execute();
                 }
+
             }
-        }).start();
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-
-        doUnbindService();
-    }
-
-    private ServiceConnection mConnection = new ServiceConnection() {
-        //EDITED PART
-        @Override
-        public void onServiceConnected(ComponentName name, IBinder service) {
-            // TODO Auto-generated method stub
-            mBoundService = ((SocketService.LocalBinder)service).getService();
-
         }
 
         @Override
-        public void onServiceDisconnected(ComponentName name) {
-            // TODO Auto-generated method stub
+        public void onServiceDisconnected(ComponentName name)
+        {
             mBoundService = null;
         }
 
     };
 
-    private void doBindService() {
+    private void doBindService()
+    {
         bindService(new Intent(GameActivity.this, SocketService.class), mConnection, Context.BIND_AUTO_CREATE);
         mIsBound = true;
-        if(mBoundService!=null){
-            mBoundService.IsBoundable(this);
-        }
-        Log.d("SocketService", "doBindService");
     }
 
-    private void doUnbindService() {
-        if (mIsBound) {
-            // Detach our existing connection.
+    private void doUnbindService()
+    {
+        if (mIsBound)
+        {
             unbindService(mConnection);
             mIsBound = false;
+            if(player_task != null)
+            {
+                player_task.cancel(true);
+            }
+            if(server_task != null)
+            {
+                server_task.cancel(true);
+            }
         }
-        Log.d("SocketService", "doUnbindService");
     }
 
 }
