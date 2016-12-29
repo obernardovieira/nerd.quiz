@@ -89,7 +89,8 @@ public class RegisterActivity extends Activity
 
     public void registerOnServer(final String username, final String password)
     {
-        mBoundService.sendMessage(Command.REGISTER + " " + username + " " + password);
+        mBoundService.sendMessage(getResources().getString(R.string.command_register) +
+                " " + username + " " + password);
         task = new ReceiveFromServerTask();
         task.execute();
     }
@@ -246,7 +247,10 @@ public class RegisterActivity extends Activity
         {
             unbindService(mConnection);
             mIsBound = false;
-            task.cancel(true);
+            if(task != null)
+            {
+                task.cancel(true);
+            }
         }
     }
 }

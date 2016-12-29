@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Binder;
+import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
 import android.widget.Toast;
@@ -37,6 +38,7 @@ public class SocketService extends Service
     public Socket socket;
     InetAddress serverAddr;
     private Context context;
+    private Handler handler;
 
     @Override
     public IBinder onBind(Intent intent)
@@ -135,6 +137,7 @@ public class SocketService extends Service
     public void setContext(Context context)
     {
         this.context = context;
+        this.handler = new Handler(context.getMainLooper());
         if(socket == null)
         {
             errorConnection();
@@ -149,7 +152,7 @@ public class SocketService extends Service
 
     public void errorConnection()
     {
-        final AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
         builder.setMessage("Probably you lost your internet connection!")
                 .setTitle("Server not found")
                 .setPositiveButton("Reconnect", new DialogInterface.OnClickListener()
@@ -159,7 +162,31 @@ public class SocketService extends Service
                     {
                         if(!isConnected())
                         {
+                            Toast.makeText(context, "Reconnecting ...", Toast.LENGTH_LONG).show();
                             new Thread(new connectSocket()).start();
+                            new Thread(new Runnable()
+                            {
+                                @Override
+                                public void run()
+                                {
+                                    try
+                                    {
+                                        Thread.sleep(2000);
+                                    }
+                                    catch (InterruptedException ignored) { }
+                                    if(!isConnected())
+                                    {
+                                        handler.post(new Runnable()
+                                        {
+                                            @Override
+                                            public void run()
+                                            {
+                                                errorConnection();
+                                            }
+                                        });
+                                    }
+                                }
+                            }).start();
                         }
                         dialog.dismiss();
                     }
@@ -176,62 +203,38 @@ public class SocketService extends Service
         {
             try
             {
-
-
-                //here you must put your computer's IP address.
-                Log.d("TCP Client", "C: Connecting");
                 serverAddr = InetAddress.getByName(SERVERIP);
-                Log.d("TCP Client", "C: Connecting...");
-                //create a socket to make the connection with the server
-
                 socket = new Socket(serverAddr, SERVERPORT);
-
-
-
-                try {
-
-
-                    //send the message to the server
-                    //out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(socket.getOutputStream())), true);
-                    Log.d("TCP Client", "Opening streams.");
+                try
+                {
                     out = new ObjectOutputStream(socket.getOutputStream());
                     in = new ObjectInputStream(socket.getInputStream());
-                    //out.writeObject("Ola");
-
-                    Log.d("TCP Client", "C: Sent.");
-
-                    Log.d("TCP Client", "C: Done.");
-
                 }
-                catch (Exception e) {
-
-                    Log.d("TCP", "S: Error", e);
-
+                catch (Exception ignored)
+                {
+                    socket = null;
                 }
-            } catch (Exception e) {
-
-
-                Log.d("TCP", "C: Error", e);
+            }
+            catch (Exception e)
+            {
                 socket = null;
             }
-
         }
-
     }
 
-
     @Override
-    public void onDestroy() {
+    public void onDestroy()
+    {
         super.onDestroy();
-        try {
+        try
+        {
             out.close();
             socket.close();
-        } catch (Exception e) {
-            // TODO Auto-generated catch block
+        }
+        catch (Exception e)
+        {
             e.printStackTrace();
         }
         socket = null;
     }
-
-
 }

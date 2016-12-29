@@ -33,28 +33,48 @@ public class AuthenticationActivity extends Activity {
 
     private boolean mIsBound;
     private SocketService mBoundService;
+    private ReceiveFromServerTask task;
+    private ReceiveProfilePhotoServerTask photo_task;
 
     String profile_pic_file_name;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState)
+    {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_authentication);
     }
 
     public void clickLoginButton(View view)
     {
-        TextView tv_username = (TextView) findViewById(R.id.et_username);
-        TextView tv_password = (TextView) findViewById(R.id.et_password);
+        if(!mBoundService.isConnected())
+        {
+            mBoundService.errorConnection();
+            return;
+        }
 
-        String username = tv_username.getText().toString();
-        String password = tv_password.getText().toString();
+        TextView et_username = (TextView) findViewById(R.id.et_username);
+        TextView et_password = (TextView) findViewById(R.id.et_password);
 
-        //
+        if(et_username.length() == 0)
+        {
+            Toast.makeText(this, "Needs username!", Toast.LENGTH_LONG).show();
+            return;
+        }
+        else if(et_password.length() == 0)
+        {
+            Toast.makeText(this, "Needs password!", Toast.LENGTH_LONG).show();
+            return;
+        }
 
-        mBoundService.sendMessage(Command.LOGIN + " " + username + " " + password);
+        String username = et_username.getText().toString();
+        String password = et_password.getText().toString();
 
-        new ReceiveFromServerTask().execute();
+        mBoundService.sendMessage(getResources().getString(R.string.command_login) +
+                " " + username + " " + password);
+
+        task = new ReceiveFromServerTask();
+        task.execute();
     }
 
     public void clickNotRegisteredText(View view)
@@ -75,37 +95,23 @@ public class AuthenticationActivity extends Activity {
             {
                 while(!isCancelled())
                 {
-                    if(mBoundService.socket.getInputStream().available() > 4)
+                    if(mBoundService.socket.getInputStream().available() < 4)
                     {
-                        Object obj;
-                        ObjectInputStream in;
-                        in = mBoundService.getObjectStreamIn();
-                        obj = in.readObject();
-
-                        if(obj instanceof String)
-                            Log.d("sdfghj", (String)obj);
-                        else if(obj instanceof Integer)
-                            response = (Integer)obj;
-                        //in.close();
-                        break;
+                        continue;
                     }
+                    ObjectInputStream in = mBoundService.getObjectStreamIn();
+                    response = (Integer)in.readObject();
+                    break;
                 }
             }
-            catch (IOException e)
-            {
-                e.printStackTrace();
-            }
-            catch (ClassNotFoundException e)
-            {
-                e.printStackTrace();
-            }
+            catch (IOException | ClassNotFoundException ignored) { }
             return response.toString();
         }
 
-        protected void onPostExecute(String result) {
+        protected void onPostExecute(String result)
+        {
             Integer response = Integer.parseInt(result);
-            Log.d("onPostExecute",result);
-            if(response == Response.OK)
+            if(response.equals(Response.OK))
             {
                 TextView tv_username = (TextView) findViewById(R.id.et_username);
                 final String username = tv_username.getText().toString();
@@ -117,15 +123,16 @@ public class AuthenticationActivity extends Activity {
 
                 Toast.makeText(AuthenticationActivity.this, "You are logged now!", Toast.LENGTH_LONG).show();
 
-                //receber nome da foto de perfil
-                //verificar se existe
-                new Thread(new Runnable() {
+                new Thread(new Runnable()
+                {
                     @Override
-                    public void run() {
+                    public void run()
+                    {
                         ObjectInputStream in;
                         in = mBoundService.getObjectStreamIn();
 
-                        try {
+                        try
+                        {
                             profile_pic_file_name = (String)in.readObject();
 
                             File profile_pic = new File(getApplicationContext().getFilesDir(), profile_pic_file_name);
@@ -139,28 +146,27 @@ public class AuthenticationActivity extends Activity {
                             else
                             {
                                 mBoundService.sendMessage(Command.PROFILE_PIC_DOWN + " " + profile_pic_file_name);
-                                new ReceiveProfilePhotoServerTask().execute();
+                                photo_task = new ReceiveProfilePhotoServerTask();
+                                photo_task.execute();
                             }
 
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        } catch (ClassNotFoundException e) {
-                            e.printStackTrace();
+                        }
+                        catch (IOException | ClassNotFoundException e)
+                        {
+                            mBoundService.errorConnection();
                         }
                     }
                 }).start();
 
             }
-            else if(response == Response.ERROR)
+            else if(response.equals(Response.ERROR))
             {
                 Toast.makeText(AuthenticationActivity.this, "An error occurred while login!", Toast.LENGTH_LONG).show();
             }
         }
 
         @Override
-        protected void onCancelled() {
-            Log.i("AsyncTask", "Cancelled.");
-        }
+        protected void onCancelled() { }
     }
 
     private class ReceiveProfilePhotoServerTask extends AsyncTask<Void, Void, String>
@@ -168,64 +174,50 @@ public class AuthenticationActivity extends Activity {
         protected String doInBackground(Void... params)
         {
             String response = "ERROR";
-
             try
             {
                 while(!isCancelled())
                 {
-                    if(mBoundService.socket.getInputStream().available() > 4)
+                    if(mBoundService.socket.getInputStream().available() < 4)
                     {
-                        ObjectInputStream oiStream;
-                        oiStream = mBoundService.getObjectStreamIn();
-
-
-                        Log.d("ppp", "abc");
-                        Integer size = (Integer)oiStream.readObject();
-                        Integer received = 0;
-                        BufferedInputStream in = new BufferedInputStream(mBoundService.getStreamIn());
-
-                        OutputStream out = new FileOutputStream(
-                                new File(getApplicationContext().getFilesDir(), profile_pic_file_name));
-                        Log.d("receiving file", "abc");
-
-                        byte[] buf = new byte[8192];
-                        int len = 0;
-                        while ((len = in.read(buf)) != -1) {
-                            out.write(buf, 0, len);
-                            if(received + len == size)
-                                break;
-                            else
-                                received += len;
-                        }
-
-                        Log.d("received", "abc");
-                        out.close();
-
-                        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(AuthenticationActivity.this);
-                        SharedPreferences.Editor editor = preferences.edit();
-                        editor.putString(getString(R.string.profile_pic), profile_pic_file_name);
-                        editor.apply();
-
-                        response = "OK";
-                        //in.close();
-                        break;
+                        continue;
                     }
+                    ObjectInputStream oiStream = mBoundService.getObjectStreamIn();
+                    Integer size = (Integer)oiStream.readObject();
+                    Integer received = 0;
+                    BufferedInputStream in = new BufferedInputStream(mBoundService.getStreamIn());
+
+                    OutputStream out = new FileOutputStream(
+                            new File(getApplicationContext().getFilesDir(), profile_pic_file_name));
+
+                    byte[] buf = new byte[getResources().getInteger(R.integer.bytes_on_photo)];
+                    int len = 0;
+                    while ((len = in.read(buf)) != -1)
+                    {
+                        out.write(buf, 0, len);
+                        if(received + len == size)
+                            break;
+                        else
+                            received += len;
+                    }
+                    out.close();
+
+                    SharedPreferences preferences = PreferenceManager.
+                            getDefaultSharedPreferences(AuthenticationActivity.this);
+                    SharedPreferences.Editor editor = preferences.edit();
+                    editor.putString(getString(R.string.profile_pic), profile_pic_file_name);
+                    editor.apply();
+
+                    response = "OK";
+                    break;
                 }
             }
-            catch (IOException e)
-            {
-                e.printStackTrace();
-            }
-            catch (ClassNotFoundException e)
-            {
-                e.printStackTrace();
-            }
+            catch (IOException | ClassNotFoundException ignored) { }
             return response;
         }
 
-        protected void onPostExecute(String result) {
-            Log.d("onPostExecute",result);
-
+        protected void onPostExecute(String result)
+        {
             if(result.equals("OK"))
             {
                 Intent intent = new Intent(AuthenticationActivity.this, DashboardActivity.class);
@@ -235,90 +227,65 @@ public class AuthenticationActivity extends Activity {
             }
             else
             {
-                //error downloading photo
+                mBoundService.errorConnection();
             }
         }
 
         @Override
-        protected void onCancelled() {
-            Log.i("AsyncTask", "Cancelled.");
-        }
+        protected void onCancelled()
+        { }
     }
 
     @Override
-    protected void onResume() {
+    protected void onResume()
+    {
         super.onResume();
-
-
         doBindService();
-
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while(mBoundService == null)
-                {
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-                while(mBoundService.socket == null)
-                {
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-
-            }
-        }).start();
     }
 
     @Override
-    protected void onPause() {
+    protected void onPause()
+    {
         super.onPause();
-
         doUnbindService();
     }
 
-
-    private ServiceConnection mConnection = new ServiceConnection() {
-        //EDITED PART
+    private ServiceConnection mConnection = new ServiceConnection()
+    {
         @Override
-        public void onServiceConnected(ComponentName name, IBinder service) {
-            // TODO Auto-generated method stub
+        public void onServiceConnected(ComponentName name, IBinder service)
+        {
             mBoundService = ((SocketService.LocalBinder)service).getService();
-
         }
 
         @Override
-        public void onServiceDisconnected(ComponentName name) {
-            // TODO Auto-generated method stub
+        public void onServiceDisconnected(ComponentName name)
+        {
             mBoundService = null;
         }
-
     };
 
-
-    private void doBindService() {
-        bindService(new Intent(AuthenticationActivity.this, SocketService.class), mConnection, Context.BIND_AUTO_CREATE);
+    private void doBindService()
+    {
+        bindService(new Intent(AuthenticationActivity.this, SocketService.class),
+                mConnection, Context.BIND_AUTO_CREATE);
         mIsBound = true;
-        if(mBoundService!=null){
-            mBoundService.IsBoundable(this);
-        }
-        Log.d("SocketService", "doBindService");
     }
 
-
-    private void doUnbindService() {
-        if (mIsBound) {
-            // Detach our existing connection.
+    private void doUnbindService()
+    {
+        if (mIsBound)
+        {
             unbindService(mConnection);
             mIsBound = false;
+            if(task != null)
+            {
+                task.cancel(true);
+            }
+            if(photo_task != null)
+            {
+                photo_task.cancel(true);
+            }
         }
-        Log.d("SocketService", "doUnbindService");
     }
-
 }
