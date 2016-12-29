@@ -26,6 +26,7 @@ import java.io.ObjectInputStream;
 import java.io.OutputStream;
 
 import a21240068.isec.nerdquiz.Core.Command;
+import a21240068.isec.nerdquiz.Core.NerdQuizApp;
 import a21240068.isec.nerdquiz.Core.Response;
 import a21240068.isec.nerdquiz.Core.SocketService;
 
@@ -121,6 +122,9 @@ public class AuthenticationActivity extends Activity {
                 editor.putString(getString(R.string.user_name), username);
                 editor.apply();
 
+                NerdQuizApp application = (NerdQuizApp)getApplication();
+                application.setUsername(username);
+                //
                 Toast.makeText(AuthenticationActivity.this, "You are logged now!", Toast.LENGTH_LONG).show();
 
                 new Thread(new Runnable()

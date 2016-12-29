@@ -108,6 +108,7 @@ public class SocketService extends Service
             {
                 if(out == null)
                 {
+                    errorConnection();
                     return;
                 }
                 try
@@ -117,7 +118,7 @@ public class SocketService extends Service
                 }
                 catch(IOException e)
                 {
-                    e.printStackTrace();
+                    errorConnection();
                 }
             }
         }).start();

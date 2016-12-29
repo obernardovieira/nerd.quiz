@@ -45,111 +45,73 @@ import a21240068.isec.nerdquiz.Database.GamesData;
 import a21240068.isec.nerdquiz.Database.QuestionsData;
 import a21240068.isec.nerdquiz.Objects.Profile;
 
-public class DashboardActivity extends Activity {
-
+public class DashboardActivity extends Activity
+{
     private ArrayList<Game> games;
     private boolean mIsBound;
     private SocketService mBoundService;
     private NerdQuizApp application;
-
     private Handler handler;
-    Runnable fromServerRunner;
-    private ReceiveFromServerTask fromServerTask;
+    private ReceiveFromServerTask task;
+    private ReceivePhotoFromServerTask photo_task;
     private boolean update_db_task;
-    private boolean first_attempt;
-
     private MyGamesHistoryAdapter adapter;
+    private boolean logged = false;
 
-    ObjectInputStream in;
+    Runnable fromServerRunner;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState)
+    {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_dashboard);
 
         games = new ArrayList<>();
-
         adapter = new MyGamesHistoryAdapter();
         ListView lv = (ListView) findViewById(R.id.lv_history);
         lv.setAdapter(adapter);
         application = (NerdQuizApp)getApplication();
 
-        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(DashboardActivity.this);
-        String defaultValue = getResources().getString(R.string.no_user_name_default);
-        String username = preferences.getString(getString(R.string.user_name), defaultValue);
-        application.setUsername(username);
-
-        fromServerRunner = new Runnable(){
-            public void run() {
-                fromServerTask = new ReceiveFromServerTask ();
-                fromServerTask.execute();
+        fromServerRunner = new Runnable()
+        {
+            public void run()
+            {
+                task = new ReceiveFromServerTask ();
+                task.execute();
             }
         };
 
         update_db_task = false;
-
         handler = new Handler();
-
-        first_attempt = true;
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while(mBoundService == null)
-                {
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-                while(mBoundService.socket == null)
-                {
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-
-                mBoundService.sendMessage(Command.AUTO_LOGIN + " " + application.getUsername());
-                /*try {
-                    in = new ObjectInputStream(mBoundService.socket.getInputStream());
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }*/
-                in = mBoundService.getObjectStreamIn();
-                handler.post(fromServerRunner);
-            }
-        }).start();
     }
 
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
+    public boolean onCreateOptionsMenu(Menu menu)
+    {
         getMenuInflater().inflate(R.menu.dashboard_options,menu);
         return true;
     }
 
     @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == R.id.id_profile) {
+    public boolean onOptionsItemSelected(MenuItem item)
+    {
+        if (item.getItemId() == R.id.id_profile)
+        {
             Intent intent = new Intent(this, EditProfileActivity.class);
             startActivity(intent);
             return true;
         }
         else if(item.getItemId() == R.id.id_upload_questions)
         {
-            //QuestionsData qdata = new QuestionsData(this);
-            //qdata.updateQuestions();
-
-            //mensagem ao servidor a pedir perguntas
-            SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
+            SharedPreferences preferences = PreferenceManager.
+                    getDefaultSharedPreferences(this);
             int defaultValue = 0;
-            int atualDBVersion = preferences.getInt(getString(R.string.version_dbquestions), defaultValue);
+            int atualDBVersion = preferences.
+                    getInt(getString(R.string.version_dbquestions), defaultValue);
 
             update_db_task = true;
-            mBoundService.sendMessage(Command.UPDATE_DB + " " + atualDBVersion);
-
-
+            mBoundService.sendMessage(getResources().getString(R.string.command_updatedb) +
+                    " " + atualDBVersion);
         }
         return super.onOptionsItemSelected(item);
     }
@@ -160,7 +122,8 @@ public class DashboardActivity extends Activity {
         startActivity(intent);
     }
 
-    class MyGamesHistoryAdapter extends BaseAdapter {
+    class MyGamesHistoryAdapter extends BaseAdapter
+    {
 
         @Override
         public int getCount() {
@@ -178,7 +141,8 @@ public class DashboardActivity extends Activity {
         }
 
         @Override
-        public View getView(int i, View view, ViewGroup viewGroup) {
+        public View getView(int i, View view, ViewGroup viewGroup)
+        {
             View layout = getLayoutInflater().inflate(R.layout.layout_item_dashboard,null);
 
             String opponent_name = games.get(i).getOpponentName();
@@ -192,7 +156,6 @@ public class DashboardActivity extends Activity {
             ((TextView)layout.findViewById(R.id.tv_date)).setText(date);
 
             ProfilesData pdata = new ProfilesData(DashboardActivity.this);
-            Log.d("interface",games.get(i).getOpponentName());
             File imgFile = new File(getApplicationContext().getFilesDir(),
                     pdata.getProfilePic(games.get(i).getOpponentName()));
 
@@ -201,325 +164,290 @@ public class DashboardActivity extends Activity {
                 Bitmap myBitmap = BitmapFactory.decodeFile(imgFile.getAbsolutePath());
                 ((ImageView)layout.findViewById(R.id.iv_profile_pic)).setImageBitmap(myBitmap);
             }
-
-            //((ImageView)layout.findViewById(R.id.iv_profile_pic)).setImageResource(android.R.drawable.btn_star_big_on);
-
             return layout;
         }
     }
-
 
     private class ReceiveFromServerTask extends AsyncTask<Void, Void, String>
     {
         protected String doInBackground(Void... params)
         {
             String response = "";
-            Log.d("doInBackground(DBA)", "started");
             try
             {
                 while(!isCancelled())
                 {
-                    //Log.d("ReceiveFromServerTask", String.valueOf(mBoundService.socket.getInputStream().available()));
-                    if(mBoundService.socket.getInputStream().available() > 4)
+                    if(mBoundService.socket.getInputStream().available() < 4)
                     {
-                        //ObjectInputStream in;
-                        //in = new ObjectInputStream(mBoundService.socket.getInputStream());
-                        if(update_db_task)
-                        {
-                            //
-                            Log.d("update","c");
-                            //ObjectInputStream in;
-                            //in = new ObjectInputStream(mBoundService.socket.getInputStream());
-                            QuestionsData qdata = new QuestionsData(DashboardActivity.this);
-                            Log.d("update","c");
-
-                            ArrayList<DownloadQuestion> questions = new ArrayList<>();
-                            Log.d("update","c");
-                            Integer version;
-                            Log.d("update","c");
-
-                            Integer tq = (Integer)in.readObject();
-                            Integer z = 0;
-
-                            while(z++ < tq)
-                            {
-                                questions.add((DownloadQuestion) in.readObject());
-                            }
-
-                            //questions = (ArrayList<DownloadQuestion>)in.readObject();
-                            Log.d("update","c");
-                            version = (Integer)in.readObject();//in.readObject();
-                            Log.d("update","d");
-                            if(!questions.isEmpty())
-                            {
-                                qdata.updateQuestions(questions, version);
-
-                                SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(DashboardActivity.this);
-                                SharedPreferences.Editor editor = preferences.edit();
-                                editor.putInt(getString(R.string.version_dbquestions), version);
-                                editor.apply();
-                            }
-                            else
-                            {
-                                Log.d("UpdateDBTask","no questions to update!");
-                            }
-                            Log.d("update","e");
-                        }
-                        else
-                        {
-                            //
-                            Log.d("update","z");
-                            response = (String)in.readObject();
-                        }
-                        //in.close();
-                        break;
+                        continue;
                     }
+                    ObjectInputStream in = mBoundService.getObjectStreamIn();
+                    if(update_db_task)
+                    {
+                        QuestionsData qdata = new QuestionsData(DashboardActivity.this);
+                        ArrayList<DownloadQuestion> questions = new ArrayList<>();
+                        Integer version;
+
+                        Integer tq = (Integer)in.readObject();
+                        Integer z = 0;
+
+                        while(z++ < tq)
+                        {
+                            questions.add((DownloadQuestion) in.readObject());
+                        }
+                        version = (Integer)in.readObject();
+                        if(!questions.isEmpty())
+                        {
+                            qdata.updateQuestions(questions, version);
+
+                            SharedPreferences preferences = PreferenceManager.
+                                    getDefaultSharedPreferences(DashboardActivity.this);
+                            SharedPreferences.Editor editor = preferences.edit();
+                            editor.putInt(getString(R.string.version_dbquestions), version);
+                            editor.apply();
+                        }
+                        response = getResources().getString(R.string.response_ok);
+                    }
+                    else
+                    {
+                        response = (String)in.readObject();
+                    }
+                    break;
                 }
             }
-            catch (IOException e)
+            catch (IOException | ClassNotFoundException ignored)
             {
-                e.printStackTrace();
+                response = getResources().getString(R.string.response_error);
             }
-            catch (ClassNotFoundException e)
-            {
-                Log.d("noclass","b");
-                e.printStackTrace();
-            }
-            Log.d("ReceiveFromServerTask","b");
             return response;
         }
 
-        protected void onPostExecute(String result) {
-            Log.d("onPostExecute(DBA)",result);
-
-            if(update_db_task == true)
+        protected void onPostExecute(String result)
+        {
+            if(update_db_task)
             {
-                //
-                Toast.makeText(DashboardActivity.this, "Questions database updated!", Toast.LENGTH_LONG).show();
+                if(result.equals(getResources().getString(R.string.response_ok)))
+                    Toast.makeText(DashboardActivity.this,
+                            "Questions database updated!", Toast.LENGTH_LONG).show();
+                else
+                    Toast.makeText(DashboardActivity.this,
+                            "An error occurred!", Toast.LENGTH_LONG).show();
+
                 update_db_task = false;
                 handler.post(fromServerRunner);
             }
             else
             {
-                //
-                //String contem "beinvited nomejogador"
-                final String [] params = result.split(" ");
-                if(params[0].equals(Command.INVITED))
+                if(result.equals(getResources().getString(R.string.response_error)))
                 {
-                /*Toast.makeText(DashboardActivity.this,
-                        "You have been invited by " + params[1], Toast.LENGTH_LONG).show();*/
+                    Toast.makeText(DashboardActivity.this,
+                            "An error occurred!", Toast.LENGTH_LONG).show();
+                    return;
+                }
 
-                    // 1. Instantiate an AlertDialog.Builder with its constructor
+                final String [] params = result.split(" ");
+                if(params[0].equals(getResources().getString(R.string.command_beinvited)))
+                {
                     AlertDialog.Builder builder = new AlertDialog.Builder(DashboardActivity.this);
-
-                    // 2. Chain together various setter methods to set the dialog characteristics
                     builder.setMessage("Do you want to play with " + params[1] + " ?")
                             .setTitle("Invited");
 
-                    builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int id) {
-                            // User clicked OK button
-
-                            final ProfilesData pdata = new ProfilesData(DashboardActivity.this);
+                    builder.setPositiveButton("Yes", new DialogInterface.OnClickListener()
+                    {
+                        public void onClick(DialogInterface dialog, int id)
+                        {
+                            ProfilesData pdata = new ProfilesData(DashboardActivity.this);
                             if(!pdata.search(params[1]))
                             {
-
-                                new Thread(new Runnable() {
+                                handler.post(new Runnable()
+                                {
                                     @Override
-                                    public void run() {
-
-                                        try {
-                                            String profile_pic = "";
-
-                                            mBoundService.sendMessage("getppic" +
-                                                    " " + params[1]);
-
-                                            profile_pic = (String)in.readObject();
-
-                                            mBoundService.sendMessage(Command.PROFILE_PIC_DOWN +
-                                                    " " + profile_pic);
-
-                                            Integer size = (Integer) in.readObject();
-                                            Integer received = 0;
-                                            BufferedInputStream in = new BufferedInputStream(mBoundService.getStreamIn());
-
-                                            OutputStream out = new FileOutputStream(
-                                                    new File(getApplicationContext().getFilesDir(), profile_pic));
-                                            Log.d("receiving file", "abc");
-
-                                            byte[] buf = new byte[8192];
-                                            int len = 0;
-                                            while ((len = in.read(buf)) != -1) {
-                                                out.write(buf, 0, len);
-                                                if (received + len == size)
-                                                    break;
-                                                else
-                                                    received += len;
-                                            }
-
-                                            Log.d("received", "abc");
-                                            out.close();
-
-                                            if(pdata.add(params[1], profile_pic))
-                                            {
-                                                Log.d("posttt","adicionado");
-                                            }
-                                            else
-                                            {
-                                                Log.d("posttt","errrrror");
-                                            }
-
-                                            handler.post(new Runnable() {
-                                                @Override
-                                                public void run() {
-
-                                                    mBoundService.sendMessage(Command.ACCEPT_INV + " " + params[1]);
-
-                                                    Intent intent = new Intent(DashboardActivity.this, GameActivity.class);
-                                                    intent.putExtra("playerToPlay", params[1]);
-                                                    intent.putExtra("isInvited", true);
-                                                    startActivity(intent);
-                                                }
-                                            });
-
-                                        } catch (FileNotFoundException e) {
-                                            e.printStackTrace();
-                                        } catch (IOException e) {
-                                            e.printStackTrace();
-                                        } catch (ClassNotFoundException e) {
-                                            e.printStackTrace();
-                                        }
+                                    public void run()
+                                    {
+                                        photo_task = new ReceivePhotoFromServerTask();
+                                        photo_task.execute(params[1]);
                                     }
-                                }).start();
-
-
-
-
+                                });
                             }
-
-                        /*
-                        ServerSocket game_socket = new ServerSocket(5009);
-
-                        mBoundService.sendMessage(Command.ACCEPT_INV + " " + params[1]);
-                        mBoundService.sendMessage(game_socket.getInetAddress());
-                        mBoundService.sendMessage(5009);
-                        */
-
                         }
                     });
-                    builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int id) {
-                            // User cancelled the dialog
-                            mBoundService.sendMessage(Command.REJECT_INV + " " + params[1]);
+                    builder.setNegativeButton("No", new DialogInterface.OnClickListener()
+                    {
+                        public void onClick(DialogInterface dialog, int id)
+                        {
+                            mBoundService.sendMessage(getResources().
+                                    getString(R.string.command_reject) + " " + params[1]);
                             handler.post(fromServerRunner);
                         }
                     });
-                    // Set other dialog properties
-
-
-                    // 3. Get the AlertDialog from create()
                     AlertDialog dialog = builder.create();
                     dialog.show();
                 }
                 else
                 {
                     handler.post(fromServerRunner);
-                    Log.d("adsfgthj", "por aqui");
                 }
             }
         }
 
         public void onCancelled()
-        {
-            Log.d("fuckingStop(DBA)", "Cancelled.");
-        }
+        { }
 
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-
-
-        doBindService();
-
-        if(first_attempt == false) {
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    while (mBoundService == null) {
-                        try {
-                            Thread.sleep(1000);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
+    private class ReceivePhotoFromServerTask extends AsyncTask<String, Void, String>
+    {
+        protected String doInBackground(String... params)
+        {
+            String response = "";
+            try
+            {
+                while(!isCancelled())
+                {
+                    if(mBoundService.socket.getInputStream().available() < 4)
+                    {
+                        continue;
                     }
-                    while (mBoundService.socket == null) {
-                        try {
-                            Thread.sleep(1000);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                    }
+                    try
+                    {
+                        String profile_pic = "";
+                        ObjectInputStream ins = mBoundService.getObjectStreamIn();
+                        mBoundService.sendMessage(getResources().
+                                getString(R.string.command_getppic) + " " + params[0]);
 
-                    handler.post(fromServerRunner);
+                        profile_pic = (String)ins.readObject();
+                        mBoundService.sendMessage(getResources().
+                                getString(R.string.command_profilepdown) + " " + profile_pic);
+
+                        Integer size = (Integer) ins.readObject();
+                        Integer received = 0;
+                        BufferedInputStream in = new BufferedInputStream(mBoundService.getStreamIn());
+
+                        OutputStream out = new FileOutputStream(
+                                new File(getApplicationContext().getFilesDir(), profile_pic));
+
+                        byte[] buf = new byte[getResources().getInteger(R.integer.bytes_on_photo)];
+                        int len = 0;
+                        while ((len = in.read(buf)) != -1)
+                        {
+                            out.write(buf, 0, len);
+                            if (received + len == size)
+                                break;
+                            else
+                                received += len;
+                        }
+                        out.close();
+
+                        response = params[0];
+
+                    }
+                    catch (IOException | ClassNotFoundException e)
+                    {
+                        response = getResources().getString(R.string.response_error);
+                    }
+                    break;
                 }
-            }).start();
-        }
-        else {
-            first_attempt = false;
+            }
+            catch (IOException ignored)
+            {
+                response = getResources().getString(R.string.response_error);
+            }
+            return response;
         }
 
+        protected void onPostExecute(String result)
+        {
+            if(result.equals(getResources().getString(R.string.response_error)))
+            {
+                Toast.makeText(DashboardActivity.this,
+                        "An error occurred!", Toast.LENGTH_LONG).show();
+            }
+            else
+            {
+                mBoundService.sendMessage(getResources().
+                        getString(R.string.command_accept) + " " + result);
+
+                Intent intent = new Intent(DashboardActivity.this, GameActivity.class);
+                intent.putExtra("playerToPlay", result);
+                intent.putExtra("isInvited", true);
+                startActivity(intent);
+            }
+        }
+
+        public void onCancelled()
+        { }
+    }
+
+    @Override
+    protected void onResume()
+    {
+        super.onResume();
+        doBindService();
+        //
         GamesData gdata = new GamesData(this);
         games = gdata.listAll();
-
         adapter.notifyDataSetChanged();
     }
 
     @Override
-    protected void onPause() {
+    protected void onPause()
+    {
         super.onPause();
-
         doUnbindService();
-
-        fromServerTask.cancel(true);
     }
 
-
-    private ServiceConnection mConnection = new ServiceConnection() {
-        //EDITED PART
+    private ServiceConnection mConnection = new ServiceConnection()
+    {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
-            // TODO Auto-generated method stub
-            mBoundService = ((SocketService.LocalBinder)service).getService();
+            mBoundService = ((SocketService.LocalBinder) service).getService();
 
+            if (!logged)
+            {
+                SharedPreferences preferences = PreferenceManager.
+                            getDefaultSharedPreferences(DashboardActivity.this);
+                String defaultValue = getResources().getString(R.string.no_user_name_default);
+                String username = preferences.getString(getString(R.string.user_name), defaultValue);
+                //
+                if (application.getUsername().equals(defaultValue)) {
+                    mBoundService.sendMessage(getResources().getString(R.string.command_autologin) +
+                            " " + application.getUsername());
+                    application.setUsername(username);
+                }
+                logged = true;
+            }
+            //
+            handler.post(fromServerRunner);
         }
 
         @Override
-        public void onServiceDisconnected(ComponentName name) {
-            // TODO Auto-generated method stub
+        public void onServiceDisconnected(ComponentName name)
+        {
             mBoundService = null;
         }
-
     };
 
-
-    private void doBindService() {
-        bindService(new Intent(DashboardActivity.this, SocketService.class), mConnection, Context.BIND_AUTO_CREATE);
+    private void doBindService()
+    {
+        bindService(new Intent(DashboardActivity.this, SocketService.class),
+                mConnection, Context.BIND_AUTO_CREATE);
         mIsBound = true;
-        if(mBoundService!=null){
-            mBoundService.IsBoundable(this);
-        }
-        Log.d("SocketService", "doBindService");
     }
 
-
-    private void doUnbindService() {
-        if (mIsBound) {
-            // Detach our existing connection.
+    private void doUnbindService()
+    {
+        if (mIsBound)
+        {
             unbindService(mConnection);
             mIsBound = false;
+            if(task != null)
+            {
+                task.cancel(true);
+            }
+            if(photo_task != null)
+            {
+                photo_task.cancel(true);
+            }
         }
-        Log.d("SocketService", "doUnbindService");
     }
 }
