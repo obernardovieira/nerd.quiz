@@ -31,23 +31,21 @@ import java.nio.channels.ClosedByInterruptException;
 import a21240068.isec.nerdquiz.Core.Command;
 import a21240068.isec.nerdquiz.Core.SocketService;
 
-public class NewGameActivity extends Activity {
-
+public class NewGameActivity extends Activity
+{
     private final int INVITE_PLAYER_CODE = 0;
-
     private boolean mIsBound;
     private SocketService mBoundService;
-
-    Runnable fromServerRunner;
     private ReceiveFromServerTask fromServerTask;
     private boolean first_attempt;
     private String reInvite;
-
     private Handler handler;
-    ObjectInputStream in;
+
+    Runnable fromServerRunner;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState)
+    {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_new_game);
 
@@ -64,50 +62,16 @@ public class NewGameActivity extends Activity {
             }
         }
 
-        fromServerRunner = new Runnable(){
-            public void run() {
-                fromServerTask = new ReceiveFromServerTask ();
+        fromServerRunner = new Runnable()
+        {
+            public void run()
+            {
+                fromServerTask = new ReceiveFromServerTask();
                 fromServerTask.execute();
             }
         };
 
         handler = new Handler();
-
-        first_attempt = true;
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while(mBoundService == null)
-                {
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-                while(mBoundService.socket == null)
-                {
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-
-                in = mBoundService.getObjectStreamIn();
-                handler.post(fromServerRunner);
-                if(reInvite != null)
-                {
-                    handler.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            invitePlayer(reInvite);
-                        }
-                    });
-
-                }
-            }
-        }).start();
     }
 
     public void clickSearchPlayerButton(View view)
@@ -117,7 +81,6 @@ public class NewGameActivity extends Activity {
 
     private void invitePlayer(String username)
     {
-        //
         mBoundService.sendMessage(Command.INVITE + " " + username);
 
         TextView message = (TextView)findViewById(R.id.tv_message);
@@ -130,14 +93,13 @@ public class NewGameActivity extends Activity {
     private void processInvitationAnswer(String answer)
     {
         if(answer == null)
+        {
             return;
+        }
 
         String [] params = answer.split(" ");
-
         if(answer.startsWith(Command.ACCEPT_INV))
         {
-            //
-
             Toast.makeText(NewGameActivity.this, params[1] +
                     " accepted your invitation!", Toast.LENGTH_LONG).show();
 
@@ -150,7 +112,6 @@ public class NewGameActivity extends Activity {
         }
         else if(answer.startsWith(Command.REJECT_INV))
         {
-            //
             Toast.makeText(NewGameActivity.this, params[1] +
                     " rejected your invitation!", Toast.LENGTH_LONG).show();
         }
@@ -167,7 +128,6 @@ public class NewGameActivity extends Activity {
         {
             if (resultCode == RESULT_OK)
             {
-                Log.d("resultFromINvittion", String.valueOf(resultCode));
                 invitePlayer(data.getStringExtra("name"));
             }
         }
@@ -178,134 +138,91 @@ public class NewGameActivity extends Activity {
         protected String doInBackground(Void... params)
         {
             String response = null;
-            Log.d("doInBackground(NGA)", "started");
             try
             {
                 while(!isCancelled())
                 {
-                    //Log.d("ReceiveFromServerTask", String.valueOf(mBoundService.socket.getInputStream().available()));
                     if(mBoundService.socket.getInputStream().available() > 4)
                     {
-                        //ObjectInputStream in;
-                        //in = new ObjectInputStream(mBoundService.socket.getInputStream());
-
-                        Object obj = in.readObject();
-
-                        if(obj instanceof String) {
-                            response = (String) obj;
-
-                            //in.close();
-                            break;
-                        }
-                        /*else if(obj instanceof Integer)
-                        {
-                            Log.d("mqsqdsf",String.valueOf((Integer)obj));
-                        }*/
+                        ObjectInputStream in = mBoundService.getObjectStreamIn();
+                        response = (String)in.readObject();
                     }
                 }
             }
-            catch (IOException e)
+            catch (IOException | ClassNotFoundException ignored)
             {
-                e.printStackTrace();
-            } catch (ClassNotFoundException e) {
-                e.printStackTrace();
+                response = null;
             }
-            Log.d("ReceiveFromServerTask","b");
             return response;
         }
 
-        protected void onPostExecute(String result) {
-            Log.d("onPostExecute(NGA)",result);
+        protected void onPostExecute(String result)
+        {
+            //
             processInvitationAnswer(result);
         }
 
         protected void onCancelled()
         {
-            Log.d("onCancelled(NGA)","fdghnafsbdnsbdg");
+            //
         }
 
     }
 
     @Override
-    protected void onResume() {
+    protected void onResume()
+    {
         super.onResume();
-
-
         doBindService();
-
-        if(first_attempt == false) {
-
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    while (mBoundService == null) {
-                        try {
-                            Thread.sleep(1000);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                    while (mBoundService.socket == null) {
-                        try {
-                            Thread.sleep(1000);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                    }
-
-                    handler.post(fromServerRunner);
-                }
-            }).start();
-        }
-        else {
-            first_attempt = false;
-        }
     }
 
     @Override
-    protected void onPause() {
+    protected void onPause()
+    {
         super.onPause();
-
         doUnbindService();
-
-        fromServerTask.cancel(true);
     }
 
-
-    private ServiceConnection mConnection = new ServiceConnection() {
-        //EDITED PART
+    private ServiceConnection mConnection = new ServiceConnection()
+    {
         @Override
-        public void onServiceConnected(ComponentName name, IBinder service) {
-            // TODO Auto-generated method stub
+        public void onServiceConnected(ComponentName name, IBinder service)
+        {
             mBoundService = ((SocketService.LocalBinder)service).getService();
-
+            if(mBoundService.isConnected())
+            {
+                handler.post(fromServerRunner);
+                if (reInvite != null)
+                {
+                    invitePlayer(reInvite);
+                }
+            }
         }
 
         @Override
-        public void onServiceDisconnected(ComponentName name) {
-            // TODO Auto-generated method stub
+        public void onServiceDisconnected(ComponentName name)
+        {
             mBoundService = null;
         }
 
     };
 
-
-    private void doBindService() {
+    private void doBindService()
+    {
         bindService(new Intent(NewGameActivity.this, SocketService.class), mConnection, Context.BIND_AUTO_CREATE);
         mIsBound = true;
-        if(mBoundService!=null){
-            mBoundService.IsBoundable(this);
-        }
-        Log.d("SocketService", "doBindService");
     }
 
-
-    private void doUnbindService() {
-        if (mIsBound) {
-            // Detach our existing connection.
+    private void doUnbindService()
+    {
+        if (mIsBound)
+        {
             unbindService(mConnection);
             mIsBound = false;
+            if(fromServerTask != null)
+            {
+                fromServerTask.cancel(true);
+            }
         }
-        Log.d("SocketService", "doUnbindService");
     }
 }

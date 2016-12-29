@@ -17,7 +17,8 @@
         android:layout_height="wrap_content"
         app:srcCompat="@drawable/change_profile_photo"
         android:id="@+id/iv_profile_pic"
-        android:layout_weight="1"/>
+        android:layout_weight="1"
+        android:onClick="changeProfilePhoto"/>
 
     <EditText
         android:layout_width="match_parent"

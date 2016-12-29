@@ -4,4 +4,26 @@
     <string name="user_name">username</string>
     <string name="version_dbquestions">version_dbquestions</string>
     <string name="profile_pic">profile_pic</string>
+    <string name="default_profile_pic_name">picture.jpg</string>
+
+
+
+    <!-- commands -->
+
+    <string name="command_register">register</string>
+    <string name="command_login">login</string>
+    <string name="command_autologin">autologin</string>
+    <string name="command_updatedb">updatedb</string>
+    <string name="command_beinvited">beinvited</string>
+    <string name="command_reject">reject</string>
+    <string name="command_getppic">getppic</string>
+    <string name="command_profilepdown">profilepdown</string>
+    <string name="command_accept">accept</string>
+
+    <!-- reponses -->
+
+    <string name="response_ok">OK</string>
+    <string name="response_error">ERROR</string>
+
+    <integer name="bytes_on_photo">8192</integer>
 </resources>

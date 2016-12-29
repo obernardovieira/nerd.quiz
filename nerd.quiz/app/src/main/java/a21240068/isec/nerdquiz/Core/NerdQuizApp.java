@@ -19,8 +19,10 @@ public class NerdQuizApp extends Application {
     private String username;
 
     @Override
-    public void onCreate() {
+    public void onCreate()
+    {
         super.onCreate();
+        username = "";
         Log.d("onCreate", "Create nerdQuizApp class!");
     }
 

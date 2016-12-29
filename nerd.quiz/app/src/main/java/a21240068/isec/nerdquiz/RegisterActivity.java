@@ -33,18 +33,18 @@ import a21240068.isec.nerdquiz.Core.NerdQuizApp;
 import a21240068.isec.nerdquiz.Core.Response;
 import a21240068.isec.nerdquiz.Core.SocketService;
 
-public class RegisterActivity extends Activity {
-
+public class RegisterActivity extends Activity
+{
     private final int TAKE_NEW_PHOTO = 0;
-
-    private Uri selectedImageUri;
-    NerdQuizApp nerdQuizApp;
-
     private boolean mIsBound;
     private SocketService mBoundService;
+    private Uri selectedImageUri;
+    private ReceiveFromServerTask task;
+    NerdQuizApp nerdQuizApp;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState)
+    {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_register);
 
@@ -59,6 +59,13 @@ public class RegisterActivity extends Activity {
 
     public void clickRegisterButton(View view)
     {
+
+        if(!mBoundService.isConnected())
+        {
+            mBoundService.errorConnection();
+            return;
+        }
+
         EditText et_username = (EditText)findViewById(R.id.et_username);
         EditText et_password = (EditText)findViewById(R.id.et_password);
 
@@ -82,11 +89,10 @@ public class RegisterActivity extends Activity {
 
     public void registerOnServer(final String username, final String password)
     {
-        Log.d("fick", "me");
-
-        mBoundService.sendMessage(Command.REGISTER + " " + username + " " + password);
-
-        new ReceiveFromServerTask().execute();
+        mBoundService.sendMessage(getResources().getString(R.string.command_register) +
+                " " + username + " " + password);
+        task = new ReceiveFromServerTask();
+        task.execute();
     }
 
     public void clickRegisteredText(View view)
@@ -104,7 +110,8 @@ public class RegisterActivity extends Activity {
             case TAKE_NEW_PHOTO:
                 if (resultCode == Activity.RESULT_OK)
                 {
-                    selectedImageUri = Uri.fromFile(new File(getApplicationContext().getFilesDir(), "picture.jpg"));
+                    selectedImageUri = Uri.fromFile(new File(getApplicationContext().getFilesDir(),
+                            getResources().getString(R.string.default_profile_pic_name)));
                     ((ImageView) findViewById(R.id.iv_profile_pic)).setImageURI(selectedImageUri);
                 }
                 break;
@@ -112,17 +119,16 @@ public class RegisterActivity extends Activity {
     }
 
     @Override
-    protected void onResume() {
+    protected void onResume()
+    {
         super.onResume();
-
-
         doBindService();
     }
 
     @Override
-    protected void onPause() {
+    protected void onPause()
+    {
         super.onPause();
-
         doUnbindService();
     }
 
@@ -130,99 +136,69 @@ public class RegisterActivity extends Activity {
     {
         protected String doInBackground(Void... params)
         {
-            String response = "";
-            Log.d("doInBackground(DBA)", "started");
+            String response = "ERROR";
             try
             {
                 while(!isCancelled())
                 {
-                    //Log.d("ReceiveFromServerTask", String.valueOf(mBoundService.socket.getInputStream().available()));
-                    if(mBoundService.socket.getInputStream().available() > 4)
+                    if(mBoundService.socket.getInputStream().available() < 4)
                     {
-                        ObjectInputStream ins = mBoundService.getObjectStreamIn();
-                        //in = new ObjectInputStream(mBoundService.socket.getInputStream());
-
-                        Integer tq = (Integer)ins.readObject();
-
-                        if(tq.equals(Response.OK))
-                        {
-                            ObjectOutputStream out = mBoundService.getObjectStreamOut();
-                            if(out != null)
-                            {
-
-                                try {
-
-                                    /*Log.d("uploadPhoto","uploading");
-                                    out.writeObject(Command.PROFILE_PIC_UP);
-                                    out.flush();*/
-                                    Log.d("uploadPhoto","uploading");
-
-                                    InputStream in = new FileInputStream(
-                                            new File(getApplicationContext().getFilesDir(), "picture.jpg"));
-                                    out.writeObject(in.available());
-                                    out.flush();
-                                    OutputStream outs = mBoundService.getStreamOut();
-
-                                    byte[] buf = new byte[8192];
-                                    int len = 0;
-                                    while ((len = in.read(buf)) != -1) {
-                                        outs.write(buf, 0, len);
-                                        outs.flush();
-                                    }
-
-                                    in.close();
-                                    //out.close();
-
-                                    String file_name = (String)ins.readObject();
-                                    File own_file = new File(getApplicationContext().getFilesDir(), "picture.jpg");
-                                    own_file.renameTo(new File(getApplicationContext().getFilesDir(), file_name));
-
-                                    SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(RegisterActivity.this);
-                                    SharedPreferences.Editor editor = preferences.edit();
-                                    editor.putString(getString(R.string.profile_pic), file_name);
-                                    editor.apply();
-
-                                    Log.d("uploadPhoto","uploaded");
-                                    response = "OK";
-                                    break;
-                                }
-                                catch(IOException e)
-                                {
-                                    e.printStackTrace();
-                                }
-                            }
-                            else
-                            {
-                                Log.d("sendMessage","Erro");
-                            }
-
-
-                        }
-                        else
-                        {
-                            throw new IOException("Response.ERROR");
-                        }
-
-
-                        //in.close();
+                        continue;
+                    }
+                    ObjectInputStream ins = mBoundService.getObjectStreamIn();
+                    Integer tq = (Integer)ins.readObject();
+                    if(!tq.equals(Response.OK))
+                    {
                         break;
                     }
+                    ObjectOutputStream out = mBoundService.getObjectStreamOut();
+                    if(out == null)
+                    {
+                        break;
+                    }
+                    try
+                    {
+                        InputStream in = new FileInputStream(
+                                new File(getApplicationContext().getFilesDir(),
+                                        getResources().getString(R.string.default_profile_pic_name)));
+                        out.writeObject(in.available());
+                        out.flush();
+                        OutputStream outs = mBoundService.getStreamOut();
+
+                        byte[] buf = new byte[getResources().getInteger(R.integer.bytes_on_photo)];
+                        int len = 0;
+                        while ((len = in.read(buf)) != -1)
+                        {
+                            outs.write(buf, 0, len);
+                            outs.flush();
+                        }
+
+                        in.close();
+
+                        String file_name = (String)ins.readObject();
+                        File own_file = new File(getApplicationContext().getFilesDir(),
+                                getResources().getString(R.string.default_profile_pic_name));
+                        own_file.renameTo(new File(getApplicationContext().getFilesDir(), file_name));
+
+                        SharedPreferences preferences = PreferenceManager.
+                                getDefaultSharedPreferences(RegisterActivity.this);
+                        SharedPreferences.Editor editor = preferences.edit();
+                        editor.putString(getString(R.string.profile_pic), file_name);
+                        editor.apply();
+
+                        response = "OK";
+                        break;
+                    }
+                    catch(IOException | ClassNotFoundException ignored) { }
+                    break;
                 }
             }
-            catch (IOException e)
-            {
-                e.printStackTrace();
-            } catch (ClassNotFoundException e) {
-                e.printStackTrace();
-            }
-            Log.d("ReceiveFromServerTask","b");
+            catch (IOException | ClassNotFoundException ignored) { }
             return response;
         }
 
         protected void onPostExecute(String result)
         {
-            Log.d("onPostExecute(DBA)",result);
-
             if(result.equals("OK"))
             {
                 Intent intent = new Intent(RegisterActivity.this, AuthenticationActivity.class);
@@ -232,52 +208,49 @@ public class RegisterActivity extends Activity {
             }
             else
             {
-                //error uploading photo
+                mBoundService.errorConnection();
             }
         }
 
         public void onCancelled()
-        {
-            Log.d("fuckingStop(DBA)", "Cancelled.");
-        }
+        { }
 
     }
 
-
-    private ServiceConnection mConnection = new ServiceConnection() {
-        //EDITED PART
+    private ServiceConnection mConnection = new ServiceConnection()
+    {
         @Override
-        public void onServiceConnected(ComponentName name, IBinder service) {
-            // TODO Auto-generated method stub
+        public void onServiceConnected(ComponentName name, IBinder service)
+        {
             mBoundService = ((SocketService.LocalBinder)service).getService();
-
+            mBoundService.setContext(RegisterActivity.this);
         }
 
         @Override
-        public void onServiceDisconnected(ComponentName name) {
-            // TODO Auto-generated method stub
+        public void onServiceDisconnected(ComponentName name)
+        {
             mBoundService = null;
         }
 
     };
 
-
-    private void doBindService() {
-        bindService(new Intent(RegisterActivity.this, SocketService.class), mConnection, Context.BIND_AUTO_CREATE);
+    private void doBindService()
+    {
+        bindService(new Intent(RegisterActivity.this, SocketService.class),
+                mConnection, Context.BIND_AUTO_CREATE);
         mIsBound = true;
-        if(mBoundService!=null){
-            mBoundService.IsBoundable(this);
-        }
-        Log.d("SocketService", "doBindService");
     }
 
-
-    private void doUnbindService() {
-        if (mIsBound) {
-            // Detach our existing connection.
+    private void doUnbindService()
+    {
+        if (mIsBound)
+        {
             unbindService(mConnection);
             mIsBound = false;
+            if(task != null)
+            {
+                task.cancel(true);
+            }
         }
-        Log.d("SocketService", "doUnbindService");
     }
 }
