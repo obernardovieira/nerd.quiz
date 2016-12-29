@@ -260,6 +260,7 @@ public class AuthenticationActivity extends Activity {
         public void onServiceConnected(ComponentName name, IBinder service)
         {
             mBoundService = ((SocketService.LocalBinder)service).getService();
+            mBoundService.setContext(AuthenticationActivity.this);
         }
 
         @Override

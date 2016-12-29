@@ -62,6 +62,7 @@ public class TakePhotoActivity extends Activity implements SurfaceHolder.Callbac
     public void onPause() {
         super.onPause();
         mCamera.stopPreview();
+
     }
 
     @Override

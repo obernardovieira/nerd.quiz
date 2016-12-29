@@ -43,6 +43,7 @@ public class SocketService extends Service
     @Override
     public IBinder onBind(Intent intent)
     {
+        Log.d("onBind","aefsrgdth");
         //
         return myBinder;
     }
@@ -66,6 +67,7 @@ public class SocketService extends Service
     {
         public SocketService getService()
         {
+            Log.d("getService","aefsrgdth");
             return SocketService.this;
         }
     }

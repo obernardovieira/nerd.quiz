@@ -417,7 +417,11 @@ public class DashboardActivity extends Activity
                 logged = true;
             }
             //
-            handler.post(fromServerRunner);
+            mBoundService.setContext(DashboardActivity.this);
+            if(mBoundService.isConnected())
+            {
+                handler.post(fromServerRunner);
+            }
         }
 
         @Override

@@ -1,19 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent">
+
+    <ImageView
+        android:layout_width="wrap_content"
+        android:id="@+id/imageView2"
+        android:background="@drawable/nerdglasseshi"
+        android:visibility="visible"
+        android:elevation="1dp"
+        android:layout_marginTop="130dp"
+        android:layout_height="150dp" />
+
     <SurfaceView
         android:id="@+id/preview"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"/>
-
-    <ImageView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        app:srcCompat="@android:drawable/divider_horizontal_dim_dark"
-        android:id="@+id/imageView2" />
 
     <RelativeLayout
         android:layout_width="fill_parent"
