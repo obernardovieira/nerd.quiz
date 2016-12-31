@@ -1,23 +1,47 @@
 package a21240068.isec.nerdquiz;
 
 import android.app.Activity;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
+
+import a21240068.isec.nerdquiz.Core.Response;
+import a21240068.isec.nerdquiz.Core.SocketService;
 
 public class EditProfileActivity extends Activity
 {
     private final int TAKE_NEW_PHOTO = 0;
     private Uri selectedImageUri;
+    private boolean newPhoto;
+
+    private boolean mIsBound;
+    private SocketService mBoundService;
+    private ReceiveFromServerTask task;
+
+    String username;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -27,6 +51,8 @@ public class EditProfileActivity extends Activity
 
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
         String file_profile_pic = preferences.getString(getString(R.string.profile_pic), "");
+        String defaultValue = getResources().getString(R.string.no_user_name_default);
+        username = preferences.getString(getString(R.string.user_name), defaultValue);
 
         ImageView iv_profile_pic = (ImageView) findViewById(R.id.iv_profile_pic);
         File imgFile = new File(getApplicationContext().getFilesDir(), file_profile_pic);
@@ -36,6 +62,7 @@ public class EditProfileActivity extends Activity
             Bitmap myBitmap = BitmapFactory.decodeFile(imgFile.getAbsolutePath());
             iv_profile_pic.setImageBitmap(myBitmap);
         }
+        newPhoto = false;
     }
 
     public void changeProfilePhoto(View view)
@@ -50,12 +77,156 @@ public class EditProfileActivity extends Activity
             case TAKE_NEW_PHOTO:
                 if (resultCode == Activity.RESULT_OK)
                 {
+                    newPhoto = true;
                     Log.d("sfdgthfy","wadesrgfh");
                     selectedImageUri = Uri.fromFile(new File(getApplicationContext().getFilesDir(),
                             getResources().getString(R.string.default_profile_pic_name)));
                     ((ImageView) findViewById(R.id.iv_profile_pic)).setImageURI(selectedImageUri);
                 }
                 break;
+        }
+    }
+
+    public void updateData(View view)
+    {
+        boolean run_task = false;
+        TextView tv_pass = (TextView) findViewById(R.id.et_password);
+        TextView tv_rpass = (TextView) findViewById(R.id.et_repeat_password);
+        if(newPhoto)
+        {
+            try
+            {
+                InputStream in = new FileInputStream(
+                        new File(getApplicationContext().getFilesDir(),
+                                getResources().getString(R.string.default_profile_pic_name)));
+                mBoundService.sendMessage(getResources().getString(R.string.command_profilepup) + "");
+                mBoundService.sendMessage(in.available());
+                run_task = true;
+            }
+            catch (IOException ignored) { }
+
+        }
+        else if(tv_pass.getText().length() > 0)
+        {
+            String pass = tv_pass.getText().toString();
+            String rpass = tv_rpass.getText().toString();
+
+            if(pass.equals(rpass))
+            {
+                mBoundService.sendMessage(getResources().getString(R.string.command_uppass) + " " +
+                    username + " " + pass);
+                run_task = true;
+            }
+            else
+            {
+                Toast.makeText(EditProfileActivity.this, "Passwords are different!",
+                        Toast.LENGTH_LONG).show();
+            }
+        }
+        if(run_task)
+        {
+            task = new ReceiveFromServerTask();
+            task.execute();
+        }
+    }
+
+    @Override
+    protected void onResume()
+    {
+        super.onResume();
+        doBindService();
+    }
+
+    @Override
+    protected void onPause()
+    {
+        super.onPause();
+        doUnbindService();
+    }
+
+    private class ReceiveFromServerTask extends AsyncTask<Void, Void, String>
+    {
+        protected String doInBackground(Void... params)
+        {
+            String response = getResources().getString(R.string.response_error);
+            try
+            {
+                while(!isCancelled())
+                {
+                    if(mBoundService.socket.getInputStream().available() < 4)
+                    {
+                        continue;
+                    }
+                    ObjectInputStream ins = mBoundService.getObjectStreamIn();
+                    String tq = (String)ins.readObject();
+                    if(tq.startsWith(getResources().getString(R.string.command_uppass)))
+                    {
+                        String [] pms = tq.split(" ");
+                        Integer resp = Integer.parseInt(pms[1]);
+                        if(resp.equals(Response.OK))
+                        {
+                            response = getResources().getString(R.string.response_ok);
+                        }
+                    }
+                    else continue;
+                    break;
+                }
+            }
+            catch (IOException | ClassNotFoundException ignored) { }
+            return response;
+        }
+
+        protected void onPostExecute(String result)
+        {
+            if(result.equals(getResources().getString(R.string.response_ok)))
+            {
+                Toast.makeText(EditProfileActivity.this, "Updated!", Toast.LENGTH_LONG).show();
+            }
+            else
+            {
+                Toast.makeText(EditProfileActivity.this, "An error occurred!", Toast.LENGTH_LONG).show();
+            }
+        }
+
+        public void onCancelled()
+        { }
+
+    }
+
+    private ServiceConnection mConnection = new ServiceConnection()
+    {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service)
+        {
+            mBoundService = ((SocketService.LocalBinder)service).getService();
+            mBoundService.setContext(EditProfileActivity.this);
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name)
+        {
+            mBoundService = null;
+        }
+
+    };
+
+    private void doBindService()
+    {
+        bindService(new Intent(EditProfileActivity.this, SocketService.class),
+                mConnection, Context.BIND_AUTO_CREATE);
+        mIsBound = true;
+    }
+
+    private void doUnbindService()
+    {
+        if (mIsBound)
+        {
+            unbindService(mConnection);
+            mIsBound = false;
+            if(task != null)
+            {
+                task.cancel(true);
+            }
         }
     }
 }

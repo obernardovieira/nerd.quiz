@@ -57,6 +57,7 @@ public class DashboardActivity extends Activity
     private boolean update_db_task;
     private MyGamesHistoryAdapter adapter;
     private boolean logged = false;
+    private boolean show_updt_notif = false;
 
     Runnable fromServerRunner;
 
@@ -103,17 +104,23 @@ public class DashboardActivity extends Activity
         }
         else if(item.getItemId() == R.id.id_upload_questions)
         {
-            SharedPreferences preferences = PreferenceManager.
-                    getDefaultSharedPreferences(this);
-            int defaultValue = 0;
-            int atualDBVersion = preferences.
-                    getInt(getString(R.string.version_dbquestions), defaultValue);
-
-            update_db_task = true;
-            mBoundService.sendMessage(getResources().getString(R.string.command_updatedb) +
-                    " " + atualDBVersion);
+            show_updt_notif = true;
+            update_questions_database();
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    public void update_questions_database()
+    {
+        SharedPreferences preferences = PreferenceManager.
+                getDefaultSharedPreferences(this);
+        int defaultValue = 0;
+        int atualDBVersion = preferences.
+                getInt(getString(R.string.version_dbquestions), defaultValue);
+
+        update_db_task = true;
+        mBoundService.sendMessage(getResources().getString(R.string.command_updatedb) +
+                " " + atualDBVersion);
     }
 
     public void startNewGame(View view)
@@ -226,13 +233,17 @@ public class DashboardActivity extends Activity
         {
             if(update_db_task)
             {
-                if(result.equals(getResources().getString(R.string.response_ok)))
-                    Toast.makeText(DashboardActivity.this,
-                            "Questions database updated!", Toast.LENGTH_LONG).show();
-                else
-                    Toast.makeText(DashboardActivity.this,
-                            "An error occurred!", Toast.LENGTH_LONG).show();
+                if(show_updt_notif)
+                {
+                    if(result.equals(getResources().getString(R.string.response_ok)))
+                        Toast.makeText(DashboardActivity.this,
+                                "Questions database updated!", Toast.LENGTH_LONG).show();
+                    else
+                        Toast.makeText(DashboardActivity.this,
+                                "An error occurred!", Toast.LENGTH_LONG).show();
 
+                    show_updt_notif = false;
+                }
                 update_db_task = false;
                 handler.post(fromServerRunner);
             }
@@ -401,7 +412,7 @@ public class DashboardActivity extends Activity
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
             mBoundService = ((SocketService.LocalBinder) service).getService();
-
+            mBoundService.setContext(DashboardActivity.this);
             if (!logged)
             {
                 SharedPreferences preferences = PreferenceManager.
@@ -409,15 +420,17 @@ public class DashboardActivity extends Activity
                 String defaultValue = getResources().getString(R.string.no_user_name_default);
                 String username = preferences.getString(getString(R.string.user_name), defaultValue);
                 //
-                if (application.getUsername().equals(defaultValue)) {
+                if (application.getUsername().equals(defaultValue))
+                {
                     mBoundService.sendMessage(getResources().getString(R.string.command_autologin) +
                             " " + application.getUsername());
                     application.setUsername(username);
+
+                    update_questions_database();
                 }
                 logged = true;
             }
             //
-            mBoundService.setContext(DashboardActivity.this);
             if(mBoundService.isConnected())
             {
                 handler.post(fromServerRunner);

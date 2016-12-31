@@ -13,12 +13,15 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListAdapter;
 import android.widget.ListView;
@@ -51,6 +54,7 @@ public class SearchPlayerActivity extends Activity {
     private Runnable fromServerRunner;
     private ReceiveFromServerTask fromServerTask;
     private ReceivePhotoFromServerTask task_photo;
+    private EditText et_search;
 
     ProfilesData pdata;
 
@@ -73,25 +77,27 @@ public class SearchPlayerActivity extends Activity {
         };
 
         pdata = new ProfilesData(SearchPlayerActivity.this);
+
+        et_search = (EditText)findViewById(R.id.et_player_name);
+        et_search.addTextChangedListener(searchPlayer);
     }
 
-    public void getConnectedPlayers()
+    TextWatcher searchPlayer = new TextWatcher()
     {
-        //
-        getConnectedPlayers("a21240068.isec.nerdquiz");
-    }
+        @Override
+        public void beforeTextChanged(CharSequence s, int start, int count, int after)
+        { }
 
-    public void getConnectedPlayers(final String search_for_name)
-    {
-        if(search_for_name.equals("a21240068.isec.nerdquiz"))
+        @Override
+        public void onTextChanged(CharSequence s, int start, int before, int count)
         {
-            mBoundService.sendMessage(Command.SEARCH);
+            mBoundService.sendMessage(getResources().getString(R.string.command_search) + " " + s);
         }
-        else
-        {
-            //search by name
-        }
-    }
+
+        @Override
+        public void afterTextChanged(Editable s)
+        { }
+    };
 
     public void updatePlayersList()
     {
@@ -145,8 +151,8 @@ public class SearchPlayerActivity extends Activity {
         }
     }
 
-    class MyAdapter extends BaseAdapter implements ListAdapter {
-
+    class MyAdapter extends BaseAdapter implements ListAdapter
+    {
         @Override
         public int getCount() {
             return players_profile.size();
@@ -287,7 +293,7 @@ public class SearchPlayerActivity extends Activity {
                                 profiles.add(profile);
                                 obj = ins.readObject();
                             }
-                            response = "newSearch";
+                            response = getResources().getString(R.string.type_new_search);
                         }
                         break;
                     }
@@ -305,17 +311,23 @@ public class SearchPlayerActivity extends Activity {
             String [] params = result.split(" ");
             if(result.startsWith(Command.JOINED))
             {
-                Toast.makeText(SearchPlayerActivity.this, params[1] +
-                        " joined the game!", Toast.LENGTH_LONG).show();
-                addPlayerToView(params[1], params[2]);
+                if(params[1].contains(et_search.getText().toString()))
+                {
+                    Toast.makeText(SearchPlayerActivity.this, params[1] +
+                            " joined the game!", Toast.LENGTH_LONG).show();
+                    addPlayerToView(params[1], params[2]);
+                }
             }
             else if(result.startsWith(Command.LEAVED))
             {
-                Toast.makeText(SearchPlayerActivity.this, params[1] +
-                        " leaved the game!", Toast.LENGTH_LONG).show();
-                removePlayerFromView(params[1]);
+                if(params[1].contains(et_search.getText().toString()))
+                {
+                    Toast.makeText(SearchPlayerActivity.this, params[1] +
+                            " leaved the game!", Toast.LENGTH_LONG).show();
+                    removePlayerFromView(params[1]);
+                }
             }
-            else if(result.equals("newSearch"))
+            else if(result.equals(getResources().getString(R.string.type_new_search)))
             {
                 for(Profile p : profiles)
                 {
@@ -352,7 +364,7 @@ public class SearchPlayerActivity extends Activity {
             if(mBoundService.isConnected())
             {
                 mainHandler.post(fromServerRunner);
-                getConnectedPlayers();
+                mBoundService.sendMessage(getResources().getString(R.string.command_search));
                 updatePlayersList();
             }
         }

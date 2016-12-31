@@ -11,6 +11,8 @@ package amovserver;
  */
 public class Response
 {
-    public static Integer   OK      = 1;
-    public static Integer   ERROR   = 2;
+    public static Integer   OK              = 1;
+    public static Integer   ERROR           = 2;
+    public static Integer   REGISTERED      = 3;
+    public static Integer   NOT_REGISTERED  = 4;
 }

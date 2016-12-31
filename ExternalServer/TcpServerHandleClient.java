@@ -61,10 +61,13 @@ class Command
     public static String    REJECT_INV  = "reject";
     public static String    ACCEPT_INV  = "accept";
     public static String    UPDATE_DB   = "updatedb";
+    public static String    UPDATE_PASS = "updatepass";
     
     public static String    JOINED      = "joined";
     public static String    LEAVED      = "leaved";
     
+    public static String    GET_PPIC    = "getppic";
+    public static String    REMOVE_PPIC = "removeppic";
     public static String    PROFILE_PIC_UP     = "profilepup";
     public static String    PROFILE_PIC_DOWN   = "profilepdown";
 }
@@ -127,7 +130,6 @@ public class TcpServerHandleClient implements Runnable {
         //
         if(command.equals(Command.SEARCH))
         {
-            //ArrayList<Profile> profiles = new ArrayList<>();
             ooStream.writeObject(Command.SEARCH);
             for(Player player_in_list : TcpServer.players)
             {
@@ -141,14 +143,45 @@ public class TcpServerHandleClient implements Runnable {
                                 player_in_list.getName() + " " +
                                 player_in_list.getProfilePicture());
                     }
-                        //profiles.add(player_in_list.getProfile());
                 }
             }
             ooStream.writeObject(Command.SEARCH);
-            //ooStream.writeObject(profiles);
             ooStream.flush();
         }
-        else if(command.startsWith("getppic"))
+        else if(command.startsWith(Command.SEARCH))
+        {
+            String [] params = command.split(" ");
+            ooStream.writeObject(Command.SEARCH);
+            for(Player player_in_list : TcpServer.players)
+            {
+                if(player_in_list.isConnected() && !player_in_list.isPlaying())
+                {
+                    if(player_in_list != player)
+                    {
+                        if(player_in_list.getName().compareToIgnoreCase(params[1]) == 0)
+                        {
+                            ooStream.writeObject(new Profile(player_in_list.getName(),
+                                player_in_list.getProfilePicture()));
+                            System.out.println("vai! " +
+                                    player_in_list.getName() + " " +
+                                    player_in_list.getProfilePicture());
+                        }
+                    }
+                }
+            }
+            ooStream.writeObject(Command.SEARCH);
+            ooStream.flush();
+        }
+        else if(command.startsWith(Command.REMOVE_PPIC))
+        {
+            String [] params = command.split(" ");
+            File file = new File(params[1]);
+            if(file.exists())
+            {
+                file.delete();
+            }
+        }
+        else if(command.startsWith(Command.GET_PPIC))
         {
             String [] params = command.split(" ");
             for(Player player_in_list : TcpServer.players)
@@ -156,22 +189,32 @@ public class TcpServerHandleClient implements Runnable {
                 if(player_in_list.getName().equals(params[1]))
                 {
                     ooStream.writeObject(player_in_list.getProfilePicture());
-                    //ooStream.writeObject(profiles);
                     ooStream.flush();
                     break;
                 }
             }
         }
-        else if(command.startsWith(Command.SEARCH))
+        else if(command.startsWith(Command.UPDATE_PASS))
         {
-            //search for a name
+            String [] params = command.split(" ");
+            //
+            try
+            {
+                database.updatePassword(params[1], params[2]);
+                ooStream.writeObject(Command.UPDATE_PASS + " " + Response.OK);
+            }
+            catch(SQLException ex)
+            {
+                ooStream.writeObject(Command.UPDATE_PASS + " " + Response.ERROR);
+            }
+            ooStream.flush();
         }
         else if(command.startsWith(Command.AUTO_LOGIN))
         {
             String [] params = command.split(" ");
             if(!database.checkUser(params[1]))
             {
-                //ooStream.writeObject(Response.ERROR);
+                ooStream.writeObject(Response.NOT_REGISTERED);
             }
             else
             {
@@ -206,7 +249,7 @@ public class TcpServerHandleClient implements Runnable {
             
             if(database.checkUser(params[1]))
             {
-                ooStream.writeObject(Response.ERROR);
+                ooStream.writeObject(Response.REGISTERED);
             }
             else
             {
@@ -242,6 +285,7 @@ public class TcpServerHandleClient implements Runnable {
                     catch(IOException ex)
                     {
                         database.removeUser(params[1]);
+                        ooStream.writeObject(Response.ERROR);
                         throw new IOException();
                     }
 
@@ -259,6 +303,55 @@ public class TcpServerHandleClient implements Runnable {
                 }
             }
             ooStream.flush();
+        }
+        else if(command.startsWith(Command.PROFILE_PIC_UP))
+        {
+            String [] params = command.split(" ");
+            //
+            String profile_pic = new Date().getTime() + "_" + Math.random() * 128 + ".jpg";
+            Integer size = (Integer)oiStream.readObject();
+            Integer received = 0;
+            BufferedInputStream in = new BufferedInputStream(
+                player.getSocket().getInputStream());
+
+            OutputStream out = new FileOutputStream(profile_pic);
+            System.out.println("receiving file");
+
+            byte[] buf = new byte[8192];
+            int len = 0;
+            try
+            {
+                while ((len = in.read(buf)) != -1) {
+                    out.write(buf, 0, len);
+                    if(received + len == size)
+                        break;
+                    else
+                        received += len;
+                }
+            }
+            catch(IOException ex)
+            {
+                ooStream.writeObject(Command.PROFILE_PIC_UP + " " + Response.ERROR);
+                throw new IOException();
+            }
+
+            //send file name to client
+            try
+            {
+                database.updateProfilePhotoName(params[1], profile_pic);
+                ooStream.writeObject(Command.PROFILE_PIC_UP + " " + Response.OK);
+            }
+            catch(SQLException ex)
+            {
+                ooStream.writeObject(Command.PROFILE_PIC_UP + " " + Response.ERROR);
+                File file = new File(profile_pic);
+                if(file.exists())
+                    file.delete();
+                throw new SQLException();
+            }
+            
+            System.out.println("received");
+            out.close();
         }
         else if(command.startsWith(Command.PROFILE_PIC_DOWN))
         {
@@ -284,10 +377,6 @@ public class TcpServerHandleClient implements Runnable {
         else if(command.startsWith(Command.INVITE))
         {
             String [] params = command.split(" ");
-            
-            //ooStream.writeObject(Response.OK);
-            //ooStream.flush();
-            
             for(Player p : TcpServer.players)
             {
                 if(p.getName().equals(params[1]))

@@ -92,6 +92,7 @@ public class GameActivity extends Activity {
         handler                     = new Handler();
         answered_right              = 0;
         points                      = 0;
+        other_points                = 0;
 
         pb_questions_left   = (ProgressBar)   findViewById(R.id.pb_questions_left);
         tv_time             = (TextView)      findViewById(R.id.tv_time);
@@ -155,7 +156,8 @@ public class GameActivity extends Activity {
                                     {
                                         try
                                         {
-                                            oostream.writeObject(Command.NEXT_QUEST);
+                                            oostream.writeObject(getResources().getString(
+                                                    R.string.command_next_quest));
                                         }
                                         catch (IOException e)
                                         {
@@ -229,15 +231,18 @@ public class GameActivity extends Activity {
 
     public void clickAnswerButton(View view)
     {
+        boolean right_ans = false;
         Button btn = (Button) view.findViewById(view.getId());
         if(btn.getText().equals(questions.get(in_question).getRightAnswer()))
         {
             answered_right ++;
+            right_ans = true;
         }
 
         scheduler.shutdownNow();
         if(theOtherAnswered)
         {
+            points ++;
             new Thread(new Runnable()
             {
                 @Override
@@ -245,7 +250,8 @@ public class GameActivity extends Activity {
                 {
                     try
                     {
-                        oostream.writeObject(Command.NEXT_QUEST);
+                        oostream.writeObject(getResources().getString(
+                                R.string.command_next_quest));
                     }
                     catch (IOException e)
                     {
@@ -265,6 +271,8 @@ public class GameActivity extends Activity {
         }
         else
         {
+            points += 2;
+            final boolean tsend = right_ans;
             new Thread(new Runnable()
             {
                 @Override
@@ -272,7 +280,8 @@ public class GameActivity extends Activity {
                 {
                     try
                     {
-                        oostream.writeObject(Command.OTHER_ANSWERED);
+                        oostream.writeObject(getResources().getString(R.string.command_other_ans) +
+                                " " + ((tsend) ? (1) : (0)));
                     }
                     catch (IOException e)
                     {
@@ -309,7 +318,7 @@ public class GameActivity extends Activity {
 
         protected void onPostExecute(String result)
         {
-            if(result.equals(Command.RECEIVE_QUESTIONS))
+            if(result.equals(getResources().getString(R.string.command_receive_ques)))
             {
                 new Thread(new Runnable()
                 {
@@ -324,7 +333,7 @@ public class GameActivity extends Activity {
                                 questions.add((GameQuestion) oistream.readObject());
                             }
                             handler.post(myRunner);
-                            oostream.writeObject(Command.GAME_START);
+                            oostream.writeObject(getResources().getString(R.string.command_game_start));
                             oostream.flush();
                             handler.post(new Runnable()
                             {
@@ -344,12 +353,12 @@ public class GameActivity extends Activity {
 
 
             }
-            if(result.startsWith(Command.GAME_START))
+            if(result.startsWith(getResources().getString(R.string.command_game_start)))
             {
                 gameStart();
                 handler.post(myRunner);
             }
-            else if(result.startsWith(Command.NEXT_QUEST))
+            else if(result.startsWith(getResources().getString(R.string.command_next_quest)))
             {
                 if (++in_question < total_questions_per_round)
                 {
@@ -361,8 +370,9 @@ public class GameActivity extends Activity {
                     finishQuiz();
                 }
             }
-            else if(result.equals(Command.OTHER_ANSWERED))
+            else if(result.startsWith(getResources().getString(R.string.command_other_ans)))
             {
+                final String [] params = result.split(" ");
                 if(IAnswered)
                 {
                     new Thread(new Runnable()
@@ -372,7 +382,8 @@ public class GameActivity extends Activity {
                         {
                             try
                             {
-                                oostream.writeObject(Command.NEXT_QUEST);
+                                oostream.writeObject(getResources().getString(
+                                        R.string.command_next_quest));
                             }
                             catch (IOException e)
                             {
@@ -394,6 +405,10 @@ public class GameActivity extends Activity {
                 else
                 {
                     theOtherAnswered = true;
+                    if(params[1].equals("1"))
+                    {
+                        other_points += 2;
+                    }
                 }
             }
             else if(result.equals(""))
@@ -421,7 +436,7 @@ public class GameActivity extends Activity {
                         continue;
                     }
                     response = (String) mBoundService.getObjectStreamIn().readObject();
-                    if (response.startsWith(Command.NEW_GAME))
+                    if (response.startsWith(getResources().getString(R.string.command_new_game)))
                     {
                         String[] params = response.split(" ");
                         player_socket = new Socket(params[1], Integer.parseInt(params[2]));
@@ -436,14 +451,14 @@ public class GameActivity extends Activity {
             }
             catch (IOException | ClassNotFoundException ignored)
             {
-                response = "ERROR";
+                response = getResources().getString(R.string.response_error);
             }
             return response;
         }
 
         protected void onPostExecute(String result)
         {
-            if(result.equals("ERROR"))
+            if(result.equals(getResources().getString(R.string.response_error)))
             {
                 mBoundService.errorConnection();
             }
@@ -486,8 +501,8 @@ public class GameActivity extends Activity {
                         WifiManager wm = (WifiManager) getSystemService(WIFI_SERVICE);
                         String ip = Formatter.formatIpAddress(wm.getConnectionInfo().getIpAddress());
 
-                        mBoundService.sendMessage(Command.NEW_GAME + " " + opponent_name + " "
-                                + ip + " " + 5009);
+                        mBoundService.sendMessage(getResources().getString(R.string.command_new_game) +
+                                " " + opponent_name + " " + ip + " " + 5009);
 
                         player_socket = game_socket.accept();
 
@@ -499,7 +514,7 @@ public class GameActivity extends Activity {
 
                         handler.post(myRunner);
 
-                        oostream.writeObject(Command.RECEIVE_QUESTIONS);
+                        oostream.writeObject(getResources().getString(R.string.command_receive_ques));
                         oostream.writeObject(questions.size());
                         for (GameQuestion q : questions)
                             oostream.writeObject(q);

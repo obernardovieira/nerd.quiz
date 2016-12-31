@@ -163,9 +163,15 @@ public class AuthenticationActivity extends Activity {
                 }).start();
 
             }
+            else if(response.equals(Response.NOT_REGISTERED))
+            {
+                Toast.makeText(AuthenticationActivity.this, "You are not registered!",
+                        Toast.LENGTH_LONG).show();
+            }
             else if(response.equals(Response.ERROR))
             {
-                Toast.makeText(AuthenticationActivity.this, "An error occurred while login!", Toast.LENGTH_LONG).show();
+                Toast.makeText(AuthenticationActivity.this, "An error occurred while login!",
+                        Toast.LENGTH_LONG).show();
             }
         }
 

@@ -18,7 +18,10 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
@@ -30,6 +33,7 @@ import java.nio.channels.ClosedByInterruptException;
 
 import a21240068.isec.nerdquiz.Core.Command;
 import a21240068.isec.nerdquiz.Core.SocketService;
+import a21240068.isec.nerdquiz.Database.ProfilesData;
 
 public class NewGameActivity extends Activity
 {
@@ -37,7 +41,7 @@ public class NewGameActivity extends Activity
     private boolean mIsBound;
     private SocketService mBoundService;
     private ReceiveFromServerTask fromServerTask;
-    private boolean first_attempt;
+    private ReceivePhotoFromServerTask photo_task;
     private String reInvite;
     private Handler handler;
 
@@ -81,7 +85,7 @@ public class NewGameActivity extends Activity
 
     private void invitePlayer(String username)
     {
-        mBoundService.sendMessage(Command.INVITE + " " + username);
+        mBoundService.sendMessage(getResources().getString(R.string.command_invite) + " " + username);
 
         TextView message = (TextView)findViewById(R.id.tv_message);
         message.setText("Waiting opponet's answer ...");
@@ -115,9 +119,43 @@ public class NewGameActivity extends Activity
             Toast.makeText(NewGameActivity.this, params[1] +
                     " rejected your invitation!", Toast.LENGTH_LONG).show();
         }
-        else if(answer.startsWith(Command.INVITED))
+        else if(answer.startsWith(getResources().getString(R.string.command_beinvited)))
         {
-            //what if being invited meanwhile?
+            final String inveted_by = params[1];
+            AlertDialog.Builder builder = new AlertDialog.Builder(NewGameActivity.this);
+            builder.setMessage("Do you want to play with " + params[1] + " ?")
+                    .setTitle("Invited");
+
+            builder.setPositiveButton("Yes", new DialogInterface.OnClickListener()
+            {
+                public void onClick(DialogInterface dialog, int id)
+                {
+                    ProfilesData pdata = new ProfilesData(NewGameActivity.this);
+                    if(!pdata.search(inveted_by))
+                    {
+                        handler.post(new Runnable()
+                        {
+                            @Override
+                            public void run()
+                            {
+                                photo_task = new ReceivePhotoFromServerTask();
+                                photo_task.execute(inveted_by);
+                            }
+                        });
+                    }
+                }
+            });
+            builder.setNegativeButton("No", new DialogInterface.OnClickListener()
+            {
+                public void onClick(DialogInterface dialog, int id)
+                {
+                    mBoundService.sendMessage(getResources().
+                            getString(R.string.command_reject) + " " + inveted_by);
+                    handler.post(fromServerRunner);
+                }
+            });
+            AlertDialog dialog = builder.create();
+            dialog.show();
         }
     }
 
@@ -169,6 +207,89 @@ public class NewGameActivity extends Activity
 
     }
 
+    private class ReceivePhotoFromServerTask extends AsyncTask<String, Void, String>
+    {
+        protected String doInBackground(String... params)
+        {
+            String response = "";
+            try
+            {
+                while(!isCancelled())
+                {
+                    if(mBoundService.socket.getInputStream().available() < 4)
+                    {
+                        continue;
+                    }
+                    try
+                    {
+                        String profile_pic = "";
+                        ObjectInputStream ins = mBoundService.getObjectStreamIn();
+                        mBoundService.sendMessage(getResources().
+                                getString(R.string.command_getppic) + " " + params[0]);
+
+                        profile_pic = (String)ins.readObject();
+                        mBoundService.sendMessage(getResources().
+                                getString(R.string.command_profilepdown) + " " + profile_pic);
+
+                        Integer size = (Integer) ins.readObject();
+                        Integer received = 0;
+                        BufferedInputStream in = new BufferedInputStream(mBoundService.getStreamIn());
+
+                        OutputStream out = new FileOutputStream(
+                                new File(getApplicationContext().getFilesDir(), profile_pic));
+
+                        byte[] buf = new byte[getResources().getInteger(R.integer.bytes_on_photo)];
+                        int len = 0;
+                        while ((len = in.read(buf)) != -1)
+                        {
+                            out.write(buf, 0, len);
+                            if (received + len == size)
+                                break;
+                            else
+                                received += len;
+                        }
+                        out.close();
+
+                        response = params[0];
+
+                    }
+                    catch (IOException | ClassNotFoundException e)
+                    {
+                        response = getResources().getString(R.string.response_error);
+                    }
+                    break;
+                }
+            }
+            catch (IOException ignored)
+            {
+                response = getResources().getString(R.string.response_error);
+            }
+            return response;
+        }
+
+        protected void onPostExecute(String result)
+        {
+            if(result.equals(getResources().getString(R.string.response_error)))
+            {
+                Toast.makeText(NewGameActivity.this,
+                        "An error occurred!", Toast.LENGTH_LONG).show();
+            }
+            else
+            {
+                mBoundService.sendMessage(getResources().
+                        getString(R.string.command_accept) + " " + result);
+
+                Intent intent = new Intent(NewGameActivity.this, GameActivity.class);
+                intent.putExtra("playerToPlay", result);
+                intent.putExtra("isInvited", true);
+                startActivity(intent);
+            }
+        }
+
+        public void onCancelled()
+        { }
+    }
+
     @Override
     protected void onResume()
     {
@@ -189,6 +310,7 @@ public class NewGameActivity extends Activity
         public void onServiceConnected(ComponentName name, IBinder service)
         {
             mBoundService = ((SocketService.LocalBinder)service).getService();
+            mBoundService.setContext(NewGameActivity.this);
             if(mBoundService.isConnected())
             {
                 handler.post(fromServerRunner);
@@ -222,6 +344,10 @@ public class NewGameActivity extends Activity
             if(fromServerTask != null)
             {
                 fromServerTask.cancel(true);
+            }
+            if(photo_task != null)
+            {
+                photo_task.cancel(true);
             }
         }
     }

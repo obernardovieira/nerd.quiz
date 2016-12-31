@@ -78,6 +78,32 @@ public class DatabaseClients {
         c.commit();
     }
     
+    public void updatePassword(String username, String password)
+            throws SQLException
+    {
+        stmt = c.createStatement();
+            
+        String sql = "UPDATE users SET password ='" +
+                password + "' WHERE name = '" + username + "'"; 
+        stmt.executeUpdate(sql);
+
+        stmt.close();
+        c.commit();
+    }
+    
+    public void updateProfilePhotoName(String username, String photo_name)
+            throws SQLException
+    {
+        stmt = c.createStatement();
+            
+        String sql = "UPDATE users SET profile_pic ='" +
+                photo_name + "' WHERE name = '" + username + "'"; 
+        stmt.executeUpdate(sql);
+
+        stmt.close();
+        c.commit();
+    }
+    
     public String getProfilePhotoName(String username)
             throws SQLException
     {
@@ -114,7 +140,7 @@ public class DatabaseClients {
             throws SQLException
     {
         if(!checkUser(username))
-            return Response.ERROR;
+            return Response.NOT_REGISTERED;
         
         Integer found = Response.ERROR;
         stmt = c.createStatement();

@@ -45,7 +45,8 @@ public class FinishGameActivity extends Activity {
         }
         else
         {
-            //erro
+            Toast.makeText(FinishGameActivity.this, "An error occurred!",
+                    Toast.LENGTH_LONG).show();
         }
 
         if(isOk)
@@ -78,6 +79,7 @@ public class FinishGameActivity extends Activity {
 
     public void clickButtonGoBack(View view)
     {
+        //
         finish();
     }
 

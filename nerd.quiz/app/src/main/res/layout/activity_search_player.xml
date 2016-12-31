@@ -18,7 +18,7 @@
         android:inputType="textPersonName"
         android:ems="10"
         android:id="@+id/et_player_name"
-        android:hint="Player Name" />
+        android:hint="Player Name"/>
 
     <ListView
         android:layout_width="match_parent"
