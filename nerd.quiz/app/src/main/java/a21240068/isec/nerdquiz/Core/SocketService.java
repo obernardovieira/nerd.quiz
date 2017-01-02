@@ -29,7 +29,7 @@ import java.net.Socket;
 
 public class SocketService extends Service
 {
-    public static final String SERVERIP = "192.168.10.7"; //your computer IP address should be written here
+    public static final String SERVERIP = "192.168.1.8"; //your computer IP address should be written here
     public static final int SERVERPORT = 5007;
     //PrintWriter out;
     ObjectOutputStream out;
@@ -43,7 +43,6 @@ public class SocketService extends Service
     @Override
     public IBinder onBind(Intent intent)
     {
-        Log.d("onBind","aefsrgdth");
         //
         return myBinder;
     }
@@ -67,7 +66,6 @@ public class SocketService extends Service
     {
         public SocketService getService()
         {
-            Log.d("getService","aefsrgdth");
             return SocketService.this;
         }
     }
@@ -116,8 +114,6 @@ public class SocketService extends Service
                 try
                 {
                     out.writeObject(object);
-                    if(object instanceof String)
-                        Log.d("sendMessage",(String)object);
                     out.flush();
                 }
                 catch(IOException e)
@@ -133,10 +129,6 @@ public class SocketService extends Service
     {
         super.onStartCommand(intent, flags, startId);
         return START_STICKY;
-    }
-
-    public void IsBoundable(Context context){
-        Toast.makeText(context,"I bind like butter", Toast.LENGTH_LONG).show();
     }
 
     public void setContext(Context context)

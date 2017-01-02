@@ -94,7 +94,8 @@ public class SearchPlayerActivity extends Activity {
                 mBoundService.sendMessage(getResources().getString(R.string.command_search));
             else
                 mBoundService.sendMessage(getResources().getString(R.string.command_search) + " " + s);
-            Log.d("onTextChanged","wdaesfrgdthyum");
+
+            Log.d("onTextChanged","start " + start + " before " + before + " count " + count);
         }
 
         @Override

@@ -16,31 +16,20 @@ import a21240068.isec.nerdquiz.Objects.DownloadQuestion;
 import amovserver.DatabaseClients;
 import amovserver.Response;
 import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
-import java.net.InetAddress;
 import java.net.Socket;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 
 /**
  *
@@ -57,7 +46,6 @@ class Command
     public static String    INVITE      = "invite";
     public static String    INVITED     = "beinvited";
     public static String    NEW_GAME    = "new_game";
-    //public static String    ANSWER    = "answer";
     public static String    REJECT_INV  = "reject";
     public static String    ACCEPT_INV  = "accept";
     public static String    UPDATE_DB   = "updatedb";
@@ -111,16 +99,9 @@ public class TcpServerHandleClient implements Runnable {
             
             oiStream.close();
         }
-        catch (SQLException ex)
+        catch (IOException | SQLException | ClassNotFoundException ex)
         {
-            ex.printStackTrace();
-            System.out.println("Erro na base de dados!");
-        } catch (IOException | ClassNotFoundException ex) {
             Logger.getLogger(TcpServerHandleClient.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        finally
-        {
-            database.close();
         }
     }
     
@@ -139,9 +120,6 @@ public class TcpServerHandleClient implements Runnable {
                     {
                         ooStream.writeObject(new Profile(player_in_list.getName(),
                             player_in_list.getProfilePicture()));
-                        System.out.println("vai! " +
-                                player_in_list.getName() + " " +
-                                player_in_list.getProfilePicture());
                     }
                 }
             }
@@ -209,6 +187,7 @@ public class TcpServerHandleClient implements Runnable {
             {
                 if(player_in_list.getName().equals(params[1]))
                 {
+                    ooStream.writeObject(Command.GET_PPIC);
                     ooStream.writeObject(player_in_list.getProfilePicture());
                     ooStream.flush();
                     break;
@@ -250,7 +229,7 @@ public class TcpServerHandleClient implements Runnable {
             String [] params = command.split(" ");
             Integer response = database.checkLogin(params[1], params[2]);
             
-            ooStream.writeObject(response);
+            ooStream.writeObject(Command.LOGIN + " " + response);
             if(response.equals(Response.OK))
             {
                 TcpServer.notifyAllPlayers(Command.JOINED + " " + params[1] +
@@ -380,6 +359,7 @@ public class TcpServerHandleClient implements Runnable {
             
             InputStream in = new FileInputStream(
                     new File(params[1]));
+            ooStream.writeObject(Command.PROFILE_PIC_DOWN);
             ooStream.writeObject((Integer)in.available());
             ooStream.flush();
             
@@ -475,6 +455,7 @@ public class TcpServerHandleClient implements Runnable {
             
             System.out.println("size - " + qs.size());
             
+            ooStream.writeObject(Command.UPDATE_DB);
             ooStream.writeObject(qs.size());
             ooStream.flush();
             
