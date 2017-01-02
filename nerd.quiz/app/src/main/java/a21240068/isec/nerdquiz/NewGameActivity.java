@@ -11,27 +11,17 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
-import android.util.Log;
 import android.view.View;
-import android.widget.Button;
-import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.net.Socket;
-import java.nio.channels.ClosedByInterruptException;
 
-import a21240068.isec.nerdquiz.Core.Command;
 import a21240068.isec.nerdquiz.Core.SocketService;
 import a21240068.isec.nerdquiz.Database.ProfilesData;
 
@@ -102,7 +92,7 @@ public class NewGameActivity extends Activity
         }
 
         String [] params = answer.split(" ");
-        if(answer.startsWith(Command.ACCEPT_INV))
+        if(answer.startsWith(getResources().getString(R.string.command_accept)))
         {
             Toast.makeText(NewGameActivity.this, params[1] +
                     " accepted your invitation!", Toast.LENGTH_LONG).show();
@@ -114,7 +104,7 @@ public class NewGameActivity extends Activity
 
             finish();
         }
-        else if(answer.startsWith(Command.REJECT_INV))
+        else if(answer.startsWith(getResources().getString(R.string.command_reject)))
         {
             Toast.makeText(NewGameActivity.this, params[1] +
                     " rejected your invitation!", Toast.LENGTH_LONG).show();

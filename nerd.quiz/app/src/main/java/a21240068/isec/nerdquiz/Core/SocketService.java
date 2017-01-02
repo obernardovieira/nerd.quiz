@@ -116,6 +116,8 @@ public class SocketService extends Service
                 try
                 {
                     out.writeObject(object);
+                    if(object instanceof String)
+                        Log.d("sendMessage",(String)object);
                     out.flush();
                 }
                 catch(IOException e)
@@ -155,48 +157,54 @@ public class SocketService extends Service
 
     public void errorConnection()
     {
-        AlertDialog.Builder builder = new AlertDialog.Builder(context);
-        builder.setMessage("Probably you lost your internet connection!")
-                .setTitle("Server not found")
-                .setPositiveButton("Reconnect", new DialogInterface.OnClickListener()
-                {
-                    @Override
-                    public void onClick(final DialogInterface dialog, int which)
-                    {
-                        if(!isConnected())
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                AlertDialog.Builder builder = new AlertDialog.Builder(context);
+                builder.setMessage("Probably you lost your internet connection!")
+                        .setTitle("Server not found")
+                        .setPositiveButton("Reconnect", new DialogInterface.OnClickListener()
                         {
-                            Toast.makeText(context, "Reconnecting ...", Toast.LENGTH_LONG).show();
-                            new Thread(new connectSocket()).start();
-                            new Thread(new Runnable()
+                            @Override
+                            public void onClick(final DialogInterface dialog, int which)
                             {
-                                @Override
-                                public void run()
+                                if(!isConnected())
                                 {
-                                    try
+                                    Toast.makeText(context, "Reconnecting ...", Toast.LENGTH_LONG).show();
+                                    new Thread(new connectSocket()).start();
+                                    new Thread(new Runnable()
                                     {
-                                        Thread.sleep(2000);
-                                    }
-                                    catch (InterruptedException ignored) { }
-                                    if(!isConnected())
-                                    {
-                                        handler.post(new Runnable()
+                                        @Override
+                                        public void run()
                                         {
-                                            @Override
-                                            public void run()
+                                            try
                                             {
-                                                errorConnection();
+                                                Thread.sleep(2000);
                                             }
-                                        });
-                                    }
+                                            catch (InterruptedException ignored) { }
+                                            if(!isConnected())
+                                            {
+                                                handler.post(new Runnable()
+                                                {
+                                                    @Override
+                                                    public void run()
+                                                    {
+                                                        errorConnection();
+                                                    }
+                                                });
+                                            }
+                                        }
+                                    }).start();
                                 }
-                            }).start();
-                        }
-                        dialog.dismiss();
-                    }
-                });
+                                dialog.dismiss();
+                            }
+                        });
 
-        AlertDialog dialog = builder.create();
-        dialog.show();
+                AlertDialog dialog = builder.create();
+                dialog.show();
+            }
+        });
+
     }
 
     class connectSocket implements Runnable

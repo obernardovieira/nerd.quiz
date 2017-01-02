@@ -151,6 +151,27 @@ public class TcpServerHandleClient implements Runnable {
         else if(command.startsWith(Command.SEARCH))
         {
             String [] params = command.split(" ");
+            if(params.length < 2)
+            {
+                ooStream.writeObject(Command.SEARCH);
+                for(Player player_in_list : TcpServer.players)
+                {
+                    if(player_in_list.isConnected() && !player_in_list.isPlaying())
+                    {
+                        if(player_in_list != player)
+                        {
+                            ooStream.writeObject(new Profile(player_in_list.getName(),
+                                player_in_list.getProfilePicture()));
+                            System.out.println("vai! " +
+                                    player_in_list.getName() + " " +
+                                    player_in_list.getProfilePicture());
+                        }
+                    }
+                }
+                ooStream.writeObject(Command.SEARCH);
+                ooStream.flush();
+                return;
+            }
             ooStream.writeObject(Command.SEARCH);
             for(Player player_in_list : TcpServer.players)
             {
@@ -451,6 +472,8 @@ public class TcpServerHandleClient implements Runnable {
             ArrayList<DownloadQuestion> qs =
                     db_questions.getQuestions(Integer.parseInt(params[1]));
             Integer v = db_questions.getLastVersionNumber();
+            
+            System.out.println("size - " + qs.size());
             
             ooStream.writeObject(qs.size());
             ooStream.flush();

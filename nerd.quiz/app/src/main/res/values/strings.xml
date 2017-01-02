@@ -26,6 +26,8 @@
     <string name="command_receive_ques">receive_questions</string>
     <string name="command_search">search</string>
     <string name="command_invite">invite</string>
+    <string name="command_joined">joined</string>
+    <string name="command_leaved">leaved</string>
 
     <!-- reponses -->
 

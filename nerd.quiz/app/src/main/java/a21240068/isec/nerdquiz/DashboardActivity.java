@@ -28,14 +28,12 @@ import android.widget.Toast;
 
 import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 
-import a21240068.isec.nerdquiz.Core.Command;
 import a21240068.isec.nerdquiz.Core.NerdQuizApp;
 import a21240068.isec.nerdquiz.Core.SocketService;
 import a21240068.isec.nerdquiz.Database.ProfilesData;
@@ -43,7 +41,6 @@ import a21240068.isec.nerdquiz.Objects.DownloadQuestion;
 import a21240068.isec.nerdquiz.Objects.Game;
 import a21240068.isec.nerdquiz.Database.GamesData;
 import a21240068.isec.nerdquiz.Database.QuestionsData;
-import a21240068.isec.nerdquiz.Objects.Profile;
 
 public class DashboardActivity extends Activity
 {
@@ -56,7 +53,7 @@ public class DashboardActivity extends Activity
     private ReceivePhotoFromServerTask photo_task;
     private boolean update_db_task;
     private MyGamesHistoryAdapter adapter;
-    private boolean logged = false;
+    private boolean logged;
     private boolean show_updt_notif = false;
 
     Runnable fromServerRunner;
@@ -82,6 +79,7 @@ public class DashboardActivity extends Activity
             }
         };
 
+        logged = false;
         update_db_task = false;
         handler = new Handler();
     }
@@ -195,8 +193,15 @@ public class DashboardActivity extends Activity
                         ArrayList<DownloadQuestion> questions = new ArrayList<>();
                         Integer version;
 
-                        Integer tq = (Integer)in.readObject();
+                        Object object = in.readObject();
+
+                        if(object instanceof String)
+                            Log.d("------------",(String)object);
+
+                        Integer tq = (Integer)object;
                         Integer z = 0;
+
+                        Log.d("tq", String.valueOf(tq));
 
                         while(z++ < tq)
                         {
@@ -413,20 +418,35 @@ public class DashboardActivity extends Activity
         public void onServiceConnected(ComponentName name, IBinder service) {
             mBoundService = ((SocketService.LocalBinder) service).getService();
             mBoundService.setContext(DashboardActivity.this);
+            Log.d("logged", String.valueOf(logged));
             if (!logged)
             {
+                Log.d("logged2", String.valueOf(logged));
                 SharedPreferences preferences = PreferenceManager.
                             getDefaultSharedPreferences(DashboardActivity.this);
                 String defaultValue = getResources().getString(R.string.no_user_name_default);
                 String username = preferences.getString(getString(R.string.user_name), defaultValue);
                 //
+                Log.d("application.getUsername", application.getUsername());
                 if (application.getUsername().equals(defaultValue))
                 {
                     mBoundService.sendMessage(getResources().getString(R.string.command_autologin) +
-                            " " + application.getUsername());
+                            " " + username);
                     application.setUsername(username);
 
-                    update_questions_database();
+                    //schedule aqui
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                Thread.sleep(1000);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                            update_questions_database();
+                        }
+                    }).start();
+
                 }
                 logged = true;
             }

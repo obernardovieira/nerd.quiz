@@ -3,10 +3,8 @@ package a21240068.isec.nerdquiz;
 import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
-import android.content.ContextWrapper;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.database.DataSetObserver;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
@@ -19,7 +17,6 @@ import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -38,8 +35,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import a21240068.isec.nerdquiz.Core.Command;
-import a21240068.isec.nerdquiz.Core.NerdQuizApp;
 import a21240068.isec.nerdquiz.Core.SocketService;
 import a21240068.isec.nerdquiz.Database.ProfilesData;
 import a21240068.isec.nerdquiz.Objects.Profile;
@@ -91,7 +86,15 @@ public class SearchPlayerActivity extends Activity {
         @Override
         public void onTextChanged(CharSequence s, int start, int before, int count)
         {
-            mBoundService.sendMessage(getResources().getString(R.string.command_search) + " " + s);
+            //clear all
+            players_profile.clear();
+            adapter.notifyDataSetChanged();
+            //
+            if(count > 0)
+                mBoundService.sendMessage(getResources().getString(R.string.command_search));
+            else
+                mBoundService.sendMessage(getResources().getString(R.string.command_search) + " " + s);
+            Log.d("onTextChanged","wdaesfrgdthyum");
         }
 
         @Override
@@ -199,7 +202,7 @@ public class SearchPlayerActivity extends Activity {
             String response = "";
             try
             {
-                mBoundService.sendMessage(Command.PROFILE_PIC_DOWN +
+                mBoundService.sendMessage(getResources().getString(R.string.command_profilepdown) +
                         " " + params[1]);
 
                 while (!isCancelled()) {
@@ -284,7 +287,7 @@ public class SearchPlayerActivity extends Activity {
                     {
                         ObjectInputStream ins = mBoundService.getObjectStreamIn();
                         response = (String) ins.readObject();
-                        if(response.equals(Command.SEARCH))
+                        if(response.equals(getResources().getString(R.string.command_search)))
                         {
                             obj = ins.readObject();
                             while(obj instanceof Profile)
@@ -309,7 +312,7 @@ public class SearchPlayerActivity extends Activity {
         protected void onPostExecute(String result)
         {
             String [] params = result.split(" ");
-            if(result.startsWith(Command.JOINED))
+            if(result.startsWith(getResources().getString(R.string.command_joined)))
             {
                 if(params[1].contains(et_search.getText().toString()))
                 {
@@ -318,7 +321,7 @@ public class SearchPlayerActivity extends Activity {
                     addPlayerToView(params[1], params[2]);
                 }
             }
-            else if(result.startsWith(Command.LEAVED))
+            else if(result.startsWith(getResources().getString(R.string.command_leaved)))
             {
                 if(params[1].contains(et_search.getText().toString()))
                 {

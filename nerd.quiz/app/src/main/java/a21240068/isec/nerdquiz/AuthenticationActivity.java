@@ -6,14 +6,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
-import android.media.Image;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
-import android.util.Log;
 import android.view.View;
-import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -21,11 +18,9 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.OutputStream;
 
-import a21240068.isec.nerdquiz.Core.Command;
 import a21240068.isec.nerdquiz.Core.NerdQuizApp;
 import a21240068.isec.nerdquiz.Core.Response;
 import a21240068.isec.nerdquiz.Core.SocketService;
@@ -149,7 +144,9 @@ public class AuthenticationActivity extends Activity {
                             }
                             else
                             {
-                                mBoundService.sendMessage(Command.PROFILE_PIC_DOWN + " " + profile_pic_file_name);
+                                mBoundService.sendMessage(
+                                        getResources().getString(R.string.command_profilepdown) +
+                                        " " + profile_pic_file_name);
                                 photo_task = new ReceiveProfilePhotoServerTask();
                                 photo_task.execute();
                             }
