@@ -339,7 +339,7 @@ public class TcpServerHandleClient implements Runnable {
             try
             {
                 database.updateProfilePhotoName(params[1], profile_pic);
-                ooStream.writeObject(Command.PROFILE_PIC_UP + " " + Response.OK);
+                ooStream.writeObject(Command.PROFILE_PIC_UP + " " + Response.OK + " " + profile_pic);
             }
             catch(SQLException ex)
             {

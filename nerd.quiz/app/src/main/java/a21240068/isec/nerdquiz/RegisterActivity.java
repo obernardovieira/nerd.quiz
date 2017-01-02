@@ -185,6 +185,7 @@ public class RegisterActivity extends Activity
                         SharedPreferences.Editor editor = preferences.edit();
                         editor.putString(getString(R.string.profile_pic), file_name);
                         editor.apply();
+                        editor.commit();
 
                         response = getResources().getString(R.string.response_ok);
                         break;

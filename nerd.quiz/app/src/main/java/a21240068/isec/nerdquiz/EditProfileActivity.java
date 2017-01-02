@@ -15,6 +15,7 @@ import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -78,7 +79,6 @@ public class EditProfileActivity extends Activity
                 if (resultCode == Activity.RESULT_OK)
                 {
                     newPhoto = true;
-                    Log.d("sfdgthfy","wadesrgfh");
                     selectedImageUri = Uri.fromFile(new File(getApplicationContext().getFilesDir(),
                             getResources().getString(R.string.default_profile_pic_name)));
                     ((ImageView) findViewById(R.id.iv_profile_pic)).setImageURI(selectedImageUri);
@@ -166,6 +166,33 @@ public class EditProfileActivity extends Activity
                         if(resp.equals(Response.OK))
                         {
                             response = getResources().getString(R.string.response_ok);
+                        }
+                    }
+                    else if(tq.startsWith(getResources().getString(R.string.command_profilepup)))
+                    {
+                        String [] pms = tq.split(" ");
+                        Integer resp = Integer.parseInt(pms[1]);
+                        if(resp.equals(Response.OK))
+                        {
+                            response = getResources().getString(R.string.response_ok);
+
+                            File own_file = new File(getApplicationContext().getFilesDir(),
+                                    getResources().getString(R.string.default_profile_pic_name));
+                            own_file.renameTo(new File(getApplicationContext().getFilesDir(), pms[2]));
+
+                            SharedPreferences preferences = PreferenceManager.
+                                    getDefaultSharedPreferences(EditProfileActivity.this);
+
+                            File old_file = new File(preferences.getString(getString(R.string.profile_pic), ""));
+                            if(old_file.exists())
+                            {
+                                old_file.delete();
+                            }
+
+                            SharedPreferences.Editor editor = preferences.edit();
+                            editor.putString(getString(R.string.profile_pic), pms[2]);
+                            editor.apply();
+                            editor.commit();
                         }
                     }
                     else continue;
