@@ -102,7 +102,7 @@ public class AuthenticationActivity extends Activity {
                     if(object instanceof String)
                     {
                         response = (String)object;
-                        if(response.contains(getResources().getString(R.string.command_profilepdown)))
+                        if(response.startsWith(getResources().getString(R.string.command_profilepdown)))
                         {
                             response = downloadProfilePicResult();
                         }

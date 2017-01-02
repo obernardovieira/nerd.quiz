@@ -102,6 +102,7 @@ public class TcpServerHandleClient implements Runnable {
         catch (IOException | SQLException | ClassNotFoundException ex)
         {
             Logger.getLogger(TcpServerHandleClient.class.getName()).log(Level.SEVERE, null, ex);
+            TcpServer.players.remove(player);
         }
     }
     
@@ -359,7 +360,7 @@ public class TcpServerHandleClient implements Runnable {
             
             InputStream in = new FileInputStream(
                     new File(params[1]));
-            ooStream.writeObject(Command.PROFILE_PIC_DOWN);
+            ooStream.writeObject(Command.PROFILE_PIC_DOWN + " " + params[1]);
             ooStream.writeObject((Integer)in.available());
             ooStream.flush();
             

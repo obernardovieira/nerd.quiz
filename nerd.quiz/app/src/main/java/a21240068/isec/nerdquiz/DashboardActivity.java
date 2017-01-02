@@ -253,8 +253,9 @@ public class DashboardActivity extends Activity
                         {
                             response = updateDatabaseResult(in);
                         }
-                        else if(response.equals(getResources().getString(R.string.command_profilepdown)))
+                        else if(response.startsWith(getResources().getString(R.string.command_profilepdown)))
                         {
+                            response = getResources().getString(R.string.command_profilepdown);
                             response = receiveProfilePicResult(in);
                         }
                     }
@@ -338,6 +339,16 @@ public class DashboardActivity extends Activity
                         {
                             mBoundService.sendMessage(getResources().
                                     getString(R.string.command_getppic) + " " + params[1]);
+                        }
+                        else
+                        {
+                            mBoundService.sendMessage(getResources().
+                                    getString(R.string.command_accept) + " " + params[1]);
+
+                            Intent intent = new Intent(DashboardActivity.this, GameActivity.class);
+                            intent.putExtra("playerToPlay", params[1]);
+                            intent.putExtra("isInvited", true);
+                            startActivity(intent);
                         }
                     }
                 });

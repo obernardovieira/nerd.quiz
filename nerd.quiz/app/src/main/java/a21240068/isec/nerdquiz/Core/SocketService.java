@@ -101,6 +101,7 @@ public class SocketService extends Service
 
     public void sendMessage(final Object object)
     {
+        Log.d("sendit","wadesfrgdthfy");
         new Thread(new Runnable()
         {
             @Override
@@ -113,6 +114,7 @@ public class SocketService extends Service
                 }
                 try
                 {
+                    Log.d("sendit","wadesfrgdthfy");
                     out.writeObject(object);
                     out.flush();
                 }

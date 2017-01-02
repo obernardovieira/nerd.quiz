@@ -215,6 +215,7 @@ public class NewGameActivity extends Activity
                                 response = receiveProfilePicResult(in);
                             }
                         }
+                        break;
                     }
                 }
             }
@@ -228,14 +229,74 @@ public class NewGameActivity extends Activity
         protected void onPostExecute(String result)
         {
             //
-            if(result.contains(getResources().getString(R.string.command_beinvited)))
+            String [] params = result.split(" ");
+            if(result.startsWith(getResources().getString(R.string.command_accept)))
             {
-                processInvitationAnswer(result);
+                Toast.makeText(NewGameActivity.this, params[1] +
+                        " accepted your invitation!", Toast.LENGTH_LONG).show();
+
+                Intent intent = new Intent(NewGameActivity.this, GameActivity.class);
+                intent.putExtra("playerToPlay", params[1]);
+                intent.putExtra("isInvited", false);
+                startActivity(intent);
+
+                finish();
+            }
+            else if(result.startsWith(getResources().getString(R.string.command_reject)))
+            {
+                Toast.makeText(NewGameActivity.this, params[1] +
+                        " rejected your invitation!", Toast.LENGTH_LONG).show();
+                handler.post(fromServerRunner);
+            }
+            else if(result.startsWith(getResources().getString(R.string.command_beinvited)))
+            {
+                if(invited_by.length() > 0)
+                {
+                    return;
+                }
+                invited_by = params[1];
+                AlertDialog.Builder builder = new AlertDialog.Builder(NewGameActivity.this);
+                builder.setMessage("Do you want to play with " + params[1] + " ?")
+                        .setTitle("Invited");
+
+                builder.setPositiveButton("Yes", new DialogInterface.OnClickListener()
+                {
+                    public void onClick(DialogInterface dialog, int id)
+                    {
+                        ProfilesData pdata = new ProfilesData(NewGameActivity.this);
+                        if(!pdata.search(invited_by))
+                        {
+                            mBoundService.sendMessage(getResources().
+                                    getString(R.string.command_getppic) + " " + invited_by);
+                        }
+                        else
+                        {
+                            mBoundService.sendMessage(getResources().
+                                    getString(R.string.command_accept) + " " + invited_by);
+
+                            Intent intent = new Intent(NewGameActivity.this, GameActivity.class);
+                            intent.putExtra("playerToPlay", invited_by);
+                            intent.putExtra("isInvited", true);
+                            startActivity(intent);
+                        }
+                    }
+                });
+                builder.setNegativeButton("No", new DialogInterface.OnClickListener()
+                {
+                    public void onClick(DialogInterface dialog, int id)
+                    {
+                        mBoundService.sendMessage(getResources().
+                                getString(R.string.command_reject) + " " + invited_by);
+                        handler.post(fromServerRunner);
+                    }
+                });
+                AlertDialog dialog = builder.create();
+                dialog.show();
             }
             else if(result.startsWith(getResources().getString(R.string.command_profilepdown)))
             {
-                String [] params = result.split(" ");
-                if(params.length > 1)
+                String [] pms = result.split(" ");
+                if(pms.length > 1)
                 {
                     mBoundService.sendMessage(getResources().
                             getString(R.string.command_accept) + " " + result);

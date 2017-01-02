@@ -485,42 +485,56 @@ public class GameActivity extends Activity {
             {
                 if(isInvited)
                 {
-                    try
+                    new Thread(new Runnable()
                     {
-                        ServerSocket game_socket = new ServerSocket(5009);
-                        game_socket.setSoTimeout(5000);
+                        @Override
+                        public void run()
+                        {
+                            try
+                            {
+                                ServerSocket game_socket = new ServerSocket(5009);
+                                game_socket.setSoTimeout(5000);
 
-                        WifiManager wm = (WifiManager) getSystemService(WIFI_SERVICE);
-                        String ip = Formatter.formatIpAddress(wm.getConnectionInfo().getIpAddress());
+                                WifiManager wm = (WifiManager) getSystemService(WIFI_SERVICE);
+                                String ip = Formatter.formatIpAddress(wm.getConnectionInfo().getIpAddress());
 
-                        mBoundService.sendMessage(getResources().getString(R.string.command_new_game) +
-                                " " + opponent_name + " " + ip + " " + 5009);
+                                mBoundService.sendMessage(getResources().getString(R.string.command_new_game) +
+                                        " " + opponent_name + " " + ip + " " + 5009);
 
-                        player_socket = game_socket.accept();
+                                player_socket = game_socket.accept();
 
-                        QuestionsData qdata = new QuestionsData(GameActivity.this);
-                        questions = qdata.getRandomQuestions(total_questions_per_round);
+                                QuestionsData qdata = new QuestionsData(GameActivity.this);
+                                questions = qdata.getRandomQuestions(total_questions_per_round);
 
-                        oostream = new ObjectOutputStream(player_socket.getOutputStream());
-                        oistream = new ObjectInputStream(player_socket.getInputStream());
+                                oostream = new ObjectOutputStream(player_socket.getOutputStream());
+                                oistream = new ObjectInputStream(player_socket.getInputStream());
 
-                        handler.post(myRunner);
+                                handler.post(myRunner);
 
-                        oostream.writeObject(getResources().getString(R.string.command_receive_ques));
-                        oostream.writeObject(questions.size());
-                        for (GameQuestion q : questions)
-                            oostream.writeObject(q);
+                                oostream.writeObject(getResources().getString(R.string.command_receive_ques));
+                                oostream.writeObject(questions.size());
+                                for (GameQuestion q : questions)
+                                    oostream.writeObject(q);
 
-                    }
-                    catch (SocketException e)
-                    {
-                        Toast.makeText(GameActivity.this, "TimeOut!", Toast.LENGTH_SHORT).show();
-                        finish();
-                    }
-                    catch (IOException e)
-                    {
-                        mBoundService.errorConnection();
-                    }
+                            }
+                            catch (SocketException e)
+                            {
+                                handler.post(new Runnable()
+                                {
+                                    @Override
+                                    public void run()
+                                    {
+                                        Toast.makeText(GameActivity.this, "TimeOut!", Toast.LENGTH_SHORT).show();
+                                        finish();
+                                    }
+                                });
+                            }
+                            catch (IOException e)
+                            {
+                                mBoundService.errorConnection();
+                            }
+                        }
+                    }).start();
                 }
                 else
                 {
