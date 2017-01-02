@@ -31,10 +31,11 @@ public class NewGameActivity extends Activity
     private boolean mIsBound;
     private SocketService mBoundService;
     private ReceiveFromServerTask fromServerTask;
-    private ReceivePhotoFromServerTask photo_task;
     private String reInvite;
     private Handler handler;
 
+    String invited_by;
+    String profilepic_invited_by;
     Runnable fromServerRunner;
 
     @Override
@@ -111,7 +112,11 @@ public class NewGameActivity extends Activity
         }
         else if(answer.startsWith(getResources().getString(R.string.command_beinvited)))
         {
-            final String inveted_by = params[1];
+            if(invited_by.length() > 0)
+            {
+                return;
+            }
+            invited_by = params[1];
             AlertDialog.Builder builder = new AlertDialog.Builder(NewGameActivity.this);
             builder.setMessage("Do you want to play with " + params[1] + " ?")
                     .setTitle("Invited");
@@ -121,17 +126,10 @@ public class NewGameActivity extends Activity
                 public void onClick(DialogInterface dialog, int id)
                 {
                     ProfilesData pdata = new ProfilesData(NewGameActivity.this);
-                    if(!pdata.search(inveted_by))
+                    if(!pdata.search(invited_by))
                     {
-                        handler.post(new Runnable()
-                        {
-                            @Override
-                            public void run()
-                            {
-                                photo_task = new ReceivePhotoFromServerTask();
-                                photo_task.execute(inveted_by);
-                            }
-                        });
+                        mBoundService.sendMessage(getResources().
+                                getString(R.string.command_getppic) + " " + invited_by);
                     }
                 }
             });
@@ -140,7 +138,7 @@ public class NewGameActivity extends Activity
                 public void onClick(DialogInterface dialog, int id)
                 {
                     mBoundService.sendMessage(getResources().
-                            getString(R.string.command_reject) + " " + inveted_by);
+                            getString(R.string.command_reject) + " " + invited_by);
                     handler.post(fromServerRunner);
                 }
             });
@@ -161,11 +159,39 @@ public class NewGameActivity extends Activity
         }
     }
 
+    private String receiveProfilePicResult(ObjectInputStream ins)
+            throws IOException, ClassNotFoundException
+    {
+        String response;
+        Integer size = (Integer) ins.readObject();
+        Integer received = 0;
+        BufferedInputStream in = new BufferedInputStream(mBoundService.getStreamIn());
+
+        OutputStream out = new FileOutputStream(
+                new File(getApplicationContext().getFilesDir(), profilepic_invited_by));
+
+        byte[] buf = new byte[getResources().getInteger(R.integer.bytes_on_photo)];
+        int len = 0;
+        while ((len = in.read(buf)) != -1)
+        {
+            out.write(buf, 0, len);
+            if (received + len == size)
+                break;
+            else
+                received += len;
+        }
+        out.close();
+
+        response = getResources().getString(R.string.command_profilepdown) + " " + invited_by;
+        return response;
+    }
+
     private class ReceiveFromServerTask extends AsyncTask<Void, Void, String>
     {
         protected String doInBackground(Void... params)
         {
             String response = null;
+            Object object;
             try
             {
                 while(!isCancelled())
@@ -173,7 +199,22 @@ public class NewGameActivity extends Activity
                     if(mBoundService.socket.getInputStream().available() > 4)
                     {
                         ObjectInputStream in = mBoundService.getObjectStreamIn();
-                        response = (String)in.readObject();
+                        object = in.readObject();
+                        if(object instanceof String)
+                        {
+                            response = (String)object;
+                            if(response.startsWith(getResources().getString(R.string.command_getppic)))
+                            {
+                                String [] pms = response.split(" ");
+                                profilepic_invited_by = pms[1];
+                                mBoundService.sendMessage(getResources().
+                                        getString(R.string.command_profilepdown) + " " + params[1]);
+                            }
+                            else if(response.equals(getResources().getString(R.string.command_profilepdown)))
+                            {
+                                response = receiveProfilePicResult(in);
+                            }
+                        }
                     }
                 }
             }
@@ -187,7 +228,32 @@ public class NewGameActivity extends Activity
         protected void onPostExecute(String result)
         {
             //
-            processInvitationAnswer(result);
+            if(result.contains(getResources().getString(R.string.command_beinvited)))
+            {
+                processInvitationAnswer(result);
+            }
+            else if(result.startsWith(getResources().getString(R.string.command_profilepdown)))
+            {
+                String [] params = result.split(" ");
+                if(params.length > 1)
+                {
+                    mBoundService.sendMessage(getResources().
+                            getString(R.string.command_accept) + " " + result);
+
+                    Intent intent = new Intent(NewGameActivity.this, GameActivity.class);
+                    intent.putExtra("playerToPlay", invited_by);
+                    intent.putExtra("isInvited", true);
+                    startActivity(intent);
+                }
+                else
+                {
+                    mBoundService.errorConnection();
+                }
+            }
+            else
+            {
+                handler.post(fromServerRunner);
+            }
         }
 
         protected void onCancelled()
@@ -197,94 +263,12 @@ public class NewGameActivity extends Activity
 
     }
 
-    private class ReceivePhotoFromServerTask extends AsyncTask<String, Void, String>
-    {
-        protected String doInBackground(String... params)
-        {
-            String response = "";
-            try
-            {
-                while(!isCancelled())
-                {
-                    if(mBoundService.socket.getInputStream().available() < 4)
-                    {
-                        continue;
-                    }
-                    try
-                    {
-                        String profile_pic = "";
-                        ObjectInputStream ins = mBoundService.getObjectStreamIn();
-                        mBoundService.sendMessage(getResources().
-                                getString(R.string.command_getppic) + " " + params[0]);
-
-                        profile_pic = (String)ins.readObject();
-                        mBoundService.sendMessage(getResources().
-                                getString(R.string.command_profilepdown) + " " + profile_pic);
-
-                        Integer size = (Integer) ins.readObject();
-                        Integer received = 0;
-                        BufferedInputStream in = new BufferedInputStream(mBoundService.getStreamIn());
-
-                        OutputStream out = new FileOutputStream(
-                                new File(getApplicationContext().getFilesDir(), profile_pic));
-
-                        byte[] buf = new byte[getResources().getInteger(R.integer.bytes_on_photo)];
-                        int len = 0;
-                        while ((len = in.read(buf)) != -1)
-                        {
-                            out.write(buf, 0, len);
-                            if (received + len == size)
-                                break;
-                            else
-                                received += len;
-                        }
-                        out.close();
-
-                        response = params[0];
-
-                    }
-                    catch (IOException | ClassNotFoundException e)
-                    {
-                        response = getResources().getString(R.string.response_error);
-                    }
-                    break;
-                }
-            }
-            catch (IOException ignored)
-            {
-                response = getResources().getString(R.string.response_error);
-            }
-            return response;
-        }
-
-        protected void onPostExecute(String result)
-        {
-            if(result.equals(getResources().getString(R.string.response_error)))
-            {
-                Toast.makeText(NewGameActivity.this,
-                        "An error occurred!", Toast.LENGTH_LONG).show();
-            }
-            else
-            {
-                mBoundService.sendMessage(getResources().
-                        getString(R.string.command_accept) + " " + result);
-
-                Intent intent = new Intent(NewGameActivity.this, GameActivity.class);
-                intent.putExtra("playerToPlay", result);
-                intent.putExtra("isInvited", true);
-                startActivity(intent);
-            }
-        }
-
-        public void onCancelled()
-        { }
-    }
-
     @Override
     protected void onResume()
     {
         super.onResume();
         doBindService();
+        invited_by = "";
     }
 
     @Override
@@ -334,10 +318,6 @@ public class NewGameActivity extends Activity
             if(fromServerTask != null)
             {
                 fromServerTask.cancel(true);
-            }
-            if(photo_task != null)
-            {
-                photo_task.cancel(true);
             }
         }
     }

@@ -187,8 +187,8 @@ public class TcpServerHandleClient implements Runnable {
             {
                 if(player_in_list.getName().equals(params[1]))
                 {
-                    ooStream.writeObject(Command.GET_PPIC);
-                    ooStream.writeObject(player_in_list.getProfilePicture());
+                    ooStream.writeObject(Command.GET_PPIC +
+                            " " + player_in_list.getProfilePicture());
                     ooStream.flush();
                     break;
                 }

@@ -295,7 +295,7 @@ public class DashboardActivity extends Activity
                     mBoundService.errorConnection();
                 }
             }
-            else if(params[0].equals(getResources().getString(R.string.command_getppic)))
+            else if(params[0].startsWith(getResources().getString(R.string.command_getppic)))
             {
                 profilepic_invited_by = params[1];
                 mBoundService.sendMessage(getResources().
