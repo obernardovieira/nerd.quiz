@@ -226,6 +226,9 @@ public class DashboardActivity extends Activity
         }
         out.close();
 
+        ProfilesData pdata = new ProfilesData(DashboardActivity.this);
+        pdata.add(invited_by, profilepic_invited_by);
+
         response = getResources().getString(R.string.command_profilepdown) + " " + invited_by;
         return response;
     }
@@ -296,19 +299,19 @@ public class DashboardActivity extends Activity
                     mBoundService.errorConnection();
                 }
             }
-            else if(params[0].startsWith(getResources().getString(R.string.command_getppic)))
+            else if(params[0].equals(getResources().getString(R.string.command_getppic)))
             {
                 profilepic_invited_by = params[1];
                 mBoundService.sendMessage(getResources().
                         getString(R.string.command_profilepdown) + " " + params[1]);
                 handler.post(fromServerRunner);
             }
-            else if(params[0].startsWith(getResources().getString(R.string.command_profilepdown)))
+            else if(params[0].equals(getResources().getString(R.string.command_profilepdown)))
             {
                 if(params.length > 1)
                 {
                     mBoundService.sendMessage(getResources().
-                            getString(R.string.command_accept) + " " + result);
+                            getString(R.string.command_accept) + " " + invited_by);
 
                     Intent intent = new Intent(DashboardActivity.this, GameActivity.class);
                     intent.putExtra("playerToPlay", invited_by);
@@ -339,6 +342,7 @@ public class DashboardActivity extends Activity
                         {
                             mBoundService.sendMessage(getResources().
                                     getString(R.string.command_getppic) + " " + params[1]);
+                            handler.post(fromServerRunner);
                         }
                         else
                         {

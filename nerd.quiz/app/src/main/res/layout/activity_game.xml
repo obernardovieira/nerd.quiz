@@ -26,7 +26,7 @@
             <ProgressBar
                 style="@style/Widget.AppCompat.ProgressBar.Horizontal"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:id="@+id/pb_questions_left"
                 android:max="10"
                 android:progress="5" />
@@ -36,7 +36,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:id="@+id/tv_time"
-                android:textAlignment="center" />
+                android:textAlignment="center"
+                android:textSize="25sp" />
 
         </LinearLayout>
 
@@ -52,7 +53,8 @@
                 android:layout_height="wrap_content"
                 android:id="@+id/tv_question"
                 android:textAlignment="center"
-                android:padding="20dp" />
+                android:padding="20dp"
+                android:textSize="22sp" />
 
             <Button
                 android:text="Button"

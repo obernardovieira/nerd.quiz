@@ -26,7 +26,7 @@
         android:layout_height="wrap_content"
         android:id="@+id/tv_game_over"
         android:textAlignment="center"
-        android:textSize="18sp" />
+        android:textSize="45sp" />
 
     <TextView
         android:text="3/5"
@@ -41,7 +41,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/tv_winner"
-        android:textAlignment="center" />
+        android:textAlignment="center"
+        android:textSize="30sp" />
 
     <Button
         android:layout_width="match_parent"

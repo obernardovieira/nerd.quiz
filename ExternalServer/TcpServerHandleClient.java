@@ -323,12 +323,14 @@ public class TcpServerHandleClient implements Runnable {
             try
             {
                 while ((len = in.read(buf)) != -1) {
+                    System.out.println("rccc");
                     out.write(buf, 0, len);
                     if(received + len == size)
                         break;
                     else
                         received += len;
                 }
+                System.out.println("rrr");
             }
             catch(IOException ex)
             {

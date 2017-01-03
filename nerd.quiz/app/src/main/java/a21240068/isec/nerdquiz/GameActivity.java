@@ -1,8 +1,10 @@
 package a21240068.isec.nerdquiz;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.net.wifi.WifiManager;
@@ -11,6 +13,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.text.format.Formatter;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ProgressBar;
@@ -66,10 +69,9 @@ public class GameActivity extends Activity {
     ObjectInputStream               oistream;
 
     private boolean                 theOtherAnswered;
-    private boolean                 IAnswered;
 
-    private boolean mIsBound;
-    private SocketService mBoundService;
+    private boolean                 mIsBound;
+    private SocketService           mBoundService;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -85,6 +87,7 @@ public class GameActivity extends Activity {
         answered_right              = 0;
         points                      = 0;
         other_points                = 0;
+        theOtherAnswered            = false;
 
         pb_questions_left   = (ProgressBar)   findViewById(R.id.pb_questions_left);
         tv_time             = (TextView)      findViewById(R.id.tv_time);
@@ -129,6 +132,7 @@ public class GameActivity extends Activity {
             @Override
             public void run()
             {
+                Log.d("dfbghj", "startCountdown");
                 handler.post(new Runnable()
                 {
                     @Override
@@ -149,11 +153,18 @@ public class GameActivity extends Activity {
                                         try
                                         {
                                             oostream.writeObject(getResources().getString(
-                                                    R.string.command_next_quest));
+                                                    R.string.command_next_quest) + "0");
                                         }
                                         catch (IOException e)
                                         {
-                                            mBoundService.errorConnection();
+                                            /*handler.post(new Runnable()
+                                            {
+                                                @Override
+                                                public void run()
+                                                {
+                                                    lostPlayerConnection();
+                                                }
+                                            });*/
                                         }
                                     }
                                 }).start();
@@ -172,6 +183,7 @@ public class GameActivity extends Activity {
                 });
             }
         };
+        Log.d("dfbghj", "scheduleAtFixedRate");
         scheduler.scheduleAtFixedRate(beeper, 1, 1, SECONDS);
     }
 
@@ -188,7 +200,6 @@ public class GameActivity extends Activity {
         bt_answer_three.setText(answers.get(2));
         //
         theOtherAnswered = false;
-        IAnswered = false;
         startCountdown();
     }
 
@@ -218,7 +229,27 @@ public class GameActivity extends Activity {
         {
            mBoundService.errorConnection();
         }
+        scheduler.shutdownNow();
         finish();
+    }
+
+    private void lostPlayerConnection()
+    {
+        AlertDialog.Builder builder = new AlertDialog.Builder(GameActivity.this);
+        builder.setMessage("You lost your connection to the other client!")
+                .setTitle("Client not found")
+                .setPositiveButton("OK", new DialogInterface.OnClickListener()
+                {
+                    @Override
+                    public void onClick(final DialogInterface dialog, int which)
+                    {
+                        finish();
+                        dialog.dismiss();
+                    }
+                });
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
     }
 
     public void clickAnswerButton(View view)
@@ -230,11 +261,15 @@ public class GameActivity extends Activity {
             answered_right ++;
             right_ans = true;
         }
-
+        final boolean tsend = right_ans;
         scheduler.shutdownNow();
         if(theOtherAnswered)
         {
-            points ++;
+            theOtherAnswered = false;
+            if(right_ans)
+            {
+                points ++;
+            }
             new Thread(new Runnable()
             {
                 @Override
@@ -243,11 +278,19 @@ public class GameActivity extends Activity {
                     try
                     {
                         oostream.writeObject(getResources().getString(
-                                R.string.command_next_quest));
+                                R.string.command_next_quest) +
+                                " " + ((tsend) ? (1) : (0)));
                     }
                     catch (IOException e)
                     {
-                        mBoundService.errorConnection();
+                        handler.post(new Runnable()
+                        {
+                            @Override
+                            public void run()
+                            {
+                                lostPlayerConnection();
+                            }
+                        });
                     }
                 }
             }).start();
@@ -263,8 +306,10 @@ public class GameActivity extends Activity {
         }
         else
         {
-            points += 2;
-            final boolean tsend = right_ans;
+            if(right_ans)
+            {
+                points += 2;
+            }
             new Thread(new Runnable()
             {
                 @Override
@@ -281,8 +326,9 @@ public class GameActivity extends Activity {
                     }
                 }
             }).start();
-            IAnswered = true;
         }
+
+
     }
 
     private class ReceiveFromPlayerTask extends AsyncTask<Void, Void, String>
@@ -338,12 +384,17 @@ public class GameActivity extends Activity {
                         }
                         catch (IOException | ClassNotFoundException e)
                         {
-                            mBoundService.errorConnection();
+                            handler.post(new Runnable()
+                            {
+                                @Override
+                                public void run()
+                                {
+                                    lostPlayerConnection();
+                                }
+                            });
                         }
                     }
                 }).start();
-
-
             }
             if(result.startsWith(getResources().getString(R.string.command_game_start)))
             {
@@ -352,6 +403,12 @@ public class GameActivity extends Activity {
             }
             else if(result.startsWith(getResources().getString(R.string.command_next_quest)))
             {
+                String [] params = result.split(" ");
+                theOtherAnswered = false;
+                if(params[1].equals("1"))
+                {
+                    other_points ++;
+                }
                 if (++in_question < total_questions_per_round)
                 {
                     handler.post(myRunner);
@@ -365,42 +422,10 @@ public class GameActivity extends Activity {
             else if(result.startsWith(getResources().getString(R.string.command_other_ans)))
             {
                 final String [] params = result.split(" ");
-                if(IAnswered)
+                theOtherAnswered = true;
+                if(params[1].equals("1"))
                 {
-                    new Thread(new Runnable()
-                    {
-                        @Override
-                        public void run()
-                        {
-                            try
-                            {
-                                oostream.writeObject(getResources().getString(
-                                        R.string.command_next_quest));
-                            }
-                            catch (IOException e)
-                            {
-                                mBoundService.errorConnection();
-                            }
-                        }
-                    }).start();
-                    //
-                    if (++in_question < total_questions_per_round)
-                    {
-                        handler.post(myRunner);
-                        showNewQuestion();
-                    }
-                    else
-                    {
-                        finishQuiz();
-                    }
-                }
-                else
-                {
-                    theOtherAnswered = true;
-                    if(params[1].equals("1"))
-                    {
-                        other_points += 2;
-                    }
+                    other_points += 2;
                 }
             }
             else if(result.equals(""))
@@ -481,6 +506,7 @@ public class GameActivity extends Activity {
         public void onServiceConnected(ComponentName name, IBinder service)
         {
             mBoundService = ((SocketService.LocalBinder)service).getService();
+            mBoundService.setContext(GameActivity.this);
             if(mBoundService.isConnected())
             {
                 if(isInvited)
@@ -573,6 +599,8 @@ public class GameActivity extends Activity {
             {
                 server_task.cancel(true);
             }
+            scheduler.shutdownNow();
+            scheduler = null;
         }
     }
 

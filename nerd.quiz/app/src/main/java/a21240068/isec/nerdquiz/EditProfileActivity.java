@@ -36,7 +36,6 @@ public class EditProfileActivity extends Activity
 {
     private final int TAKE_NEW_PHOTO = 0;
     private Uri selectedImageUri;
-    private boolean newPhoto;
 
     private boolean mIsBound;
     private SocketService mBoundService;
@@ -63,7 +62,7 @@ public class EditProfileActivity extends Activity
             Bitmap myBitmap = BitmapFactory.decodeFile(imgFile.getAbsolutePath());
             iv_profile_pic.setImageBitmap(myBitmap);
         }
-        newPhoto = false;
+        selectedImageUri = null;
     }
 
     public void changeProfilePhoto(View view)
@@ -78,7 +77,6 @@ public class EditProfileActivity extends Activity
             case TAKE_NEW_PHOTO:
                 if (resultCode == Activity.RESULT_OK)
                 {
-                    newPhoto = true;
                     selectedImageUri = Uri.fromFile(new File(getApplicationContext().getFilesDir(),
                             getResources().getString(R.string.default_profile_pic_name)));
                     ((ImageView) findViewById(R.id.iv_profile_pic)).setImageURI(selectedImageUri);
@@ -92,19 +90,43 @@ public class EditProfileActivity extends Activity
         boolean run_task = false;
         TextView tv_pass = (TextView) findViewById(R.id.et_password);
         TextView tv_rpass = (TextView) findViewById(R.id.et_repeat_password);
-        if(newPhoto)
+        if(selectedImageUri != null)
         {
-            try
+            run_task = true;
+            new Thread(new Runnable()
             {
-                InputStream in = new FileInputStream(
-                        new File(getApplicationContext().getFilesDir(),
-                                getResources().getString(R.string.default_profile_pic_name)));
-                mBoundService.sendMessage(getResources().getString(R.string.command_profilepup) + "");
-                mBoundService.sendMessage(in.available());
-                run_task = true;
-            }
-            catch (IOException ignored) { }
+                @Override
+                public void run()
+                {
+                    try
+                    {
+                        Log.d("abc","a");
+                        ObjectOutputStream os = mBoundService.getObjectStreamOut();
+                        InputStream in = new FileInputStream(
+                                new File(getApplicationContext().getFilesDir(),
+                                        getResources().getString(R.string.default_profile_pic_name)));
+                        os.writeObject(getResources().getString(R.string.command_profilepup) +
+                                " " + username);
+                        os.writeObject(in.available());
+                        Log.d("abc","a");
+                        os.flush();
+                        Log.d("abc","a");
+                        OutputStream outs = mBoundService.getStreamOut();
 
+                        Log.d("abc","a");
+                        byte[] buf = new byte[getResources().getInteger(R.integer.bytes_on_photo)];
+                        int len = 0;
+                        while ((len = in.read(buf)) != -1)
+                        {
+                            outs.write(buf, 0, len);
+                            outs.flush();
+                        }
+                        Log.d("abc","a");
+                        in.close();
+                    }
+                    catch (IOException ignored) { }
+                }
+            }).start();
         }
         else if(tv_pass.getText().length() > 0)
         {
