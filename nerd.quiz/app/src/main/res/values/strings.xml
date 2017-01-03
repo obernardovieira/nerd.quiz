@@ -6,8 +6,6 @@
     <string name="profile_pic">profile_pic</string>
     <string name="default_profile_pic_name">picture.jpg</string>
 
-
-
     <!-- commands -->
 
     <string name="command_register">register</string>
@@ -19,11 +17,28 @@
     <string name="command_getppic">getppic</string>
     <string name="command_profilepdown">profilepdown</string>
     <string name="command_accept">accept</string>
+    <string name="command_uppass">updatepass</string>
+    <string name="command_profilepup">profilepup</string>
+    <string name="command_next_quest">next_quest</string>
+    <string name="command_game_start">game_start</string>
+    <string name="command_other_ans">other_answered</string>
+    <string name="command_new_game">new_game</string>
+    <string name="command_receive_ques">receive_questions</string>
+    <string name="command_search">search</string>
+    <string name="command_invite">invite</string>
+    <string name="command_joined">joined</string>
+    <string name="command_leaved">leaved</string>
 
     <!-- reponses -->
 
     <string name="response_ok">OK</string>
     <string name="response_error">ERROR</string>
+    <string name="response_registered">REGISTERED</string>
+    <string name="response_not_regist">NOT_REGISTERED</string>
+
+    <!-- -->
+
+    <string name="type_new_search">new_search</string>
 
     <integer name="bytes_on_photo">8192</integer>
 </resources>

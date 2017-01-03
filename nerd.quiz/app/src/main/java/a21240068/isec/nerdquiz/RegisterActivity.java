@@ -2,7 +2,6 @@ package a21240068.isec.nerdquiz;
 
 import android.app.Activity;
 import android.content.ComponentName;
-import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
@@ -12,14 +11,11 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
-import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.TextView;
 import android.widget.Toast;
 
-import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -28,7 +24,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 
-import a21240068.isec.nerdquiz.Core.Command;
 import a21240068.isec.nerdquiz.Core.NerdQuizApp;
 import a21240068.isec.nerdquiz.Core.Response;
 import a21240068.isec.nerdquiz.Core.SocketService;
@@ -136,7 +131,7 @@ public class RegisterActivity extends Activity
     {
         protected String doInBackground(Void... params)
         {
-            String response = "ERROR";
+            String response = getResources().getString(R.string.response_error);
             try
             {
                 while(!isCancelled())
@@ -147,7 +142,12 @@ public class RegisterActivity extends Activity
                     }
                     ObjectInputStream ins = mBoundService.getObjectStreamIn();
                     Integer tq = (Integer)ins.readObject();
-                    if(!tq.equals(Response.OK))
+                    if(tq.equals(Response.REGISTERED))
+                    {
+                        response = getResources().getString(R.string.response_registered);
+                        break;
+                    }
+                    else if(tq.equals(Response.ERROR))
                     {
                         break;
                     }
@@ -185,8 +185,9 @@ public class RegisterActivity extends Activity
                         SharedPreferences.Editor editor = preferences.edit();
                         editor.putString(getString(R.string.profile_pic), file_name);
                         editor.apply();
+                        editor.commit();
 
-                        response = "OK";
+                        response = getResources().getString(R.string.response_ok);
                         break;
                     }
                     catch(IOException | ClassNotFoundException ignored) { }
@@ -199,12 +200,17 @@ public class RegisterActivity extends Activity
 
         protected void onPostExecute(String result)
         {
-            if(result.equals("OK"))
+            if(result.equals(getResources().getString(R.string.response_ok)))
             {
                 Intent intent = new Intent(RegisterActivity.this, AuthenticationActivity.class);
                 startActivity(intent);
 
                 finish();
+            }
+            else if(result.equals(getResources().getString(R.string.response_registered)))
+            {
+                Toast.makeText(RegisterActivity.this, "Already registered!",
+                        Toast.LENGTH_LONG).show();
             }
             else
             {

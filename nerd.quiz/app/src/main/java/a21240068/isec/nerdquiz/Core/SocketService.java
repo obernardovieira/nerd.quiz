@@ -29,7 +29,7 @@ import java.net.Socket;
 
 public class SocketService extends Service
 {
-    public static final String SERVERIP = "192.168.10.7"; //your computer IP address should be written here
+    public static final String SERVERIP = "192.168.1.8"; //your computer IP address should be written here
     public static final int SERVERPORT = 5007;
     //PrintWriter out;
     ObjectOutputStream out;
@@ -43,7 +43,6 @@ public class SocketService extends Service
     @Override
     public IBinder onBind(Intent intent)
     {
-        Log.d("onBind","aefsrgdth");
         //
         return myBinder;
     }
@@ -67,7 +66,6 @@ public class SocketService extends Service
     {
         public SocketService getService()
         {
-            Log.d("getService","aefsrgdth");
             return SocketService.this;
         }
     }
@@ -103,6 +101,7 @@ public class SocketService extends Service
 
     public void sendMessage(final Object object)
     {
+        Log.d("sendit","wadesfrgdthfy");
         new Thread(new Runnable()
         {
             @Override
@@ -115,6 +114,7 @@ public class SocketService extends Service
                 }
                 try
                 {
+                    Log.d("sendit","wadesfrgdthfy");
                     out.writeObject(object);
                     out.flush();
                 }
@@ -131,10 +131,6 @@ public class SocketService extends Service
     {
         super.onStartCommand(intent, flags, startId);
         return START_STICKY;
-    }
-
-    public void IsBoundable(Context context){
-        Toast.makeText(context,"I bind like butter", Toast.LENGTH_LONG).show();
     }
 
     public void setContext(Context context)
@@ -155,48 +151,54 @@ public class SocketService extends Service
 
     public void errorConnection()
     {
-        AlertDialog.Builder builder = new AlertDialog.Builder(context);
-        builder.setMessage("Probably you lost your internet connection!")
-                .setTitle("Server not found")
-                .setPositiveButton("Reconnect", new DialogInterface.OnClickListener()
-                {
-                    @Override
-                    public void onClick(final DialogInterface dialog, int which)
-                    {
-                        if(!isConnected())
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                AlertDialog.Builder builder = new AlertDialog.Builder(context);
+                builder.setMessage("Probably you lost your internet connection!")
+                        .setTitle("Server not found")
+                        .setPositiveButton("Reconnect", new DialogInterface.OnClickListener()
                         {
-                            Toast.makeText(context, "Reconnecting ...", Toast.LENGTH_LONG).show();
-                            new Thread(new connectSocket()).start();
-                            new Thread(new Runnable()
+                            @Override
+                            public void onClick(final DialogInterface dialog, int which)
                             {
-                                @Override
-                                public void run()
+                                if(!isConnected())
                                 {
-                                    try
+                                    Toast.makeText(context, "Reconnecting ...", Toast.LENGTH_LONG).show();
+                                    new Thread(new connectSocket()).start();
+                                    new Thread(new Runnable()
                                     {
-                                        Thread.sleep(2000);
-                                    }
-                                    catch (InterruptedException ignored) { }
-                                    if(!isConnected())
-                                    {
-                                        handler.post(new Runnable()
+                                        @Override
+                                        public void run()
                                         {
-                                            @Override
-                                            public void run()
+                                            try
                                             {
-                                                errorConnection();
+                                                Thread.sleep(2000);
                                             }
-                                        });
-                                    }
+                                            catch (InterruptedException ignored) { }
+                                            if(!isConnected())
+                                            {
+                                                handler.post(new Runnable()
+                                                {
+                                                    @Override
+                                                    public void run()
+                                                    {
+                                                        errorConnection();
+                                                    }
+                                                });
+                                            }
+                                        }
+                                    }).start();
                                 }
-                            }).start();
-                        }
-                        dialog.dismiss();
-                    }
-                });
+                                dialog.dismiss();
+                            }
+                        });
 
-        AlertDialog dialog = builder.create();
-        dialog.show();
+                AlertDialog dialog = builder.create();
+                dialog.show();
+            }
+        });
+
     }
 
     class connectSocket implements Runnable

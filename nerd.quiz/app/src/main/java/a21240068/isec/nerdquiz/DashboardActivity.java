@@ -28,14 +28,12 @@ import android.widget.Toast;
 
 import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 
-import a21240068.isec.nerdquiz.Core.Command;
 import a21240068.isec.nerdquiz.Core.NerdQuizApp;
 import a21240068.isec.nerdquiz.Core.SocketService;
 import a21240068.isec.nerdquiz.Database.ProfilesData;
@@ -43,7 +41,6 @@ import a21240068.isec.nerdquiz.Objects.DownloadQuestion;
 import a21240068.isec.nerdquiz.Objects.Game;
 import a21240068.isec.nerdquiz.Database.GamesData;
 import a21240068.isec.nerdquiz.Database.QuestionsData;
-import a21240068.isec.nerdquiz.Objects.Profile;
 
 public class DashboardActivity extends Activity
 {
@@ -53,11 +50,12 @@ public class DashboardActivity extends Activity
     private NerdQuizApp application;
     private Handler handler;
     private ReceiveFromServerTask task;
-    private ReceivePhotoFromServerTask photo_task;
-    private boolean update_db_task;
     private MyGamesHistoryAdapter adapter;
-    private boolean logged = false;
+    private boolean logged;
+    private boolean show_updt_notif;
 
+    String profilepic_invited_by;
+    String invited_by;
     Runnable fromServerRunner;
 
     @Override
@@ -81,7 +79,8 @@ public class DashboardActivity extends Activity
             }
         };
 
-        update_db_task = false;
+        logged = false;
+        show_updt_notif = false;
         handler = new Handler();
     }
 
@@ -103,17 +102,22 @@ public class DashboardActivity extends Activity
         }
         else if(item.getItemId() == R.id.id_upload_questions)
         {
-            SharedPreferences preferences = PreferenceManager.
-                    getDefaultSharedPreferences(this);
-            int defaultValue = 0;
-            int atualDBVersion = preferences.
-                    getInt(getString(R.string.version_dbquestions), defaultValue);
-
-            update_db_task = true;
-            mBoundService.sendMessage(getResources().getString(R.string.command_updatedb) +
-                    " " + atualDBVersion);
+            show_updt_notif = true;
+            update_questions_database();
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    public void update_questions_database()
+    {
+        SharedPreferences preferences = PreferenceManager.
+                getDefaultSharedPreferences(this);
+        int defaultValue = 0;
+        int atualDBVersion = preferences.
+                getInt(getString(R.string.version_dbquestions), defaultValue);
+
+        mBoundService.sendMessage(getResources().getString(R.string.command_updatedb) +
+                " " + atualDBVersion);
     }
 
     public void startNewGame(View view)
@@ -168,11 +172,73 @@ public class DashboardActivity extends Activity
         }
     }
 
+    private String updateDatabaseResult(ObjectInputStream in)
+            throws IOException, ClassNotFoundException
+    {
+        String response;
+        QuestionsData qdata = new QuestionsData(DashboardActivity.this);
+        ArrayList<DownloadQuestion> questions = new ArrayList<>();
+        Integer version;
+
+        Integer tq = (Integer)in.readObject();
+        Integer z = 0;
+
+        while(z++ < tq)
+        {
+            questions.add((DownloadQuestion) in.readObject());
+        }
+        version = (Integer)in.readObject();
+        if(!questions.isEmpty())
+        {
+            qdata.updateQuestions(questions, version);
+
+            SharedPreferences preferences = PreferenceManager.
+                    getDefaultSharedPreferences(DashboardActivity.this);
+            SharedPreferences.Editor editor = preferences.edit();
+            editor.putInt(getString(R.string.version_dbquestions), version);
+            editor.apply();
+        }
+        response = getResources().getString(R.string.command_updatedb) +
+                " " + getResources().getString(R.string.response_ok);
+        return response;
+    }
+
+    private String receiveProfilePicResult(ObjectInputStream ins)
+            throws IOException, ClassNotFoundException
+    {
+        String response;
+        Integer size = (Integer) ins.readObject();
+        Integer received = 0;
+        BufferedInputStream in = new BufferedInputStream(mBoundService.getStreamIn());
+
+        OutputStream out = new FileOutputStream(
+                new File(getApplicationContext().getFilesDir(), profilepic_invited_by));
+
+        byte[] buf = new byte[getResources().getInteger(R.integer.bytes_on_photo)];
+        int len = 0;
+        while ((len = in.read(buf)) != -1)
+        {
+            out.write(buf, 0, len);
+            if (received + len == size)
+                break;
+            else
+                received += len;
+        }
+        out.close();
+
+        ProfilesData pdata = new ProfilesData(DashboardActivity.this);
+        pdata.add(invited_by, profilepic_invited_by);
+
+        response = getResources().getString(R.string.command_profilepdown) + " " + invited_by;
+        return response;
+    }
+
     private class ReceiveFromServerTask extends AsyncTask<Void, Void, String>
     {
         protected String doInBackground(Void... params)
         {
             String response = "";
+            Object object;
             try
             {
                 while(!isCancelled())
@@ -182,35 +248,19 @@ public class DashboardActivity extends Activity
                         continue;
                     }
                     ObjectInputStream in = mBoundService.getObjectStreamIn();
-                    if(update_db_task)
+                    object = in.readObject();
+                    if(object instanceof String)
                     {
-                        QuestionsData qdata = new QuestionsData(DashboardActivity.this);
-                        ArrayList<DownloadQuestion> questions = new ArrayList<>();
-                        Integer version;
-
-                        Integer tq = (Integer)in.readObject();
-                        Integer z = 0;
-
-                        while(z++ < tq)
+                        response = (String)object;
+                        if(response.equals(getResources().getString(R.string.command_updatedb)))
                         {
-                            questions.add((DownloadQuestion) in.readObject());
+                            response = updateDatabaseResult(in);
                         }
-                        version = (Integer)in.readObject();
-                        if(!questions.isEmpty())
+                        else if(response.startsWith(getResources().getString(R.string.command_profilepdown)))
                         {
-                            qdata.updateQuestions(questions, version);
-
-                            SharedPreferences preferences = PreferenceManager.
-                                    getDefaultSharedPreferences(DashboardActivity.this);
-                            SharedPreferences.Editor editor = preferences.edit();
-                            editor.putInt(getString(R.string.version_dbquestions), version);
-                            editor.apply();
+                            response = getResources().getString(R.string.command_profilepdown);
+                            response = receiveProfilePicResult(in);
                         }
-                        response = getResources().getString(R.string.response_ok);
-                    }
-                    else
-                    {
-                        response = (String)in.readObject();
                     }
                     break;
                 }
@@ -224,158 +274,110 @@ public class DashboardActivity extends Activity
 
         protected void onPostExecute(String result)
         {
-            if(update_db_task)
-            {
-                if(result.equals(getResources().getString(R.string.response_ok)))
-                    Toast.makeText(DashboardActivity.this,
-                            "Questions database updated!", Toast.LENGTH_LONG).show();
-                else
-                    Toast.makeText(DashboardActivity.this,
-                            "An error occurred!", Toast.LENGTH_LONG).show();
-
-                update_db_task = false;
-                handler.post(fromServerRunner);
-            }
-            else
-            {
-                if(result.equals(getResources().getString(R.string.response_error)))
-                {
-                    Toast.makeText(DashboardActivity.this,
-                            "An error occurred!", Toast.LENGTH_LONG).show();
-                    return;
-                }
-
-                final String [] params = result.split(" ");
-                if(params[0].equals(getResources().getString(R.string.command_beinvited)))
-                {
-                    AlertDialog.Builder builder = new AlertDialog.Builder(DashboardActivity.this);
-                    builder.setMessage("Do you want to play with " + params[1] + " ?")
-                            .setTitle("Invited");
-
-                    builder.setPositiveButton("Yes", new DialogInterface.OnClickListener()
-                    {
-                        public void onClick(DialogInterface dialog, int id)
-                        {
-                            ProfilesData pdata = new ProfilesData(DashboardActivity.this);
-                            if(!pdata.search(params[1]))
-                            {
-                                handler.post(new Runnable()
-                                {
-                                    @Override
-                                    public void run()
-                                    {
-                                        photo_task = new ReceivePhotoFromServerTask();
-                                        photo_task.execute(params[1]);
-                                    }
-                                });
-                            }
-                        }
-                    });
-                    builder.setNegativeButton("No", new DialogInterface.OnClickListener()
-                    {
-                        public void onClick(DialogInterface dialog, int id)
-                        {
-                            mBoundService.sendMessage(getResources().
-                                    getString(R.string.command_reject) + " " + params[1]);
-                            handler.post(fromServerRunner);
-                        }
-                    });
-                    AlertDialog dialog = builder.create();
-                    dialog.show();
-                }
-                else
-                {
-                    handler.post(fromServerRunner);
-                }
-            }
-        }
-
-        public void onCancelled()
-        { }
-
-    }
-
-    private class ReceivePhotoFromServerTask extends AsyncTask<String, Void, String>
-    {
-        protected String doInBackground(String... params)
-        {
-            String response = "";
-            try
-            {
-                while(!isCancelled())
-                {
-                    if(mBoundService.socket.getInputStream().available() < 4)
-                    {
-                        continue;
-                    }
-                    try
-                    {
-                        String profile_pic = "";
-                        ObjectInputStream ins = mBoundService.getObjectStreamIn();
-                        mBoundService.sendMessage(getResources().
-                                getString(R.string.command_getppic) + " " + params[0]);
-
-                        profile_pic = (String)ins.readObject();
-                        mBoundService.sendMessage(getResources().
-                                getString(R.string.command_profilepdown) + " " + profile_pic);
-
-                        Integer size = (Integer) ins.readObject();
-                        Integer received = 0;
-                        BufferedInputStream in = new BufferedInputStream(mBoundService.getStreamIn());
-
-                        OutputStream out = new FileOutputStream(
-                                new File(getApplicationContext().getFilesDir(), profile_pic));
-
-                        byte[] buf = new byte[getResources().getInteger(R.integer.bytes_on_photo)];
-                        int len = 0;
-                        while ((len = in.read(buf)) != -1)
-                        {
-                            out.write(buf, 0, len);
-                            if (received + len == size)
-                                break;
-                            else
-                                received += len;
-                        }
-                        out.close();
-
-                        response = params[0];
-
-                    }
-                    catch (IOException | ClassNotFoundException e)
-                    {
-                        response = getResources().getString(R.string.response_error);
-                    }
-                    break;
-                }
-            }
-            catch (IOException ignored)
-            {
-                response = getResources().getString(R.string.response_error);
-            }
-            return response;
-        }
-
-        protected void onPostExecute(String result)
-        {
             if(result.equals(getResources().getString(R.string.response_error)))
             {
-                Toast.makeText(DashboardActivity.this,
-                        "An error occurred!", Toast.LENGTH_LONG).show();
+                mBoundService.errorConnection();
+                return;
+            }
+
+            final String [] params = result.split(" ");
+            if(params[0].startsWith(getResources().getString(R.string.command_updatedb)))
+            {
+                if (params.length > 1)
+                {
+                    if(show_updt_notif)
+                    {
+                        Toast.makeText(DashboardActivity.this,
+                                "Questions database updated!", Toast.LENGTH_LONG).show();
+
+                        show_updt_notif = false;
+                    }
+                    handler.post(fromServerRunner);
+                }
+                else
+                {
+                    mBoundService.errorConnection();
+                }
+            }
+            else if(params[0].equals(getResources().getString(R.string.command_getppic)))
+            {
+                profilepic_invited_by = params[1];
+                mBoundService.sendMessage(getResources().
+                        getString(R.string.command_profilepdown) + " " + params[1]);
+                handler.post(fromServerRunner);
+            }
+            else if(params[0].equals(getResources().getString(R.string.command_profilepdown)))
+            {
+                if(params.length > 1)
+                {
+                    mBoundService.sendMessage(getResources().
+                            getString(R.string.command_accept) + " " + invited_by);
+
+                    Intent intent = new Intent(DashboardActivity.this, GameActivity.class);
+                    intent.putExtra("playerToPlay", invited_by);
+                    intent.putExtra("isInvited", true);
+                    startActivity(intent);
+                }
+                else
+                {
+                    mBoundService.errorConnection();
+                }
+            }
+            else if(params[0].equals(getResources().getString(R.string.command_beinvited)))
+            {
+                if(invited_by.length() > 0)
+                {
+                    return;
+                }
+                AlertDialog.Builder builder = new AlertDialog.Builder(DashboardActivity.this);
+                builder.setMessage("Do you want to play with " + params[1] + " ?")
+                        .setTitle("Invited");
+
+                builder.setPositiveButton("Yes", new DialogInterface.OnClickListener()
+                {
+                    public void onClick(DialogInterface dialog, int id)
+                    {
+                        ProfilesData pdata = new ProfilesData(DashboardActivity.this);
+                        if(!pdata.search(params[1]))
+                        {
+                            mBoundService.sendMessage(getResources().
+                                    getString(R.string.command_getppic) + " " + params[1]);
+                            handler.post(fromServerRunner);
+                        }
+                        else
+                        {
+                            mBoundService.sendMessage(getResources().
+                                    getString(R.string.command_accept) + " " + params[1]);
+
+                            Intent intent = new Intent(DashboardActivity.this, GameActivity.class);
+                            intent.putExtra("playerToPlay", params[1]);
+                            intent.putExtra("isInvited", true);
+                            startActivity(intent);
+                        }
+                    }
+                });
+                builder.setNegativeButton("No", new DialogInterface.OnClickListener()
+                {
+                    public void onClick(DialogInterface dialog, int id)
+                    {
+                        mBoundService.sendMessage(getResources().
+                                getString(R.string.command_reject) + " " + params[1]);
+                        handler.post(fromServerRunner);
+                    }
+                });
+                AlertDialog dialog = builder.create();
+                dialog.show();
+                invited_by = params[1];
             }
             else
             {
-                mBoundService.sendMessage(getResources().
-                        getString(R.string.command_accept) + " " + result);
-
-                Intent intent = new Intent(DashboardActivity.this, GameActivity.class);
-                intent.putExtra("playerToPlay", result);
-                intent.putExtra("isInvited", true);
-                startActivity(intent);
+                handler.post(fromServerRunner);
             }
         }
 
         public void onCancelled()
         { }
+
     }
 
     @Override
@@ -387,6 +389,7 @@ public class DashboardActivity extends Activity
         GamesData gdata = new GamesData(this);
         games = gdata.listAll();
         adapter.notifyDataSetChanged();
+        invited_by = "";
     }
 
     @Override
@@ -401,23 +404,40 @@ public class DashboardActivity extends Activity
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
             mBoundService = ((SocketService.LocalBinder) service).getService();
-
+            mBoundService.setContext(DashboardActivity.this);
+            Log.d("logged", String.valueOf(logged));
             if (!logged)
             {
+                Log.d("logged2", String.valueOf(logged));
                 SharedPreferences preferences = PreferenceManager.
                             getDefaultSharedPreferences(DashboardActivity.this);
                 String defaultValue = getResources().getString(R.string.no_user_name_default);
                 String username = preferences.getString(getString(R.string.user_name), defaultValue);
                 //
-                if (application.getUsername().equals(defaultValue)) {
+                Log.d("application.getUsername", application.getUsername());
+                if (application.getUsername().equals(defaultValue))
+                {
                     mBoundService.sendMessage(getResources().getString(R.string.command_autologin) +
-                            " " + application.getUsername());
+                            " " + username);
                     application.setUsername(username);
+
+                    //schedule aqui
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                Thread.sleep(1000);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                            update_questions_database();
+                        }
+                    }).start();
+
                 }
                 logged = true;
             }
             //
-            mBoundService.setContext(DashboardActivity.this);
             if(mBoundService.isConnected())
             {
                 handler.post(fromServerRunner);
@@ -447,10 +467,6 @@ public class DashboardActivity extends Activity
             if(task != null)
             {
                 task.cancel(true);
-            }
-            if(photo_task != null)
-            {
-                photo_task.cancel(true);
             }
         }
     }

@@ -3,22 +3,22 @@ package a21240068.isec.nerdquiz;
 import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
-import android.content.ContextWrapper;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.database.DataSetObserver;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListAdapter;
 import android.widget.ListView;
@@ -27,16 +27,16 @@ import android.widget.Toast;
 
 import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
-import a21240068.isec.nerdquiz.Core.Command;
-import a21240068.isec.nerdquiz.Core.NerdQuizApp;
 import a21240068.isec.nerdquiz.Core.SocketService;
 import a21240068.isec.nerdquiz.Database.ProfilesData;
 import a21240068.isec.nerdquiz.Objects.Profile;
@@ -50,8 +50,9 @@ public class SearchPlayerActivity extends Activity {
     private SocketService mBoundService;
     private Runnable fromServerRunner;
     private ReceiveFromServerTask fromServerTask;
-    private ReceivePhotoFromServerTask task_photo;
+    private EditText et_search;
 
+    HashMap<String, String> waitingPhotos;
     ProfilesData pdata;
 
     @Override
@@ -73,25 +74,37 @@ public class SearchPlayerActivity extends Activity {
         };
 
         pdata = new ProfilesData(SearchPlayerActivity.this);
+
+        et_search = (EditText)findViewById(R.id.et_player_name);
+        et_search.addTextChangedListener(searchPlayer);
+        waitingPhotos = new HashMap();
     }
 
-    public void getConnectedPlayers()
+    TextWatcher searchPlayer = new TextWatcher()
     {
-        //
-        getConnectedPlayers("a21240068.isec.nerdquiz");
-    }
+        @Override
+        public void beforeTextChanged(CharSequence s, int start, int count, int after)
+        { }
 
-    public void getConnectedPlayers(final String search_for_name)
-    {
-        if(search_for_name.equals("a21240068.isec.nerdquiz"))
+        @Override
+        public void onTextChanged(CharSequence s, int start, int before, int count)
         {
-            mBoundService.sendMessage(Command.SEARCH);
+            //clear all
+            players_profile.clear();
+            adapter.notifyDataSetChanged();
+            //
+            if(count > 0)
+                mBoundService.sendMessage(getResources().getString(R.string.command_search));
+            else
+                mBoundService.sendMessage(getResources().getString(R.string.command_search) + " " + s);
+
+            Log.d("onTextChanged","start " + start + " before " + before + " count " + count);
         }
-        else
-        {
-            //search by name
-        }
-    }
+
+        @Override
+        public void afterTextChanged(Editable s)
+        { }
+    };
 
     public void updatePlayersList()
     {
@@ -125,8 +138,9 @@ public class SearchPlayerActivity extends Activity {
         File p_pic = new File(getApplicationContext().getFilesDir(), profile_pic);
         if(!p_pic.exists())
         {
-            task_photo = new ReceivePhotoFromServerTask();
-            task_photo.execute(username, profile_pic);
+            waitingPhotos.put(profile_pic, username);
+            mBoundService.sendMessage(getResources().getString(R.string.command_profilepdown) +
+                    " " + profile_pic);
         }
     }
 
@@ -145,8 +159,8 @@ public class SearchPlayerActivity extends Activity {
         }
     }
 
-    class MyAdapter extends BaseAdapter implements ListAdapter {
-
+    class MyAdapter extends BaseAdapter implements ListAdapter
+    {
         @Override
         public int getCount() {
             return players_profile.size();
@@ -186,80 +200,32 @@ public class SearchPlayerActivity extends Activity {
         }
     }
 
-    private class ReceivePhotoFromServerTask extends AsyncTask<String, Void, String>
+    private String receiveProfilePicResult(ObjectInputStream ins, String photo_name)
+            throws IOException, ClassNotFoundException
     {
-        protected String doInBackground(String... params)
+        String response;
+        Integer size = (Integer)ins.readObject();
+        Integer received = 0;
+        BufferedInputStream in = new BufferedInputStream(
+                mBoundService.getStreamIn());
+
+        OutputStream out = new FileOutputStream(
+                new File(getApplicationContext().getFilesDir(), photo_name));
+
+        byte[] buf = new byte[getResources().getInteger(R.integer.bytes_on_photo)];
+        int len = 0;
+        while ((len = in.read(buf)) != -1)
         {
-            String response = "";
-            try
-            {
-                mBoundService.sendMessage(Command.PROFILE_PIC_DOWN +
-                        " " + params[1]);
-
-                while (!isCancelled()) {
-
-                    if (mBoundService.socket.getInputStream().available() > 4) {
-
-                        ObjectInputStream ins = mBoundService.getObjectStreamIn();
-                        Integer size = (Integer)ins.readObject();
-                        Integer received = 0;
-                        BufferedInputStream in = new BufferedInputStream(
-                                mBoundService.getStreamIn());
-
-                        OutputStream out = new FileOutputStream(
-                                new File(getApplicationContext().getFilesDir(), params[1]));
-
-                        byte[] buf = new byte[8192];
-                        int len = 0;
-                        while ((len = in.read(buf)) != -1)
-                        {
-                            out.write(buf, 0, len);
-                            if(received + len == size)
-                                break;
-                            else
-                                received += len;
-                        }
-                        out.close();
-                        //
-                        response = params[0] + " " + params[1];
-                        break;
-                    }
-                }
-            }
-            catch (IOException | ClassNotFoundException e)
-            {
-                response = "";
-            }
-            return response;
+            out.write(buf, 0, len);
+            if(received + len == size)
+                break;
+            else
+                received += len;
         }
-
-        protected void onPostExecute(String result)
-        {
-            if(result.equals(""))
-            {
-                return;
-            }
-
-            String [] params = result.split(" ");
-
-            if(!pdata.search(params[0]))
-            {
-                pdata.add(params[0], params[1]);
-                players_profile.add(new Profile(params[0], params[1]));
-                adapter.notifyDataSetChanged();
-            }
-            else if(!pdata.getProfilePic(params[0]).equals(params[1]))
-            {
-                if(pdata.updateProfilePic(params[0], params[1]))
-                {
-                    players_profile.add(new Profile(params[0], params[1]));
-                    adapter.notifyDataSetChanged();
-                }
-            }
-        }
-
-        public void onCancelled()
-        { }
+        out.close();
+        //
+        response = getResources().getString(R.string.command_profilepdown) + " " + photo_name;
+        return response;
     }
 
     private class ReceiveFromServerTask extends AsyncTask<Void, Void, String>
@@ -268,7 +234,7 @@ public class SearchPlayerActivity extends Activity {
         protected String doInBackground(Void... params)
         {
             String response = "";
-            Object obj;
+            Object object;
             Profile profile;
             try
             {
@@ -277,17 +243,26 @@ public class SearchPlayerActivity extends Activity {
                     if (mBoundService.socket.getInputStream().available() > 4)
                     {
                         ObjectInputStream ins = mBoundService.getObjectStreamIn();
-                        response = (String) ins.readObject();
-                        if(response.equals(Command.SEARCH))
+                        object = ins.readObject();
+                        if(object instanceof String)
                         {
-                            obj = ins.readObject();
-                            while(obj instanceof Profile)
+                            response = (String) object;
+                            if(response.equals(getResources().getString(R.string.command_search)))
                             {
-                                profile = (Profile)obj;
-                                profiles.add(profile);
-                                obj = ins.readObject();
+                                object = ins.readObject();
+                                while(object instanceof Profile)
+                                {
+                                    profile = (Profile)object;
+                                    profiles.add(profile);
+                                    object = ins.readObject();
+                                }
+                                response = getResources().getString(R.string.type_new_search);
                             }
-                            response = "newSearch";
+                            else if(response.startsWith(getResources().getString(R.string.command_profilepdown)))
+                            {
+                                String [] pms = response.split(" ");
+                                response = receiveProfilePicResult(ins, pms[1]);
+                            }
                         }
                         break;
                     }
@@ -295,7 +270,7 @@ public class SearchPlayerActivity extends Activity {
             }
             catch (IOException | ClassNotFoundException ignored)
             {
-                response = "";
+                response = getResources().getString(R.string.response_error);
             }
             return response;
         }
@@ -303,25 +278,52 @@ public class SearchPlayerActivity extends Activity {
         protected void onPostExecute(String result)
         {
             String [] params = result.split(" ");
-            if(result.startsWith(Command.JOINED))
+            if(result.startsWith(getResources().getString(R.string.command_joined)))
             {
-                Toast.makeText(SearchPlayerActivity.this, params[1] +
-                        " joined the game!", Toast.LENGTH_LONG).show();
-                addPlayerToView(params[1], params[2]);
+                if(params[1].contains(et_search.getText().toString()))
+                {
+                    Toast.makeText(SearchPlayerActivity.this, params[1] +
+                            " joined the game!", Toast.LENGTH_LONG).show();
+                    addPlayerToView(params[1], params[2]);
+                }
             }
-            else if(result.startsWith(Command.LEAVED))
+            else if(result.startsWith(getResources().getString(R.string.command_leaved)))
             {
-                Toast.makeText(SearchPlayerActivity.this, params[1] +
-                        " leaved the game!", Toast.LENGTH_LONG).show();
-                removePlayerFromView(params[1]);
+                if(params[1].contains(et_search.getText().toString()))
+                {
+                    Toast.makeText(SearchPlayerActivity.this, params[1] +
+                            " leaved the game!", Toast.LENGTH_LONG).show();
+                    removePlayerFromView(params[1]);
+                }
             }
-            else if(result.equals("newSearch"))
+            else if(result.equals(getResources().getString(R.string.type_new_search)))
             {
                 for(Profile p : profiles)
                 {
                     addPlayerToView(p.getName(), p.getProfilePicture());
                 }
             }
+            else if(result.contains(getResources().getString(R.string.command_profilepdown)))
+            {
+                String [] pms = result.split(" ");
+                String username = waitingPhotos.get(pms[1]);
+                String photo_name = pms[1];
+                if(!pdata.search(username))
+                {
+                    pdata.add(username, photo_name);
+                    players_profile.add(new Profile(username, photo_name));
+                    adapter.notifyDataSetChanged();
+                }
+                else if(!pdata.getProfilePic(username).equals(photo_name))
+                {
+                    if(pdata.updateProfilePic(username, photo_name))
+                    {
+                        players_profile.add(new Profile(username, photo_name));
+                        adapter.notifyDataSetChanged();
+                    }
+                }
+            }
+
             mainHandler.post(fromServerRunner);
         }
 
@@ -352,7 +354,7 @@ public class SearchPlayerActivity extends Activity {
             if(mBoundService.isConnected())
             {
                 mainHandler.post(fromServerRunner);
-                getConnectedPlayers();
+                mBoundService.sendMessage(getResources().getString(R.string.command_search));
                 updatePlayersList();
             }
         }
@@ -381,10 +383,6 @@ public class SearchPlayerActivity extends Activity {
             if(fromServerTask != null)
             {
                 fromServerTask.cancel(true);
-            }
-            if(task_photo != null)
-            {
-                task_photo.cancel(true);
             }
         }
     }

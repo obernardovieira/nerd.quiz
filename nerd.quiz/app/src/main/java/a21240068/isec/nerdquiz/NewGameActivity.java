@@ -11,25 +11,19 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
-import android.util.Log;
 import android.view.View;
-import android.widget.Button;
-import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.io.BufferedReader;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.net.Socket;
-import java.nio.channels.ClosedByInterruptException;
 
-import a21240068.isec.nerdquiz.Core.Command;
 import a21240068.isec.nerdquiz.Core.SocketService;
+import a21240068.isec.nerdquiz.Database.ProfilesData;
 
 public class NewGameActivity extends Activity
 {
@@ -37,10 +31,11 @@ public class NewGameActivity extends Activity
     private boolean mIsBound;
     private SocketService mBoundService;
     private ReceiveFromServerTask fromServerTask;
-    private boolean first_attempt;
     private String reInvite;
     private Handler handler;
 
+    String invited_by;
+    String profilepic_invited_by;
     Runnable fromServerRunner;
 
     @Override
@@ -81,7 +76,7 @@ public class NewGameActivity extends Activity
 
     private void invitePlayer(String username)
     {
-        mBoundService.sendMessage(Command.INVITE + " " + username);
+        mBoundService.sendMessage(getResources().getString(R.string.command_invite) + " " + username);
 
         TextView message = (TextView)findViewById(R.id.tv_message);
         message.setText("Waiting opponet's answer ...");
@@ -98,7 +93,7 @@ public class NewGameActivity extends Activity
         }
 
         String [] params = answer.split(" ");
-        if(answer.startsWith(Command.ACCEPT_INV))
+        if(answer.startsWith(getResources().getString(R.string.command_accept)))
         {
             Toast.makeText(NewGameActivity.this, params[1] +
                     " accepted your invitation!", Toast.LENGTH_LONG).show();
@@ -110,14 +105,45 @@ public class NewGameActivity extends Activity
 
             finish();
         }
-        else if(answer.startsWith(Command.REJECT_INV))
+        else if(answer.startsWith(getResources().getString(R.string.command_reject)))
         {
             Toast.makeText(NewGameActivity.this, params[1] +
                     " rejected your invitation!", Toast.LENGTH_LONG).show();
         }
-        else if(answer.startsWith(Command.INVITED))
+        else if(answer.startsWith(getResources().getString(R.string.command_beinvited)))
         {
-            //what if being invited meanwhile?
+            if(invited_by.length() > 0)
+            {
+                return;
+            }
+            invited_by = params[1];
+            AlertDialog.Builder builder = new AlertDialog.Builder(NewGameActivity.this);
+            builder.setMessage("Do you want to play with " + params[1] + " ?")
+                    .setTitle("Invited");
+
+            builder.setPositiveButton("Yes", new DialogInterface.OnClickListener()
+            {
+                public void onClick(DialogInterface dialog, int id)
+                {
+                    ProfilesData pdata = new ProfilesData(NewGameActivity.this);
+                    if(!pdata.search(invited_by))
+                    {
+                        mBoundService.sendMessage(getResources().
+                                getString(R.string.command_getppic) + " " + invited_by);
+                    }
+                }
+            });
+            builder.setNegativeButton("No", new DialogInterface.OnClickListener()
+            {
+                public void onClick(DialogInterface dialog, int id)
+                {
+                    mBoundService.sendMessage(getResources().
+                            getString(R.string.command_reject) + " " + invited_by);
+                    handler.post(fromServerRunner);
+                }
+            });
+            AlertDialog dialog = builder.create();
+            dialog.show();
         }
     }
 
@@ -133,11 +159,39 @@ public class NewGameActivity extends Activity
         }
     }
 
+    private String receiveProfilePicResult(ObjectInputStream ins)
+            throws IOException, ClassNotFoundException
+    {
+        String response;
+        Integer size = (Integer) ins.readObject();
+        Integer received = 0;
+        BufferedInputStream in = new BufferedInputStream(mBoundService.getStreamIn());
+
+        OutputStream out = new FileOutputStream(
+                new File(getApplicationContext().getFilesDir(), profilepic_invited_by));
+
+        byte[] buf = new byte[getResources().getInteger(R.integer.bytes_on_photo)];
+        int len = 0;
+        while ((len = in.read(buf)) != -1)
+        {
+            out.write(buf, 0, len);
+            if (received + len == size)
+                break;
+            else
+                received += len;
+        }
+        out.close();
+
+        response = getResources().getString(R.string.command_profilepdown) + " " + invited_by;
+        return response;
+    }
+
     private class ReceiveFromServerTask extends AsyncTask<Void, Void, String>
     {
         protected String doInBackground(Void... params)
         {
             String response = null;
+            Object object;
             try
             {
                 while(!isCancelled())
@@ -145,7 +199,23 @@ public class NewGameActivity extends Activity
                     if(mBoundService.socket.getInputStream().available() > 4)
                     {
                         ObjectInputStream in = mBoundService.getObjectStreamIn();
-                        response = (String)in.readObject();
+                        object = in.readObject();
+                        if(object instanceof String)
+                        {
+                            response = (String)object;
+                            if(response.startsWith(getResources().getString(R.string.command_getppic)))
+                            {
+                                String [] pms = response.split(" ");
+                                profilepic_invited_by = pms[1];
+                                mBoundService.sendMessage(getResources().
+                                        getString(R.string.command_profilepdown) + " " + params[1]);
+                            }
+                            else if(response.equals(getResources().getString(R.string.command_profilepdown)))
+                            {
+                                response = receiveProfilePicResult(in);
+                            }
+                        }
+                        break;
                     }
                 }
             }
@@ -159,7 +229,92 @@ public class NewGameActivity extends Activity
         protected void onPostExecute(String result)
         {
             //
-            processInvitationAnswer(result);
+            String [] params = result.split(" ");
+            if(result.startsWith(getResources().getString(R.string.command_accept)))
+            {
+                Toast.makeText(NewGameActivity.this, params[1] +
+                        " accepted your invitation!", Toast.LENGTH_LONG).show();
+
+                Intent intent = new Intent(NewGameActivity.this, GameActivity.class);
+                intent.putExtra("playerToPlay", params[1]);
+                intent.putExtra("isInvited", false);
+                startActivity(intent);
+
+                finish();
+            }
+            else if(result.startsWith(getResources().getString(R.string.command_reject)))
+            {
+                Toast.makeText(NewGameActivity.this, params[1] +
+                        " rejected your invitation!", Toast.LENGTH_LONG).show();
+                handler.post(fromServerRunner);
+            }
+            else if(result.startsWith(getResources().getString(R.string.command_beinvited)))
+            {
+                if(invited_by.length() > 0)
+                {
+                    return;
+                }
+                invited_by = params[1];
+                AlertDialog.Builder builder = new AlertDialog.Builder(NewGameActivity.this);
+                builder.setMessage("Do you want to play with " + params[1] + " ?")
+                        .setTitle("Invited");
+
+                builder.setPositiveButton("Yes", new DialogInterface.OnClickListener()
+                {
+                    public void onClick(DialogInterface dialog, int id)
+                    {
+                        ProfilesData pdata = new ProfilesData(NewGameActivity.this);
+                        if(!pdata.search(invited_by))
+                        {
+                            mBoundService.sendMessage(getResources().
+                                    getString(R.string.command_getppic) + " " + invited_by);
+                        }
+                        else
+                        {
+                            mBoundService.sendMessage(getResources().
+                                    getString(R.string.command_accept) + " " + invited_by);
+
+                            Intent intent = new Intent(NewGameActivity.this, GameActivity.class);
+                            intent.putExtra("playerToPlay", invited_by);
+                            intent.putExtra("isInvited", true);
+                            startActivity(intent);
+                        }
+                    }
+                });
+                builder.setNegativeButton("No", new DialogInterface.OnClickListener()
+                {
+                    public void onClick(DialogInterface dialog, int id)
+                    {
+                        mBoundService.sendMessage(getResources().
+                                getString(R.string.command_reject) + " " + invited_by);
+                        handler.post(fromServerRunner);
+                    }
+                });
+                AlertDialog dialog = builder.create();
+                dialog.show();
+            }
+            else if(result.startsWith(getResources().getString(R.string.command_profilepdown)))
+            {
+                String [] pms = result.split(" ");
+                if(pms.length > 1)
+                {
+                    mBoundService.sendMessage(getResources().
+                            getString(R.string.command_accept) + " " + result);
+
+                    Intent intent = new Intent(NewGameActivity.this, GameActivity.class);
+                    intent.putExtra("playerToPlay", invited_by);
+                    intent.putExtra("isInvited", true);
+                    startActivity(intent);
+                }
+                else
+                {
+                    mBoundService.errorConnection();
+                }
+            }
+            else
+            {
+                handler.post(fromServerRunner);
+            }
         }
 
         protected void onCancelled()
@@ -174,6 +329,7 @@ public class NewGameActivity extends Activity
     {
         super.onResume();
         doBindService();
+        invited_by = "";
     }
 
     @Override
@@ -189,6 +345,7 @@ public class NewGameActivity extends Activity
         public void onServiceConnected(ComponentName name, IBinder service)
         {
             mBoundService = ((SocketService.LocalBinder)service).getService();
+            mBoundService.setContext(NewGameActivity.this);
             if(mBoundService.isConnected())
             {
                 handler.post(fromServerRunner);
