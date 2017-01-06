@@ -74,7 +74,7 @@ public class ProfilesData
         values.put(NerdQuizContract.ProfilesTable.COLUMN_PHOTO, profile_pic);
         //
         int id = db.update(NerdQuizContract.ProfilesTable.TABLE_NAME, values,
-                NerdQuizContract.ProfilesTable.COLUMN_NAME + "=" + username, null);
+                NerdQuizContract.ProfilesTable.COLUMN_NAME + "= ?" + username, null);
 
         return (id != 0);
     }
