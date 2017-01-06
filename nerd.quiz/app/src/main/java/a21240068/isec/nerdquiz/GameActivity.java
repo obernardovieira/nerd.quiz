@@ -524,6 +524,8 @@ public class GameActivity extends Activity {
                                 WifiManager wm = (WifiManager) getSystemService(WIFI_SERVICE);
                                 String ip = Formatter.formatIpAddress(wm.getConnectionInfo().getIpAddress());
 
+                                Log.d("ipipipipipipipip",game_socket.getInetAddress().getHostAddress());
+
                                 mBoundService.sendMessage(getResources().getString(R.string.command_new_game) +
                                         " " + opponent_name + " " + ip + " " + 5009);
 

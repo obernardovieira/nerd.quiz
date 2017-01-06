@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center">
+
+    <TextView
+        android:text="3/5"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/tv_score"
+        android:textSize="30sp"
+        android:textAlignment="center" />
+
+    <TextView
+        android:text="You won!"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/tv_winner"
+        android:textStyle="normal|italic"
+        android:fontFamily="monospace"
+        android:textSize="25sp"
+        android:textAlignment="center" />
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/bt_play_again"
+        android:text="Play again"
+        android:onClick="clickButtonPlayAgain"
+        android:layout_marginTop="50sp" />
+
+    <Button
+        android:text="Go back"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/bt_go_back"
+        android:onClick="clickButtonGoBack" />
+
+</LinearLayout>

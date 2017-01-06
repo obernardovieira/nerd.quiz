@@ -13,28 +13,16 @@
     tools:context="a21240068.isec.nerdquiz.NewGameActivity"
     android:gravity="center_vertical">
 
-    <ImageView
+    <fragment android:name="a21240068.isec.nerdquiz.FragmentLeftNewGame"
+        android:id="@+id/headlines_fragment"
+        android:layout_weight="1"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:srcCompat="@drawable/nerd"
-        android:id="@+id/img_invited"
-        android:layout_weight="1"/>
+        android:layout_height="match_parent" />
 
-    <TextView
-        android:text="You haven't invited anyone yet!"
+    <fragment android:name="a21240068.isec.nerdquiz.FragmentRightNewGame"
+        android:id="@+id/article_fragment"
+        android:layout_weight="2"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/tv_message"
-        android:textAlignment="center"
-        android:padding="40sp"
-        android:textSize="18sp" />
-
-    <Button
-        android:text="Search Player"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/id_search_player"
-        android:onClick="clickSearchPlayerButton"
-        android:elevation="0dp" />
+        android:layout_height="match_parent" />
 
 </LinearLayout>

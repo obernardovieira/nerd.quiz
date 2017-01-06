@@ -12,6 +12,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -79,72 +80,12 @@ public class NewGameActivity extends Activity
         mBoundService.sendMessage(getResources().getString(R.string.command_invite) + " " + username);
 
         TextView message = (TextView)findViewById(R.id.tv_message);
-        message.setText("Waiting opponet's answer ...");
+        message.setText(getString(R.string.wait_other_answer));
+
+        ((ImageView)findViewById(R.id.img_invited)).setImageResource(R.drawable.invited);
 
         Toast.makeText(NewGameActivity.this, username +
-                " invited!", Toast.LENGTH_LONG).show();
-    }
-
-    private void processInvitationAnswer(String answer)
-    {
-        if(answer == null)
-        {
-            return;
-        }
-
-        String [] params = answer.split(" ");
-        if(answer.startsWith(getResources().getString(R.string.command_accept)))
-        {
-            Toast.makeText(NewGameActivity.this, params[1] +
-                    " accepted your invitation!", Toast.LENGTH_LONG).show();
-
-            Intent intent = new Intent(this, GameActivity.class);
-            intent.putExtra("playerToPlay", params[1]);
-            intent.putExtra("isInvited", false);
-            startActivity(intent);
-
-            finish();
-        }
-        else if(answer.startsWith(getResources().getString(R.string.command_reject)))
-        {
-            Toast.makeText(NewGameActivity.this, params[1] +
-                    " rejected your invitation!", Toast.LENGTH_LONG).show();
-        }
-        else if(answer.startsWith(getResources().getString(R.string.command_beinvited)))
-        {
-            if(invited_by.length() > 0)
-            {
-                return;
-            }
-            invited_by = params[1];
-            AlertDialog.Builder builder = new AlertDialog.Builder(NewGameActivity.this);
-            builder.setMessage("Do you want to play with " + params[1] + " ?")
-                    .setTitle("Invited");
-
-            builder.setPositiveButton("Yes", new DialogInterface.OnClickListener()
-            {
-                public void onClick(DialogInterface dialog, int id)
-                {
-                    ProfilesData pdata = new ProfilesData(NewGameActivity.this);
-                    if(!pdata.search(invited_by))
-                    {
-                        mBoundService.sendMessage(getResources().
-                                getString(R.string.command_getppic) + " " + invited_by);
-                    }
-                }
-            });
-            builder.setNegativeButton("No", new DialogInterface.OnClickListener()
-            {
-                public void onClick(DialogInterface dialog, int id)
-                {
-                    mBoundService.sendMessage(getResources().
-                            getString(R.string.command_reject) + " " + invited_by);
-                    handler.post(fromServerRunner);
-                }
-            });
-            AlertDialog dialog = builder.create();
-            dialog.show();
-        }
+                getString(R.string._invited), Toast.LENGTH_LONG).show();
     }
 
     @Override
@@ -233,7 +174,7 @@ public class NewGameActivity extends Activity
             if(result.startsWith(getResources().getString(R.string.command_accept)))
             {
                 Toast.makeText(NewGameActivity.this, params[1] +
-                        " accepted your invitation!", Toast.LENGTH_LONG).show();
+                        getString(R.string._accepted_invitation), Toast.LENGTH_LONG).show();
 
                 Intent intent = new Intent(NewGameActivity.this, GameActivity.class);
                 intent.putExtra("playerToPlay", params[1]);
@@ -245,7 +186,7 @@ public class NewGameActivity extends Activity
             else if(result.startsWith(getResources().getString(R.string.command_reject)))
             {
                 Toast.makeText(NewGameActivity.this, params[1] +
-                        " rejected your invitation!", Toast.LENGTH_LONG).show();
+                        getString(R.string._rejected_invitation), Toast.LENGTH_LONG).show();
                 handler.post(fromServerRunner);
             }
             else if(result.startsWith(getResources().getString(R.string.command_beinvited)))
@@ -256,10 +197,10 @@ public class NewGameActivity extends Activity
                 }
                 invited_by = params[1];
                 AlertDialog.Builder builder = new AlertDialog.Builder(NewGameActivity.this);
-                builder.setMessage("Do you want to play with " + params[1] + " ?")
-                        .setTitle("Invited");
+                builder.setMessage(getString(R.string.invitation_request) + params[1] + " ?")
+                        .setTitle(R.string.invited);
 
-                builder.setPositiveButton("Yes", new DialogInterface.OnClickListener()
+                builder.setPositiveButton(getString(R.string.yes), new DialogInterface.OnClickListener()
                 {
                     public void onClick(DialogInterface dialog, int id)
                     {
@@ -281,7 +222,7 @@ public class NewGameActivity extends Activity
                         }
                     }
                 });
-                builder.setNegativeButton("No", new DialogInterface.OnClickListener()
+                builder.setNegativeButton(getString(R.string.no), new DialogInterface.OnClickListener()
                 {
                     public void onClick(DialogInterface dialog, int id)
                     {

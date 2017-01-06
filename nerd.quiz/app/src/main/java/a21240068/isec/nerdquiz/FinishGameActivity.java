@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -56,9 +57,15 @@ public class FinishGameActivity extends Activity {
 
             tv_score.setText(ans_right + "/" + t_questions);
             if(other_points > points)
+            {
                 tv_winner.setText("You lose!");
+                ((ImageView)findViewById(R.id.img_real)).setImageResource(R.drawable.lose);
+            }
             else
+            {
                 tv_winner.setText("You won!");
+                ((ImageView)findViewById(R.id.img_real)).setImageResource(R.drawable.win);
+            }
         }
         else
         {

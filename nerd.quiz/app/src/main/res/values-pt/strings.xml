@@ -1,4 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
+
     <string name="app_name">NerdQuiz</string>
     <string name="no_user_name_default">NoUserName</string>
     <string name="user_name">username</string>
@@ -42,18 +44,9 @@
 
     <integer name="bytes_on_photo">8192</integer>
 
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
 
 
     <!-- -->
-    <string name="wait_other_answer">Waiting opponet\'s answer ...</string>
-    <string name="_invited"> invited!</string>
-    <string name="_accepted_invitation"> accepted your invitation!</string>
-    <string name="_rejected_invitation"> rejected your invitation!</string>
-    <string name="invitation_request">Do you want to play with </string>
-    <string name="invited">Invited</string>
-    <string name="yes">Yes</string>
-    <string name="no">No</string>
+
 
 </resources>

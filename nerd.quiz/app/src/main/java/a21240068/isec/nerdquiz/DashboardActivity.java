@@ -10,11 +10,15 @@ import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.wifi.WifiConfiguration;
+import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
+import android.text.format.Formatter;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -32,6 +36,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 
 import a21240068.isec.nerdquiz.Core.NerdQuizApp;
@@ -390,6 +396,19 @@ public class DashboardActivity extends Activity
         games = gdata.listAll();
         adapter.notifyDataSetChanged();
         invited_by = "";
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                WifiManager wm = (WifiManager) getSystemService(WIFI_SERVICE);
+
+                String ip = Formatter.formatIpAddress(wm.getConnectionInfo().getIpAddress());
+
+                Log.d("waefrawdefsr",ip);
+
+
+            }
+        }).start();
     }
 
     @Override
