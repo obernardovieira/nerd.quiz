@@ -11,7 +11,7 @@
         android:layout_height="match_parent" />
 
     <fragment android:name="a21240068.isec.nerdquiz.FragmentRightFinishGame"
-        android:id="@+id/article_fragment"
+        android:id="@+id/right_finish_game"
         android:layout_weight="1"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />

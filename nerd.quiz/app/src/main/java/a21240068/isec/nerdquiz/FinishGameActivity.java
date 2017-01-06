@@ -1,6 +1,7 @@
 package a21240068.isec.nerdquiz;
 
 import android.app.Activity;
+import android.app.Fragment;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
@@ -52,20 +53,9 @@ public class FinishGameActivity extends Activity {
 
         if(isOk)
         {
-            TextView tv_score = (TextView) findViewById(R.id.tv_score);
-            TextView tv_winner = (TextView) findViewById(R.id.tv_winner);
-
-            tv_score.setText(ans_right + "/" + t_questions);
-            if(other_points > points)
-            {
-                tv_winner.setText(getString(R.string.lose));
-                ((ImageView)findViewById(R.id.img_real)).setImageResource(R.drawable.lose);
-            }
-            else
-            {
-                tv_winner.setText(getString(R.string.won));
-                ((ImageView)findViewById(R.id.img_real)).setImageResource(R.drawable.win);
-            }
+            FragmentRightFinishGame fragment = (FragmentRightFinishGame)
+                    getFragmentManager().findFragmentById(R.id.right_finish_game);
+            fragment.updateText(ans_right, t_questions, points, other_points);
         }
         else
         {
