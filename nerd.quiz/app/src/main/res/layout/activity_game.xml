@@ -61,21 +61,24 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:id="@+id/bt_answer_one"
-                android:onClick="clickAnswerButton"/>
+                android:onClick="clickAnswerButton"
+                style="@android:style/Widget.Material.Light.Button" />
 
             <Button
                 android:text="Button"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:id="@+id/bt_answer_two"
-                android:onClick="clickAnswerButton"/>
+                android:onClick="clickAnswerButton"
+                style="@android:style/Widget.Material.Light.Button" />
 
             <Button
                 android:text="Button"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:id="@+id/bt_answer_three"
-                android:onClick="clickAnswerButton"/>
+                android:onClick="clickAnswerButton"
+                style="@android:style/Widget.Material.Light.Button" />
         </LinearLayout>
     </LinearLayout>
 

@@ -53,9 +53,7 @@ public class FinishGameActivity extends Activity {
         {
             TextView tv_score = (TextView) findViewById(R.id.tv_score);
             TextView tv_winner = (TextView) findViewById(R.id.tv_winner);
-            TextView tv_playing = (TextView) findViewById(R.id.tv_playing);
 
-            tv_playing.setText("Playing with\n" + opponent_name);
             tv_score.setText(ans_right + "/" + t_questions);
             if(other_points > points)
                 tv_winner.setText("You lose!");

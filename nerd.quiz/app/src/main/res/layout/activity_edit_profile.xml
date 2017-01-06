@@ -15,10 +15,10 @@
     <ImageView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:srcCompat="@drawable/change_profile_photo"
         android:id="@+id/iv_profile_pic"
         android:layout_weight="1"
-        android:onClick="changeProfilePhoto"/>
+        android:onClick="changeProfilePhoto"
+        android:background="@drawable/change_profile_photo" />
 
     <EditText
         android:layout_width="match_parent"
@@ -26,7 +26,8 @@
         android:inputType="textPassword"
         android:ems="10"
         android:id="@+id/et_password"
-        android:hint="Password" />
+        android:hint="Password"
+        android:layout_marginTop="5dp" />
 
     <EditText
         android:layout_width="match_parent"
@@ -34,12 +35,15 @@
         android:inputType="textPassword"
         android:ems="10"
         android:id="@+id/et_repeat_password"
-        android:hint="Repeat Password" />
+        android:hint="Repeat Password"
+        android:layout_marginTop="5dp" />
 
     <Button
         android:text="Update"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/bt_update"
-        android:onClick="updateData"/>
+        android:onClick="updateData"
+        style="@android:style/Widget.Material.Light.Button"
+        android:layout_marginTop="5dp" />
 </LinearLayout>
