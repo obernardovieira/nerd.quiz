@@ -5,6 +5,7 @@ import android.app.Service;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
@@ -23,13 +24,15 @@ import java.io.StreamCorruptedException;
 import java.net.InetAddress;
 import java.net.Socket;
 
+import a21240068.isec.nerdquiz.R;
+
 /**
  * Created by bernardovieira on 02-12-2016.
  */
 
 public class SocketService extends Service
 {
-    public static final String SERVERIP = "192.168.1.8"; //your computer IP address should be written here
+    public static final String SERVERIP = "192.168.1.7"; //your computer IP address should be written here
     public static final int SERVERPORT = 5007;
     //PrintWriter out;
     ObjectOutputStream out;
@@ -101,7 +104,6 @@ public class SocketService extends Service
 
     public void sendMessage(final Object object)
     {
-        Log.d("sendit","wadesfrgdthfy");
         new Thread(new Runnable()
         {
             @Override
@@ -114,7 +116,6 @@ public class SocketService extends Service
                 }
                 try
                 {
-                    Log.d("sendit","wadesfrgdthfy");
                     out.writeObject(object);
                     out.flush();
                 }
@@ -155,22 +156,23 @@ public class SocketService extends Service
             @Override
             public void run() {
                 AlertDialog.Builder builder = new AlertDialog.Builder(context);
-                builder.setMessage("Probably you lost your internet connection!")
-                        .setTitle("Server not found")
-                        .setPositiveButton("Reconnect", new DialogInterface.OnClickListener()
+                builder.setMessage(getString(R.string.lost_connection))
+                        .setTitle(getString(R.string.server_not_found))
+                        .setPositiveButton(getString(R.string.reconnect), new DialogInterface.OnClickListener()
                         {
                             @Override
                             public void onClick(final DialogInterface dialog, int which)
                             {
                                 if(!isConnected())
                                 {
-                                    Toast.makeText(context, "Reconnecting ...", Toast.LENGTH_LONG).show();
+                                    Toast.makeText(context, getString(R.string.reconnecting), Toast.LENGTH_LONG).show();
                                     new Thread(new connectSocket()).start();
                                     new Thread(new Runnable()
                                     {
                                         @Override
                                         public void run()
                                         {
+                                            new Thread(new connectSocket()).start();
                                             try
                                             {
                                                 Thread.sleep(2000);

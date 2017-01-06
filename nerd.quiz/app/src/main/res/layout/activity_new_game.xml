@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/activity_new_game"
     android:layout_width="match_parent"
@@ -12,26 +13,16 @@
     tools:context="a21240068.isec.nerdquiz.NewGameActivity"
     android:gravity="center_vertical">
 
-    <TextView
-        android:text="You haven't invited anyone yet!"
+    <fragment android:name="a21240068.isec.nerdquiz.FragmentLeftNewGame"
+        android:id="@+id/headlines_fragment"
+        android:layout_weight="1"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/tv_message"
-        android:textAlignment="center"
-        android:padding="40sp"
-        android:textSize="18sp" />
+        android:layout_height="match_parent" />
 
-    <LinearLayout
-        android:orientation="vertical"
+    <fragment android:name="a21240068.isec.nerdquiz.FragmentRightNewGame"
+        android:id="@+id/article_fragment"
+        android:layout_weight="2"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/layout_players"></LinearLayout>
-
-    <Button
-        android:text="Search Player"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/id_search_player"
-        android:onClick="clickSearchPlayerButton"/>
+        android:layout_height="match_parent" />
 
 </LinearLayout>

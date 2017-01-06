@@ -102,6 +102,7 @@ public class TcpServerHandleClient implements Runnable {
         catch (IOException | SQLException | ClassNotFoundException ex)
         {
             Logger.getLogger(TcpServerHandleClient.class.getName()).log(Level.SEVERE, null, ex);
+            System.out.println("Jogador " + player.getName() + " desconectou-se!");
             TcpServer.players.remove(player);
         }
     }

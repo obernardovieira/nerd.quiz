@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">NerdQuiz</string>
+    <string name="no_user_name_default">NoUserName</string>
+    <string name="user_name">username</string>
+    <string name="version_dbquestions">version_dbquestions</string>
+    <string name="profile_pic">profile_pic</string>
+    <string name="default_profile_pic_name">picture.jpg</string>
+
+    <!-- commands -->
+
+    <string name="command_register">register</string>
+    <string name="command_login">login</string>
+    <string name="command_autologin">autologin</string>
+    <string name="command_updatedb">updatedb</string>
+    <string name="command_beinvited">beinvited</string>
+    <string name="command_reject">reject</string>
+    <string name="command_getppic">getppic</string>
+    <string name="command_profilepdown">profilepdown</string>
+    <string name="command_accept">accept</string>
+    <string name="command_uppass">updatepass</string>
+    <string name="command_profilepup">profilepup</string>
+    <string name="command_next_quest">next_quest</string>
+    <string name="command_game_start">game_start</string>
+    <string name="command_other_ans">other_answered</string>
+    <string name="command_new_game">new_game</string>
+    <string name="command_receive_ques">receive_questions</string>
+    <string name="command_search">search</string>
+    <string name="command_invite">invite</string>
+    <string name="command_joined">joined</string>
+    <string name="command_leaved">leaved</string>
+
+    <!-- reponses -->
+
+    <string name="response_ok">OK</string>
+    <string name="response_error">ERROR</string>
+    <string name="response_registered">REGISTERED</string>
+    <string name="response_not_regist">NOT_REGISTERED</string>
+
+    <!-- -->
+
+    <string name="type_new_search">new_search</string>
+    <integer name="bytes_on_photo">8192</integer>
+
+    <!-- -->
+
+    <string name="wait_other_answer">Esperando resposta do oponente ...</string>
+    <string name="_invited"> convidado!</string>
+    <string name="_accepted_invitation"> aceitou o convite!</string>
+    <string name="_rejected_invitation"> rejeitou o convite!</string>
+    <string name="invitation_request">Voce quer jogar com </string>
+    <string name="invited">Convidado</string>
+    <string name="yes">Sim</string>
+    <string name="no">Nao</string>
+    <string name="not_invited_yet">Voce ainda nao convidou ninguem!</string>
+    <string name="search_player">Procurar jogador</string>
+    <string name="username">Nome do utilizador</string>
+    <string name="password">Palavra passe</string>
+    <string name="login">Autenticar</string>
+    <string name="not_registered">Voce ainda nao esta registado? Clique aqui!</string>
+    <string name="repeat_password">Repita a password</string>
+    <string name="update">Atualizar</string>
+    <string name="player_name">Nome do jogador</string>
+    <string name="cancel">Cancelar</string>
+    <string name="snap_photo">Tirar foto</string>
+    <string name="register">Registar</string>
+    <string name="already_registered">Voce ja esta registado? Clique aqui!</string>
+    <string name="go_back">Voltar</string>
+    <string name="play_again">Jogar de novo</string>
+    <string name="won">Voce ganhou!</string>
+    <string name="lose">Voce perdeu!</string>
+    <string name="needs_username">Falta o nome do utilizador!</string>
+    <string name="needs_password">Falta a palavra passe!</string>
+    <string name="needs_image">Falta uma imagem!</string>
+    <string name="logged_in">Autenticado com sucesso!</string>
+    <string name="not_registered_adv">Voce nao esta registado!</string>
+    <string name="error_when_login">Ocurreu um erro durante a autenticacao!</string>
+    <string name="questions_db_updated">Base de dados de perguntas, atualizado!</string>
+    <string name="passwords_are_different">As palavras passe sao diferentes!</string>
+    <string name="updated">Atualizado!</string>
+    <string name="error_occurred">Ocorreu um erro!</string>
+    <string name="already_registered_adv">Ja registado!</string>
+    <string name="joined"> juntou-se ou jogo!</string>
+    <string name="left"> deixou o jogo!</string>
+    <string name="lost_connection">Provavelmente perdeu a sua conexao a internet!</string>
+    <string name="server_not_found">Servidor nao encontrado</string>
+    <string name="reconnect">Reconectar</string>
+    <string name="reconnecting">Reconectando...</string>
+
+</resources>

@@ -56,12 +56,12 @@ public class AuthenticationActivity extends Activity {
 
         if(et_username.length() == 0)
         {
-            Toast.makeText(this, "Needs username!", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, getString(R.string.needs_username), Toast.LENGTH_LONG).show();
             return;
         }
         else if(et_password.length() == 0)
         {
-            Toast.makeText(this, "Needs password!", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, getString(R.string.needs_password), Toast.LENGTH_LONG).show();
             return;
         }
 
@@ -157,7 +157,7 @@ public class AuthenticationActivity extends Activity {
             NerdQuizApp application = (NerdQuizApp)getApplication();
             application.setUsername(username);
             //
-            Toast.makeText(AuthenticationActivity.this, "You are logged now!", Toast.LENGTH_LONG).show();
+            Toast.makeText(AuthenticationActivity.this, getString(R.string.logged_in), Toast.LENGTH_LONG).show();
 
             new Thread(new Runnable()
             {
@@ -206,12 +206,12 @@ public class AuthenticationActivity extends Activity {
         }
         else if(response.equals(Response.NOT_REGISTERED))
         {
-            Toast.makeText(AuthenticationActivity.this, "You are not registered!",
+            Toast.makeText(AuthenticationActivity.this, getString(R.string.not_registered_adv),
                     Toast.LENGTH_LONG).show();
         }
         else if(response.equals(Response.ERROR))
         {
-            Toast.makeText(AuthenticationActivity.this, "An error occurred while login!",
+            Toast.makeText(AuthenticationActivity.this, getString(R.string.error_when_login),
                     Toast.LENGTH_LONG).show();
         }
     }

@@ -1,12 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/activity_finish_game"
+    android:orientation="horizontal"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    tools:context="a21240068.isec.nerdquiz.FinishGameActivity">
+    android:layout_height="match_parent">
 
     <fragment android:name="a21240068.isec.nerdquiz.FragmentLeftFinishGame"
         android:id="@+id/headlines_fragment"
@@ -19,4 +15,5 @@
         android:layout_weight="1"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
+
 </LinearLayout>

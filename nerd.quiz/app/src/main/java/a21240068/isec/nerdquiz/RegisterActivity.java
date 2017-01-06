@@ -66,17 +66,17 @@ public class RegisterActivity extends Activity
 
         if(et_username.length() == 0)
         {
-            Toast.makeText(this, "Needs username!", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, getString(R.string.needs_username), Toast.LENGTH_LONG).show();
             return;
         }
         else if(et_password.length() == 0)
         {
-            Toast.makeText(this, "Needs password!", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, getString(R.string.needs_password), Toast.LENGTH_LONG).show();
             return;
         }
         else if (selectedImageUri == null)
         {
-            Toast.makeText(this, "Needs image!", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, getString(R.string.needs_image), Toast.LENGTH_LONG).show();
             return;
         }
         registerOnServer(et_username.getText().toString(), et_password.getText().toString());
@@ -209,7 +209,7 @@ public class RegisterActivity extends Activity
             }
             else if(result.equals(getResources().getString(R.string.response_registered)))
             {
-                Toast.makeText(RegisterActivity.this, "Already registered!",
+                Toast.makeText(RegisterActivity.this, getString(R.string.already_registered_adv),
                         Toast.LENGTH_LONG).show();
             }
             else

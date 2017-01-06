@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -45,7 +46,7 @@ public class FinishGameActivity extends Activity {
         }
         else
         {
-            Toast.makeText(FinishGameActivity.this, "An error occurred!",
+            Toast.makeText(FinishGameActivity.this, getString(R.string.error_occurred),
                     Toast.LENGTH_LONG).show();
         }
 
@@ -53,18 +54,22 @@ public class FinishGameActivity extends Activity {
         {
             TextView tv_score = (TextView) findViewById(R.id.tv_score);
             TextView tv_winner = (TextView) findViewById(R.id.tv_winner);
-            TextView tv_playing = (TextView) findViewById(R.id.tv_playing);
 
-            tv_playing.setText("Playing with\n" + opponent_name);
             tv_score.setText(ans_right + "/" + t_questions);
             if(other_points > points)
-                tv_winner.setText("You lose!");
+            {
+                tv_winner.setText(getString(R.string.lose));
+                ((ImageView)findViewById(R.id.img_real)).setImageResource(R.drawable.lose);
+            }
             else
-                tv_winner.setText("You won!");
+            {
+                tv_winner.setText(getString(R.string.won));
+                ((ImageView)findViewById(R.id.img_real)).setImageResource(R.drawable.win);
+            }
         }
         else
         {
-            Toast.makeText(this, "An error occurred!", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, getString(R.string.error_occurred), Toast.LENGTH_LONG).show();
         }
     }
 
