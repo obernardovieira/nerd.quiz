@@ -13,7 +13,7 @@
         android:textAlignment="center" />
 
     <TextView
-        android:text="You won!"
+        android:text="@string/won"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/tv_winner"
@@ -26,12 +26,12 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/bt_play_again"
-        android:text="Play again"
+        android:text="@string/play_again"
         android:onClick="clickButtonPlayAgain"
         android:layout_marginTop="50sp" />
 
     <Button
-        android:text="Go back"
+        android:text="@string/go_back"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/bt_go_back"

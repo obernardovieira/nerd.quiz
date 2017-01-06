@@ -11,7 +11,7 @@
         android:inputType="textPersonName"
         android:ems="10"
         android:id="@+id/et_username"
-        android:hint="Username"
+        android:hint="@string/username"
         android:textAlignment="center" />
 
     <EditText
@@ -20,18 +20,18 @@
         android:inputType="textPassword"
         android:ems="10"
         android:id="@+id/et_password"
-        android:hint="Password"
+        android:hint="@string/password"
         android:textAlignment="center" />
 
     <Button
-        android:text="Register"
+        android:text="@string/register"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/bt_register"
         android:onClick="clickRegisterButton"/>
 
     <Button
-        android:text="Are you registered already? Click here!"
+        android:text="@string/already_registered"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/tv_registerd"

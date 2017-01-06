@@ -46,7 +46,7 @@ public class FinishGameActivity extends Activity {
         }
         else
         {
-            Toast.makeText(FinishGameActivity.this, "An error occurred!",
+            Toast.makeText(FinishGameActivity.this, getString(R.string.error_occurred),
                     Toast.LENGTH_LONG).show();
         }
 
@@ -58,18 +58,18 @@ public class FinishGameActivity extends Activity {
             tv_score.setText(ans_right + "/" + t_questions);
             if(other_points > points)
             {
-                tv_winner.setText("You lose!");
+                tv_winner.setText(getString(R.string.lose));
                 ((ImageView)findViewById(R.id.img_real)).setImageResource(R.drawable.lose);
             }
             else
             {
-                tv_winner.setText("You won!");
+                tv_winner.setText(getString(R.string.won));
                 ((ImageView)findViewById(R.id.img_real)).setImageResource(R.drawable.win);
             }
         }
         else
         {
-            Toast.makeText(this, "An error occurred!", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, getString(R.string.error_occurred), Toast.LENGTH_LONG).show();
         }
     }
 

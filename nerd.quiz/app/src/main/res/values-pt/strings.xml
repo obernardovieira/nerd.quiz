@@ -41,12 +41,51 @@
     <!-- -->
 
     <string name="type_new_search">new_search</string>
-
     <integer name="bytes_on_photo">8192</integer>
-
-
 
     <!-- -->
 
+    <string name="wait_other_answer">Esperando resposta do oponente ...</string>
+    <string name="_invited"> convidado!</string>
+    <string name="_accepted_invitation"> aceitou o convite!</string>
+    <string name="_rejected_invitation"> rejeitou o convite!</string>
+    <string name="invitation_request">Voce quer jogar com </string>
+    <string name="invited">Convidado</string>
+    <string name="yes">Sim</string>
+    <string name="no">Nao</string>
+    <string name="not_invited_yet">Voce ainda nao convidou ninguem!</string>
+    <string name="search_player">Procurar jogador</string>
+    <string name="username">Nome do utilizador</string>
+    <string name="password">Palavra passe</string>
+    <string name="login">Autenticar</string>
+    <string name="not_registered">Voce ainda nao esta registado? Clique aqui!</string>
+    <string name="repeat_password">Repita a password</string>
+    <string name="update">Atualizar</string>
+    <string name="player_name">Nome do jogador</string>
+    <string name="cancel">Cancelar</string>
+    <string name="snap_photo">Tirar foto</string>
+    <string name="register">Registar</string>
+    <string name="already_registered">Voce ja esta registado? Clique aqui!</string>
+    <string name="go_back">Voltar</string>
+    <string name="play_again">Jogar de novo</string>
+    <string name="won">Voce ganhou!</string>
+    <string name="lose">Voce perdeu!</string>
+    <string name="needs_username">Falta o nome do utilizador!</string>
+    <string name="needs_password">Falta a palavra passe!</string>
+    <string name="needs_image">Falta uma imagem!</string>
+    <string name="logged_in">Autenticado com sucesso!</string>
+    <string name="not_registered_adv">Voce nao esta registado!</string>
+    <string name="error_when_login">Ocurreu um erro durante a autenticacao!</string>
+    <string name="questions_db_updated">Base de dados de perguntas, atualizado!</string>
+    <string name="passwords_are_different">As palavras passe sao diferentes!</string>
+    <string name="updated">Atualizado!</string>
+    <string name="error_occurred">Ocorreu um erro!</string>
+    <string name="already_registered_adv">Ja registado!</string>
+    <string name="joined"> juntou-se ou jogo!</string>
+    <string name="left"> deixou o jogo!</string>
+    <string name="lost_connection">Provavelmente perdeu a sua conexao a internet!</string>
+    <string name="server_not_found">Servidor nao encontrado</string>
+    <string name="reconnect">Reconectar</string>
+    <string name="reconnecting">Reconectando...</string>
 
 </resources>

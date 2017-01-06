@@ -26,7 +26,7 @@
         android:inputType="textPassword"
         android:ems="10"
         android:id="@+id/et_password"
-        android:hint="Password"
+        android:hint="@string/password"
         android:layout_marginTop="5dp" />
 
     <EditText
@@ -35,15 +35,14 @@
         android:inputType="textPassword"
         android:ems="10"
         android:id="@+id/et_repeat_password"
-        android:hint="Repeat Password"
+        android:hint="@string/repeat_password"
         android:layout_marginTop="5dp" />
 
     <Button
-        android:text="Update"
+        android:text="@string/update"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/bt_update"
         android:onClick="updateData"
-        style="@android:style/Widget.Material.Light.Button"
         android:layout_marginTop="5dp" />
 </LinearLayout>

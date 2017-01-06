@@ -100,7 +100,6 @@ public class EditProfileActivity extends Activity
                 {
                     try
                     {
-                        Log.d("abc","a");
                         ObjectOutputStream os = mBoundService.getObjectStreamOut();
                         InputStream in = new FileInputStream(
                                 new File(getApplicationContext().getFilesDir(),
@@ -108,12 +107,9 @@ public class EditProfileActivity extends Activity
                         os.writeObject(getResources().getString(R.string.command_profilepup) +
                                 " " + username);
                         os.writeObject(in.available());
-                        Log.d("abc","a");
                         os.flush();
-                        Log.d("abc","a");
                         OutputStream outs = mBoundService.getStreamOut();
 
-                        Log.d("abc","a");
                         byte[] buf = new byte[getResources().getInteger(R.integer.bytes_on_photo)];
                         int len = 0;
                         while ((len = in.read(buf)) != -1)
@@ -121,7 +117,6 @@ public class EditProfileActivity extends Activity
                             outs.write(buf, 0, len);
                             outs.flush();
                         }
-                        Log.d("abc","a");
                         in.close();
                     }
                     catch (IOException ignored) { }
@@ -141,7 +136,7 @@ public class EditProfileActivity extends Activity
             }
             else
             {
-                Toast.makeText(EditProfileActivity.this, "Passwords are different!",
+                Toast.makeText(EditProfileActivity.this, getString(R.string.passwords_are_different),
                         Toast.LENGTH_LONG).show();
             }
         }
@@ -229,11 +224,11 @@ public class EditProfileActivity extends Activity
         {
             if(result.equals(getResources().getString(R.string.response_ok)))
             {
-                Toast.makeText(EditProfileActivity.this, "Updated!", Toast.LENGTH_LONG).show();
+                Toast.makeText(EditProfileActivity.this, getString(R.string.updated), Toast.LENGTH_LONG).show();
             }
             else
             {
-                Toast.makeText(EditProfileActivity.this, "An error occurred!", Toast.LENGTH_LONG).show();
+                Toast.makeText(EditProfileActivity.this, getString(R.string.error_occurred), Toast.LENGTH_LONG).show();
             }
         }
 

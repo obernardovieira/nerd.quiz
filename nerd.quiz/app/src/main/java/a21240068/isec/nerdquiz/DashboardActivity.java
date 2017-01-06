@@ -294,7 +294,7 @@ public class DashboardActivity extends Activity
                     if(show_updt_notif)
                     {
                         Toast.makeText(DashboardActivity.this,
-                                "Questions database updated!", Toast.LENGTH_LONG).show();
+                                getString(R.string.questions_db_updated), Toast.LENGTH_LONG).show();
 
                         show_updt_notif = false;
                     }
@@ -336,10 +336,10 @@ public class DashboardActivity extends Activity
                     return;
                 }
                 AlertDialog.Builder builder = new AlertDialog.Builder(DashboardActivity.this);
-                builder.setMessage("Do you want to play with " + params[1] + " ?")
-                        .setTitle("Invited");
+                builder.setMessage(getString(R.string.invitation_request) + params[1] + " ?")
+                        .setTitle(getString(R.string.invited));
 
-                builder.setPositiveButton("Yes", new DialogInterface.OnClickListener()
+                builder.setPositiveButton(getString(R.string.yes), new DialogInterface.OnClickListener()
                 {
                     public void onClick(DialogInterface dialog, int id)
                     {
@@ -362,7 +362,7 @@ public class DashboardActivity extends Activity
                         }
                     }
                 });
-                builder.setNegativeButton("No", new DialogInterface.OnClickListener()
+                builder.setNegativeButton(getString(R.string.no), new DialogInterface.OnClickListener()
                 {
                     public void onClick(DialogInterface dialog, int id)
                     {
@@ -396,19 +396,6 @@ public class DashboardActivity extends Activity
         games = gdata.listAll();
         adapter.notifyDataSetChanged();
         invited_by = "";
-
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                WifiManager wm = (WifiManager) getSystemService(WIFI_SERVICE);
-
-                String ip = Formatter.formatIpAddress(wm.getConnectionInfo().getIpAddress());
-
-                Log.d("waefrawdefsr",ip);
-
-
-            }
-        }).start();
     }
 
     @Override
@@ -424,16 +411,13 @@ public class DashboardActivity extends Activity
         public void onServiceConnected(ComponentName name, IBinder service) {
             mBoundService = ((SocketService.LocalBinder) service).getService();
             mBoundService.setContext(DashboardActivity.this);
-            Log.d("logged", String.valueOf(logged));
             if (!logged)
             {
-                Log.d("logged2", String.valueOf(logged));
                 SharedPreferences preferences = PreferenceManager.
                             getDefaultSharedPreferences(DashboardActivity.this);
                 String defaultValue = getResources().getString(R.string.no_user_name_default);
                 String username = preferences.getString(getString(R.string.user_name), defaultValue);
                 //
-                Log.d("application.getUsername", application.getUsername());
                 if (application.getUsername().equals(defaultValue))
                 {
                     mBoundService.sendMessage(getResources().getString(R.string.command_autologin) +

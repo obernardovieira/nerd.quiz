@@ -283,7 +283,7 @@ public class SearchPlayerActivity extends Activity {
                 if(params[1].contains(et_search.getText().toString()))
                 {
                     Toast.makeText(SearchPlayerActivity.this, params[1] +
-                            " joined the game!", Toast.LENGTH_LONG).show();
+                            getString(R.string.joined), Toast.LENGTH_LONG).show();
                     addPlayerToView(params[1], params[2]);
                 }
             }
@@ -292,7 +292,7 @@ public class SearchPlayerActivity extends Activity {
                 if(params[1].contains(et_search.getText().toString()))
                 {
                     Toast.makeText(SearchPlayerActivity.this, params[1] +
-                            " leaved the game!", Toast.LENGTH_LONG).show();
+                            getString(R.string.left), Toast.LENGTH_LONG).show();
                     removePlayerFromView(params[1]);
                 }
             }

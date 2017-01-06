@@ -5,7 +5,7 @@
     android:gravity="center">
 
     <TextView
-        android:text="You haven't invited anyone yet!"
+        android:text="@string/not_invited_yet"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/tv_message"
@@ -14,7 +14,7 @@
         android:textSize="18sp" />
 
     <Button
-        android:text="Search Player"
+        android:text="@string/search_player"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/id_search_player"
